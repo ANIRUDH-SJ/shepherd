@@ -1,0 +1,5 @@
+out
+dist
+dist-typecheck
+node_modules
+package-lock.json
