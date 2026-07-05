@@ -20,7 +20,7 @@ code as we write it.
 | Milestone | File | What it covers |
 |---|---|---|
 | **M0** | `M0-project-scaffold.md` | The Electron + React + TypeScript skeleton: every file, the build pipeline, how to run it |
-| M1 | _(coming)_ | One real terminal (node-pty + xterm.js + the IPC loop) |
+| **M1** | `M1-terminal.md` | One real terminal: node-pty (backend) + xterm.js (UI) + the IPC loop, function by function |
 | M2 | _(coming)_ | Multiple terminals, tabs (surfaces) & split panes |
 | M3 | _(coming)_ | The workspace sidebar + minimal socket server |
 | M4 | _(coming)_ | Agent status + notifications + session restore |

@@ -1,5 +1,6 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
+import { registerPtyIpc, killAllTerminals } from './pty'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN PROCESS  (the "backend" — full Node.js + OS access)
@@ -47,6 +48,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  registerPtyIpc() // wire up the terminal IPC handlers before any window loads
   createWindow()
 
   // macOS convention (harmless on Linux): re-open a window if none are open.
@@ -57,7 +59,13 @@ app.whenReady().then(() => {
 
 // Quit when all windows are closed, except on macOS.
 app.on('window-all-closed', () => {
+  killAllTerminals()
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+// Extra safety: kill shells if the app quits some other way too.
+app.on('before-quit', () => {
+  killAllTerminals()
 })

@@ -1,8 +1,10 @@
-// The root React component. For M0 it's a static shell: a placeholder sidebar
-// and a work area. It proves Electron + React + TypeScript + the preload bridge
-// are all wired together. Real panes/terminals arrive in M1–M2.
+import TerminalView from './components/TerminalView'
 
-export default function App() {
+// The root React component. For M1 it's the sidebar (still a placeholder) plus a
+// single real terminal in the work area. Multiple terminals, tabs, and splits
+// arrive in M2; the live workspace sidebar in M3.
+
+export default function App(): React.JSX.Element {
   return (
     <div className="app">
       <aside className="sidebar">
@@ -11,13 +13,7 @@ export default function App() {
       </aside>
 
       <main className="workarea">
-        <h1>M0 ✓ — the app shell is alive</h1>
-        <p>
-          This window is Electron + React + TypeScript, bundled by electron-vite.
-          The preload bridge reports <code>window.api.version = {window.api?.version ?? 'n/a'}</code>,
-          which means main → preload → renderer are all connected.
-        </p>
-        <p className="next">Next milestone → M1: a real terminal running in this pane.</p>
+        <TerminalView />
       </main>
     </div>
   )

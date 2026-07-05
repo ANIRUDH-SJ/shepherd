@@ -41,12 +41,20 @@ body {
   opacity: 0.5;
 }
 
-/* Main work area — the future pane grid (M1–M2). min-width:0 lets it shrink. */
+/* Main work area — hosts the terminal (M1), later the pane grid (M2). */
 .workarea {
   flex: 1 1 auto;
   min-width: 0;
-  padding: 40px;
-  overflow: auto;
+  display: flex;
+  padding: 6px;
+  overflow: hidden;
+}
+
+/* The xterm.js terminal fills the work area. min-*:0 lets it shrink to fit. */
+.terminal {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
 }
 
 .workarea h1 {
