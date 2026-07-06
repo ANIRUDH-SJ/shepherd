@@ -14,12 +14,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* While dragging a divider, force the resize cursor and kill text selection. */
+body.resizing,
+body.resizing * {
+  user-select: none !important;
+  cursor: inherit;
+}
+
 .app {
   display: flex;
   height: 100vh;
 }
 
-/* Left sidebar — the future workspace list (M3). Fixed width for now. */
+/* ── Sidebar (placeholder until M3) ─────────────────────────────────────────── */
 .sidebar {
   width: 240px;
   flex: 0 0 240px;
@@ -27,55 +34,165 @@ body {
   border-right: 1px solid #232329;
   padding: 16px 14px;
 }
-
 .brand {
   font-weight: 700;
   font-size: 15px;
   color: #8ab4ff;
   letter-spacing: 0.2px;
 }
-
 .hint {
   margin-top: 10px;
   font-size: 12px;
   opacity: 0.5;
 }
+.shortcuts {
+  margin-top: 22px;
+  font-size: 12px;
+  opacity: 0.7;
+  line-height: 1.9;
+}
+.shortcuts-title {
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 1px;
+  opacity: 0.6;
+  margin-bottom: 4px;
+}
+kbd {
+  background: #1c1c22;
+  border: 1px solid #2b2b33;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11px;
+  font-family: inherit;
+}
 
-/* Main work area — hosts the terminal (M1), later the pane grid (M2). */
+/* ── Work area + pane layer ─────────────────────────────────────────────────── */
 .workarea {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
-  padding: 6px;
   overflow: hidden;
 }
-
-/* The xterm.js terminal fills the work area. min-*:0 lets it shrink to fit. */
-.terminal {
+.pane-layer {
+  position: relative;
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
 }
 
-.workarea h1 {
-  font-size: 20px;
-  margin: 0 0 16px;
+/* ── A pane ─────────────────────────────────────────────────────────────────── */
+.pane {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #232329;
+  border-radius: 6px;
+  background: #0d0d0f;
+}
+.pane.active {
+  border-color: #2b5fd0; /* focus ring */
 }
 
-.workarea p {
-  max-width: 640px;
-  line-height: 1.6;
+/* Tab bar */
+.pane-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 30px;
+  padding: 0 4px;
+  background: #141418;
+  border-bottom: 1px solid #232329;
+  user-select: none;
+  flex: 0 0 auto;
 }
-
-.workarea code {
-  background: #1c1c22;
-  padding: 2px 6px;
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 4px 0 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  color: #9aa0aa;
+  max-width: 170px;
+}
+.tab.active {
+  background: #26262e;
+  color: #e6e6e6;
+}
+.tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tab-close,
+.tab-new,
+.pane-btn {
+  border: 0;
+  background: transparent;
+  color: #7a808a;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 3px 6px;
   border-radius: 4px;
-  font-size: 13px;
+}
+.tab-close:hover,
+.tab-new:hover,
+.pane-btn:hover {
+  background: #2b2b33;
+  color: #e6e6e6;
+}
+.tabs-spacer {
+  flex: 1 1 auto;
 }
 
-.next {
-  margin-top: 28px;
-  opacity: 0.6;
-  font-size: 13px;
+/* Pane body holds the stacked terminals (only the active one is shown). */
+.pane-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.terminal {
+  position: absolute;
+  inset: 0;
+  padding: 4px 0 0 6px;
+}
+
+/* ── Dividers ───────────────────────────────────────────────────────────────── */
+.divider {
+  position: absolute;
+  z-index: 5;
+}
+.divider.row {
+  width: 8px;
+  transform: translateX(-4px);
+  cursor: col-resize;
+}
+.divider.column {
+  height: 8px;
+  transform: translateY(-4px);
+  cursor: row-resize;
+}
+.divider::before {
+  content: "";
+  position: absolute;
+  background: #232329;
+}
+.divider.row::before {
+  left: 3px;
+  top: 0;
+  width: 2px;
+  height: 100%;
+}
+.divider.column::before {
+  top: 3px;
+  left: 0;
+  height: 2px;
+  width: 100%;
+}
+.divider:hover::before {
+  background: #2b5fd0;
 }
