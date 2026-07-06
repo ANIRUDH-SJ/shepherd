@@ -98,7 +98,8 @@ subtitle per item, active highlight, and notification markers.*
       (the full control API comes in M5). See FEATURES.md Part 2.
 - [ ] Socket messages update workspace metadata → push to renderer via IPC → re-render
 - [ ] (Optional fallback) also accept status from a watched state dir (`chokidar`)
-- [ ] Collapse/expand sidebar (toggle, like cmux's sidebar button)
+- [ ] Sidebar: **resizable width (drag handle)** + collapse/expand toggle (cmux's sidebar button)
+      — reuses the draggable-divider logic built for panes in M2
 - [ ] Empty state + "new workspace" affordance (the `+` button)
 - [ ] Commit
 
