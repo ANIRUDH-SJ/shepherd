@@ -14,11 +14,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* While dragging a divider, force the resize cursor and kill text selection. */
 body.resizing,
 body.resizing * {
   user-select: none !important;
-  cursor: inherit;
 }
 
 .app {
@@ -26,13 +24,26 @@ body.resizing * {
   height: 100vh;
 }
 
-/* ── Sidebar (placeholder until M3) ─────────────────────────────────────────── */
+/* ── Sidebar ─────────────────────────────────────────────────────────────────── */
 .sidebar {
-  width: 240px;
-  flex: 0 0 240px;
+  flex-grow: 0;
+  flex-shrink: 0;
   background: #141418;
   border-right: 1px solid #232329;
-  padding: 16px 14px;
+  overflow: hidden;
+}
+.sidebar-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 14px 10px 10px;
+}
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 0 4px;
 }
 .brand {
   font-weight: 700;
@@ -40,14 +51,115 @@ body.resizing * {
   color: #8ab4ff;
   letter-spacing: 0.2px;
 }
-.hint {
-  margin-top: 10px;
-  font-size: 12px;
-  opacity: 0.5;
+.sidebar-head-actions {
+  display: flex;
+  gap: 2px;
 }
+.icon-btn {
+  border: 0;
+  background: transparent;
+  color: #8a90a0;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+.icon-btn:hover {
+  background: #26262e;
+  color: #e6e6e6;
+}
+
+/* Workspace list */
+.ws-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ws-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: 7px;
+}
+.ws-row:hover {
+  background: #1c1c22;
+}
+.ws-row.active {
+  background: #1f4fd0;
+}
+.ws-row.active .ws-status {
+  color: #cdddff;
+}
+.ws-row.attention {
+  animation: ws-flash 1s ease-in-out infinite;
+}
+@keyframes ws-flash {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 1px rgba(255, 176, 84, 0);
+  }
+  50% {
+    box-shadow: inset 0 0 0 1px rgba(255, 176, 84, 0.9);
+  }
+}
+.ws-row-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ws-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffb054;
+  flex: 0 0 auto;
+}
+.ws-name {
+  font-weight: 600;
+  font-size: 13px;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ws-close {
+  color: #9aa0aa;
+  opacity: 0;
+  font-size: 14px;
+  padding: 0 3px;
+  border-radius: 4px;
+}
+.ws-row:hover .ws-close {
+  opacity: 0.8;
+}
+.ws-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  opacity: 1;
+}
+.ws-status {
+  font-size: 11.5px;
+  color: #7a808a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Shortcut legend pinned to the bottom */
 .shortcuts {
-  margin-top: 22px;
-  font-size: 12px;
+  margin-top: 12px;
+  padding: 10px 6px 2px;
+  border-top: 1px solid #232329;
+  font-size: 11.5px;
   opacity: 0.7;
   line-height: 1.9;
 }
@@ -63,8 +175,43 @@ kbd {
   border: 1px solid #2b2b33;
   border-radius: 4px;
   padding: 1px 5px;
-  font-size: 11px;
+  font-size: 10.5px;
   font-family: inherit;
+}
+
+/* Drag-to-resize strip + collapsed expand button */
+.sidebar-resizer {
+  flex: 0 0 6px;
+  margin-left: -3px;
+  cursor: col-resize;
+  position: relative;
+  z-index: 6;
+}
+.sidebar-resizer::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: transparent;
+}
+.sidebar-resizer:hover::before {
+  background: #2b5fd0;
+}
+.sidebar-expand {
+  flex: 0 0 auto;
+  border: 0;
+  border-right: 1px solid #232329;
+  background: #141418;
+  color: #8a90a0;
+  cursor: pointer;
+  width: 20px;
+  font-size: 15px;
+}
+.sidebar-expand:hover {
+  color: #e6e6e6;
+  background: #1c1c22;
 }
 
 /* ── Work area + pane layer ─────────────────────────────────────────────────── */
@@ -92,10 +239,8 @@ kbd {
   background: #0d0d0f;
 }
 .pane.active {
-  border-color: #2b5fd0; /* focus ring */
+  border-color: #2b5fd0;
 }
-
-/* Tab bar */
 .pane-tabs {
   display: flex;
   align-items: center;
@@ -148,8 +293,6 @@ kbd {
 .tabs-spacer {
   flex: 1 1 auto;
 }
-
-/* Pane body holds the stacked terminals (only the active one is shown). */
 .pane-body {
   position: relative;
   flex: 1 1 auto;
