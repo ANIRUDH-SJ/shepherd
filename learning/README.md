@@ -22,7 +22,7 @@ code as we write it.
 | **M0** | `M0-project-scaffold.md` | The Electron + React + TypeScript skeleton: every file, the build pipeline, how to run it |
 | **M1** | `M1-terminal.md` | One real terminal: node-pty (backend) + xterm.js (UI) + the IPC loop, function by function |
 | **M2** | `M2-panes-tabs-splits.md` | Many terminals: the flat keyed pane layer, tabs, resizable splits, the pure layout engine + its test |
-| M3 | _(coming)_ | The workspace sidebar + minimal socket server |
+| **M3** | `M3-workspaces-and-socket.md` | Multi-workspace sidebar (status, markers, resize, collapse) + the unix-socket server + `cmux` CLI |
 | M4 | _(coming)_ | Agent status + notifications + session restore |
 | M5 | _(coming)_ | The full socket control API |
 | M6 | _(coming)_ | Theming + packaging |
