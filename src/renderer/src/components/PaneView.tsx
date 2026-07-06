@@ -15,10 +15,18 @@ interface Props {
   rect: Rect
   active: boolean
   workspaceId: string
+  surfaceNumbers: Map<string, number>
   dispatch: Dispatch<WorkspaceAction>
 }
 
-export default function PaneView({ pane, rect, active, workspaceId, dispatch }: Props): React.JSX.Element {
+export default function PaneView({
+  pane,
+  rect,
+  active,
+  workspaceId,
+  surfaceNumbers,
+  dispatch
+}: Props): React.JSX.Element {
   return (
     <div
       className={'pane' + (active ? ' active' : '')}
@@ -33,6 +41,7 @@ export default function PaneView({ pane, rect, active, workspaceId, dispatch }: 
     >
       <TabBar
         pane={pane}
+        surfaceNumbers={surfaceNumbers}
         onSelect={(surfaceId) => dispatch({ type: 'setActiveSurface', paneId: pane.id, surfaceId })}
         onCloseSurface={(surfaceId) => dispatch({ type: 'closeSurface', paneId: pane.id, surfaceId })}
         onNewSurface={() => dispatch(newSurfaceAction(pane.id))}

@@ -1,5 +1,5 @@
 import { useMemo, useRef, type Dispatch } from 'react'
-import { computeLayout } from '../layout/tree'
+import { computeLayout, listSurfaceIds } from '../layout/tree'
 import { type AppAction, paneAction, type Workspace } from '../state/appReducer'
 import type { WorkspaceAction } from '../state/workspaceReducer'
 import PaneView from './PaneView'
@@ -21,6 +21,14 @@ export default function WorkspaceView({ workspace, active, dispatch }: Props): R
   const layerRef = useRef<HTMLDivElement | null>(null)
   const { panes, dividers } = useMemo(() => computeLayout(workspace.root), [workspace.root])
 
+  // Terminal labels are POSITIONAL: the k-th terminal (in tree order) is "Terminal k".
+  // Recomputed on every change, so closing one renumbers the rest.
+  const surfaceNumbers = useMemo(() => {
+    const m = new Map<string, number>()
+    listSurfaceIds(workspace.root).forEach((id, i) => m.set(id, i + 1))
+    return m
+  }, [workspace.root])
+
   // Adapt pane-level (M2) actions to the app reducer, tagged with this workspace.
   const paneDispatch: Dispatch<WorkspaceAction> = (a) => dispatch(paneAction(workspace.id, a))
 
@@ -33,6 +41,7 @@ export default function WorkspaceView({ workspace, active, dispatch }: Props): R
           rect={rect}
           active={pane.id === workspace.activePaneId}
           workspaceId={workspace.id}
+          surfaceNumbers={surfaceNumbers}
           dispatch={paneDispatch}
         />
       ))}

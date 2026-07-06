@@ -5,10 +5,11 @@
 // See textbook/09 (data model) and textbook/10 (tiling).
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** A tab within a pane. In M2 one surface == one terminal, so `id` is also the pty id. */
+/** A tab within a pane. One surface == one terminal, so `id` is also the pty id.
+ *  There's no stored number — the "Terminal N" label is derived from POSITION at
+ *  render time, so closing one renumbers the rest (see WorkspaceView). */
 export interface Surface {
   id: string
-  title: string
 }
 
 /** A leaf region: holds one or more surfaces (tabs), one of them active. */

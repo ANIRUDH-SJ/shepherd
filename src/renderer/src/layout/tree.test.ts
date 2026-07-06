@@ -83,5 +83,13 @@ const collapsed = closePane(root, paneB.id)
 assert(collapsed !== null, 'tree not empty after closing one pane')
 assert(listSurfaceIds(collapsed!).length === before - 1, 'exactly one fewer surface after closePane')
 
+// ── positional numbering: order in listSurfaceIds IS the number ──
+// (after the ops above there are 3 surfaces across 3 panes)
+const order = listSurfaceIds(root)
+assert(order.length === 3, 'three surfaces in tree order')
+// close the pane holding the 2nd surface → the 3rd becomes the 2nd position
+const afterClose = closePane(root, paneB.id)!
+assert(listSurfaceIds(afterClose).length === 2, 'two surfaces remain, renumbered by position')
+
 console.log(failures === 0 ? '\n✅ ALL LAYOUT TESTS PASS' : `\n❌ ${failures} FAILURE(S)`)
 if (failures > 0) throw new Error(`${failures} layout test(s) failed`)

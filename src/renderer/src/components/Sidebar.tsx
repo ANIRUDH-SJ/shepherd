@@ -30,7 +30,7 @@ export default function Sidebar({ workspaces, activeWorkspaceId, dispatch, onCol
       </div>
 
       <div className="ws-list">
-        {workspaces.map((w) => (
+        {workspaces.map((w, i) => (
           <button
             key={w.id}
             className={
@@ -42,7 +42,7 @@ export default function Sidebar({ workspaces, activeWorkspaceId, dispatch, onCol
           >
             <div className="ws-row-top">
               {w.unread && <span className="ws-dot" title="unread" />}
-              <span className="ws-name">{w.name}</span>
+              <span className="ws-name">{w.name || `workspace ${i + 1}`}</span>
               {workspaces.length > 1 && (
                 <span
                   className="ws-close"

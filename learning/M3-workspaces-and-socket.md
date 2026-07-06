@@ -68,6 +68,14 @@ Workspace = { id, name, cwd, root, activePaneId,   // ← M2 state, per workspac
   does that in the event handler (StrictMode-safe).
 - Selecting a workspace **clears its unread/attention** (you're looking at it now).
 
+> **⚠️ Gotcha (hit & fixed):** workspace + terminal numbers are **positional** —
+> derived from position at render time (the k-th terminal in tree order is
+> "Terminal k"; workspaces are numbered by sidebar position), **not stored**. So
+> closing "Terminal 2" makes the old "Terminal 3" *become* 2 — always 1..N, no gaps.
+> (See `bug-fixes/05` for the wrong-turn we took first.) Also: **React StrictMode is
+> OFF** (`main.tsx`) — its dev double-mount created→disposed→recreated each pty over
+> async IPC, which could race and leave the **first terminal dead/untypeable**.
+
 ### `WorkspaceView.tsx` + the "keep-alive" trick
 `App` renders **every** workspace's `WorkspaceView` at once; only the active one is
 `display:block`. So switching workspaces **keeps every workspace's shells running**

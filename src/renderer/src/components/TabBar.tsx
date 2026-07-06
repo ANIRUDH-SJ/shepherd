@@ -5,6 +5,7 @@ import type { Pane } from '../layout/types'
 
 interface Props {
   pane: Pane
+  surfaceNumbers: Map<string, number>
   onSelect: (surfaceId: string) => void
   onCloseSurface: (surfaceId: string) => void
   onNewSurface: () => void
@@ -21,7 +22,7 @@ function stop(e: React.MouseEvent): void {
 }
 
 export default function TabBar(props: Props): React.JSX.Element {
-  const { pane, onSelect, onCloseSurface, onNewSurface, onSplitRight, onSplitDown, onClosePane } = props
+  const { pane, surfaceNumbers, onSelect, onCloseSurface, onNewSurface, onSplitRight, onSplitDown, onClosePane } = props
   return (
     <div className="pane-tabs">
       {pane.surfaces.map((s) => (
@@ -33,7 +34,7 @@ export default function TabBar(props: Props): React.JSX.Element {
             onSelect(s.id)
           }}
         >
-          <span className="tab-title">{s.title}</span>
+          <span className="tab-title">Terminal {surfaceNumbers.get(s.id) ?? '?'}</span>
           <button
             className="tab-close"
             title="Close tab"
