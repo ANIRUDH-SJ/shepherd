@@ -14,10 +14,11 @@ import '@xterm/xterm/css/xterm.css'
 
 interface Props {
   surfaceId: string
+  workspaceId: string
   active: boolean
 }
 
-export default function TerminalHost({ surfaceId, active }: Props): React.JSX.Element {
+export default function TerminalHost({ surfaceId, workspaceId, active }: Props): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const refs = useRef<{ term: Terminal; fit: FitAddon } | null>(null)
 
@@ -42,7 +43,7 @@ export default function TerminalHost({ surfaceId, active }: Props): React.JSX.El
     const offExit = window.api.terminal.onExit(surfaceId, (code) =>
       term.write(`\r\n\x1b[90m[process exited with code ${code}]\x1b[0m\r\n`)
     )
-    window.api.terminal.create({ id: surfaceId, cols: term.cols, rows: term.rows })
+    window.api.terminal.create({ id: surfaceId, workspaceId, cols: term.cols, rows: term.rows })
     const onData = term.onData((data) => window.api.terminal.input({ id: surfaceId, data }))
 
     // Refit on resize — but skip while hidden (0×0) so we don't resize the shell to 1×1.

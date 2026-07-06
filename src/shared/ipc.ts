@@ -15,7 +15,10 @@ export const IPC = {
   TERM_DISPOSE: 'terminal:dispose',
   // main → renderer  (push via webContents.send / ipcRenderer.on)
   TERM_DATA: 'terminal:data',
-  TERM_EXIT: 'terminal:exit'
+  TERM_EXIT: 'terminal:exit',
+  // app ⇄ socket
+  SOCKET_COMMAND: 'socket:command', // main → renderer
+  WORKSPACES_SYNC: 'workspaces:sync' // renderer → main
 } as const
 
 // ── Message payloads ─────────────────────────────────────────────────────────
@@ -23,6 +26,7 @@ export const IPC = {
 /** Ask the backend to spawn a shell. `id` is minted by the renderer. */
 export interface TermCreateOptions {
   id: string
+  workspaceId?: string
   cols: number
   rows: number
   cwd?: string
@@ -53,6 +57,19 @@ export interface TermExit {
   exitCode: number
 }
 
+/** A socket command routed from main to the renderer to apply to app state. */
+export interface SocketApply {
+  method: string
+  workspaceId: string | null
+  params: Record<string, unknown>
+}
+
+/** The renderer's workspace list, mirrored to main so the socket can resolve ids/names. */
+export interface WorkspacesSync {
+  workspaces: { id: string; name: string }[]
+  activeWorkspaceId: string
+}
+
 // ── The bridge surface exposed as `window.api` (implemented in preload) ───────
 export interface CmuxApi {
   version: string
@@ -69,5 +86,11 @@ export interface CmuxApi {
     onData(id: string, cb: (data: string) => void): () => void
     /** Subscribe to a shell's exit. Returns an unsubscribe function. */
     onExit(id: string, cb: (exitCode: number) => void): () => void
+  }
+  socket: {
+    /** Mirror the renderer's workspace list to main (for id/name resolution). */
+    syncWorkspaces(sync: WorkspacesSync): void
+    /** Subscribe to socket commands routed from main. Returns an unsubscribe fn. */
+    onCommand(cb: (cmd: SocketApply) => void): () => void
   }
 }

@@ -1,6 +1,8 @@
 import { ipcMain, type WebContents } from 'electron'
 import * as pty from 'node-pty'
 import { homedir, platform } from 'os'
+import { join } from 'path'
+import { socketPath } from './socket'
 import {
   IPC,
   type TermCreateOptions,
@@ -37,12 +39,21 @@ function createTerminal(sender: WebContents, opts: TermCreateOptions): void {
   // Defensive: if this id already has a shell, kill the old one first.
   terminals.get(opts.id)?.kill()
 
+  // Inject cmux env so a `cmux …` command run INSIDE this pane targets the right
+  // workspace by default and can reach the socket. (textbook/11 §env injection)
+  const env = currentEnv()
+  env.CMUX_SURFACE_ID = opts.id
+  if (opts.workspaceId) env.CMUX_WORKSPACE_ID = opts.workspaceId
+  env.CMUX_SOCKET_PATH = socketPath()
+  // Make the `cmux` CLI resolvable inside panes (dev: <cwd>/bin).
+  env.PATH = `${join(process.cwd(), 'bin')}:${env.PATH ?? ''}`
+
   const proc = pty.spawn(defaultShell(), [], {
     name: 'xterm-color',
     cols: opts.cols || 80,
     rows: opts.rows || 24,
     cwd: opts.cwd || homedir(),
-    env: currentEnv()
+    env
   })
   terminals.set(opts.id, proc)
 

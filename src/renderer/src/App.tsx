@@ -62,6 +62,30 @@ export default function App(): React.JSX.Element {
     return () => window.removeEventListener('keydown', onKey, true)
   }, [])
 
+  // Mirror the workspace list to main so the socket server can resolve ids/names.
+  useEffect(() => {
+    window.api.socket.syncWorkspaces({
+      workspaces: state.workspaces.map((w) => ({ id: w.id, name: w.name })),
+      activeWorkspaceId: state.activeWorkspaceId
+    })
+  }, [state.workspaces, state.activeWorkspaceId])
+
+  // Apply incoming socket commands (from `cmux set-status` / `notify` / `log`).
+  useEffect(() => {
+    return window.api.socket.onCommand((cmd) => {
+      const { method, workspaceId, params } = cmd
+      if (!workspaceId) return
+      if (method === 'set-status' || method === 'log') {
+        const status = String(params.status ?? params.text ?? '')
+        dispatch({ type: 'setStatus', id: workspaceId, status: status || null })
+      } else if (method === 'notify') {
+        const body = String(params.body ?? '')
+        dispatch({ type: 'setStatus', id: workspaceId, status: body || 'needs your attention' })
+        dispatch({ type: 'setAttention', id: workspaceId, unread: true, attention: true })
+      }
+    })
+  }, [])
+
   // Drag the sidebar's right edge to resize it (pixel-based; same idea as the
   // pane Divider, textbook/10).
   const startResize = (e: React.MouseEvent): void => {

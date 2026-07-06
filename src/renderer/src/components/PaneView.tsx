@@ -14,10 +14,11 @@ interface Props {
   pane: Pane
   rect: Rect
   active: boolean
+  workspaceId: string
   dispatch: Dispatch<WorkspaceAction>
 }
 
-export default function PaneView({ pane, rect, active, dispatch }: Props): React.JSX.Element {
+export default function PaneView({ pane, rect, active, workspaceId, dispatch }: Props): React.JSX.Element {
   return (
     <div
       className={'pane' + (active ? ' active' : '')}
@@ -42,7 +43,12 @@ export default function PaneView({ pane, rect, active, dispatch }: Props): React
 
       <div className="pane-body">
         {pane.surfaces.map((s) => (
-          <TerminalHost key={s.id} surfaceId={s.id} active={s.id === pane.activeSurfaceId} />
+          <TerminalHost
+            key={s.id}
+            surfaceId={s.id}
+            workspaceId={workspaceId}
+            active={s.id === pane.activeSurfaceId}
+          />
         ))}
       </div>
     </div>

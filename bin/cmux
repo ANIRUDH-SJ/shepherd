@@ -1,0 +1,78 @@
+#!/usr/bin/env node
+'use strict'
+// cmux — a tiny CLI client for the cmux-linux socket API. Run this from inside a
+// cmux-linux terminal pane (where CMUX_SOCKET_PATH + CMUX_WORKSPACE_ID are set) to
+// drive the sidebar. See textbook/11 and FEATURES.md Part 2.
+const net = require('net')
+
+const socketPath = process.env.CMUX_SOCKET_PATH || '/tmp/cmux-linux.sock'
+const argv = process.argv.slice(2)
+const method = argv[0]
+
+if (!method || method === '-h' || method === '--help') {
+  console.log(`cmux — drive cmux-linux from a terminal
+
+Usage:
+  cmux set-status <text>              set this workspace's sidebar subtitle
+  cmux notify --title T --body B      flash this workspace + a desktop toast
+  cmux log <text>                     append a status line
+  cmux list-workspaces                list open workspaces
+  cmux ping                           check the app is reachable
+
+Flags:  --workspace <id|name>   target a specific workspace (default: this pane's)
+
+Inside a cmux-linux pane, CMUX_WORKSPACE_ID and CMUX_SOCKET_PATH are set for you.`)
+  process.exit(method ? 0 : 1)
+}
+
+// Parse --flags and trailing positional text.
+const params = {}
+const positional = []
+for (let i = 1; i < argv.length; i++) {
+  const a = argv[i]
+  if (a.startsWith('--')) params[a.slice(2)] = argv[++i]
+  else positional.push(a)
+}
+if (positional.length) {
+  const text = positional.join(' ')
+  params.text = text
+  if (method === 'notify') {
+    if (!params.body) params.body = text
+  } else if (!params.status) {
+    params.status = text
+  }
+}
+if (process.env.CMUX_WORKSPACE_ID && !params.workspace) {
+  params.workspace = process.env.CMUX_WORKSPACE_ID
+}
+
+const conn = net.createConnection(socketPath, () => {
+  conn.write(JSON.stringify({ id: 1, method, params }) + '\n')
+})
+
+let buf = ''
+conn.on('data', (d) => {
+  buf += d.toString()
+  const nl = buf.indexOf('\n')
+  if (nl < 0) return
+  try {
+    const res = JSON.parse(buf.slice(0, nl))
+    if (res.error) {
+      console.error('cmux: error:', res.error)
+      conn.end()
+      process.exit(1)
+    }
+    if (res.result && res.result.workspaces) {
+      console.log(JSON.stringify(res.result.workspaces, null, 2))
+    }
+  } catch {
+    /* ignore malformed reply */
+  }
+  conn.end()
+  process.exit(0)
+})
+
+conn.on('error', (e) => {
+  console.error(`cmux: cannot reach cmux-linux at ${socketPath} (is the app running?) — ${e.message}`)
+  process.exit(1)
+})

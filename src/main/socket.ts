@@ -1,0 +1,129 @@
+import net from 'net'
+import { existsSync, unlinkSync } from 'fs'
+import { Notification } from 'electron'
+import type { SocketApply, WorkspacesSync } from '../shared/ipc'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SOCKET SERVER  (main process — the programmable control channel)
+// A unix-domain socket speaking newline-terminated JSON `{id, method, params}`.
+// Agents (via the `cmux` CLI) push status/notifications here; we route them to the
+// renderer to update the sidebar. This is the backbone of the cmux "feel".
+// See textbook/11 (the socket API) and FEATURES.md Part 2.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type ApplyFn = (cmd: SocketApply) => void
+
+let server: net.Server | null = null
+
+// A read-only mirror of the renderer's workspaces so we can resolve --workspace
+// (by id or name) and default to the active one, without a round-trip.
+let mirror: WorkspacesSync = { workspaces: [], activeWorkspaceId: '' }
+
+export function socketPath(): string {
+  return process.env.CMUX_SOCKET_PATH || '/tmp/cmux-linux.sock'
+}
+
+export function updateWorkspaceMirror(sync: WorkspacesSync): void {
+  mirror = sync
+}
+
+function resolveWorkspace(params: Record<string, unknown>): string | null {
+  const w = params.workspace
+  if (typeof w === 'string' && w) {
+    const byId = mirror.workspaces.find((x) => x.id === w)
+    if (byId) return byId.id
+    const byName = mirror.workspaces.find((x) => x.name === w)
+    return byName ? byName.id : null
+  }
+  return mirror.activeWorkspaceId || null
+}
+
+function send(conn: net.Socket, id: unknown, result: unknown, error?: string): void {
+  conn.write(JSON.stringify(error ? { id, error } : { id, result }) + '\n')
+}
+
+function handleLine(line: string, conn: net.Socket, apply: ApplyFn): void {
+  let msg: { id?: unknown; method?: string; params?: Record<string, unknown> }
+  try {
+    msg = JSON.parse(line)
+  } catch {
+    conn.write(JSON.stringify({ error: 'invalid json' }) + '\n')
+    return
+  }
+  const { id, method, params = {} } = msg
+
+  switch (method) {
+    case 'ping':
+      send(conn, id, { ok: true })
+      return
+    case 'list-workspaces':
+      send(conn, id, { workspaces: mirror.workspaces })
+      return
+    case 'set-status':
+    case 'log':
+    case 'notify': {
+      const workspaceId = resolveWorkspace(params)
+      if (!workspaceId) {
+        send(conn, id, null, 'no matching workspace')
+        return
+      }
+      apply({ method, workspaceId, params })
+      if (method === 'notify' && Notification.isSupported()) {
+        new Notification({
+          title: String(params.title ?? 'cmux-linux'),
+          body: String(params.body ?? '')
+        }).show()
+      }
+      send(conn, id, { ok: true })
+      return
+    }
+    default:
+      send(conn, id, null, `unknown method: ${method}`)
+  }
+}
+
+export function startSocketServer(apply: ApplyFn): void {
+  const path = socketPath()
+  // Clean up a stale socket file left by a previous crash.
+  if (existsSync(path)) {
+    try {
+      unlinkSync(path)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  server = net.createServer((conn) => {
+    // Message framing: a single 'data' event may contain partial or multiple JSON
+    // lines, so we buffer and split on '\n'. (textbook/11 §gotchas)
+    let buffer = ''
+    conn.on('data', (chunk) => {
+      buffer += chunk.toString('utf8')
+      let nl: number
+      while ((nl = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, nl).trim()
+        buffer = buffer.slice(nl + 1)
+        if (line) handleLine(line, conn, apply)
+      }
+    })
+    conn.on('error', () => {
+      /* ignore per-connection errors */
+    })
+  })
+
+  server.on('error', (err) => console.error('[socket] server error:', err))
+  server.listen(path, () => console.log('[socket] listening on', path))
+}
+
+export function stopSocketServer(): void {
+  server?.close()
+  server = null
+  const path = socketPath()
+  if (existsSync(path)) {
+    try {
+      unlinkSync(path)
+    } catch {
+      /* ignore */
+    }
+  }
+}

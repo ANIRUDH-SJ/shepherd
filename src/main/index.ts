@@ -1,6 +1,8 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { registerPtyIpc, killAllTerminals } from './pty'
+import { startSocketServer, stopSocketServer, updateWorkspaceMirror } from './socket'
+import { IPC, type WorkspacesSync } from '../shared/ipc'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN PROCESS  (the "backend" — full Node.js + OS access)
@@ -49,6 +51,16 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   registerPtyIpc() // wire up the terminal IPC handlers before any window loads
+
+  // Socket server: route incoming commands to the renderer to update app state.
+  startSocketServer((cmd) => {
+    for (const w of BrowserWindow.getAllWindows()) {
+      if (!w.isDestroyed()) w.webContents.send(IPC.SOCKET_COMMAND, cmd)
+    }
+  })
+  // Renderer mirrors its workspace list here so the socket can resolve ids/names.
+  ipcMain.on(IPC.WORKSPACES_SYNC, (_e, sync: WorkspacesSync) => updateWorkspaceMirror(sync))
+
   createWindow()
 
   // macOS convention (harmless on Linux): re-open a window if none are open.
@@ -65,7 +77,8 @@ app.on('window-all-closed', () => {
   }
 })
 
-// Extra safety: kill shells if the app quits some other way too.
+// Extra safety: kill shells + close the socket if the app quits some other way too.
 app.on('before-quit', () => {
   killAllTerminals()
+  stopSocketServer()
 })
