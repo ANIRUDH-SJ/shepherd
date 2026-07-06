@@ -22,7 +22,7 @@ const active = (s: AppState) => s.workspaces.find((w) => w.id === s.activeWorksp
 // initial
 let s = initialApp()
 assert(s.workspaces.length === 1, 'starts with 1 workspace')
-assert(active(s).name === 'main', 'first workspace is named "main"')
+assert(active(s).name === '', 'first workspace has no custom name (shown positionally)')
 const firstWs = s.activeWorkspaceId
 
 // create a second workspace → becomes active
@@ -57,6 +57,21 @@ assert(s.workspaces.length === 1, 'one workspace after close')
 const only = s.activeWorkspaceId
 s = appReducer(s, { type: 'closeWorkspace', id: only })
 assert(s.workspaces.length === 1, 'the last workspace cannot be closed')
+
+// workspaces are numbered by POSITION in the sidebar (index+1), so closing one
+// shifts the rest down. The reducer keeps the list ordered; the number is derived
+// in the UI. Verify close removes + preserves order:
+let n = initialApp()
+n = appReducer(n, createWorkspaceAction()) // position 2
+const midId = n.activeWorkspaceId
+n = appReducer(n, createWorkspaceAction()) // position 3
+assert(n.workspaces.length === 3, 'three workspaces')
+n = appReducer(n, { type: 'closeWorkspace', id: midId }) // close the middle one
+assert(n.workspaces.length === 2, 'two workspaces after closing the middle')
+assert(
+  n.workspaces.every((w) => w.id !== midId),
+  'closed workspace is gone; the third now sits at position 2 (renumbered in UI)'
+)
 
 console.log(failures === 0 ? '\n✅ ALL APP-REDUCER TESTS PASS' : `\n❌ ${failures} FAILURE(S)`)
 if (failures > 0) throw new Error(`${failures} app-reducer test(s) failed`)

@@ -1,5 +1,5 @@
 import type { LayoutNode } from '../layout/types'
-import { initialTree } from '../layout/tree'
+import { makePane, uid } from '../layout/tree'
 import { workspaceReducer, type WorkspaceState, type WorkspaceAction } from './workspaceReducer'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -28,18 +28,16 @@ export interface AppState {
   activeWorkspaceId: string
 }
 
-let wsCounter = 0
-
-/** Mint a new workspace (side effects: uuid + name counter). Call from handlers only. */
+/** Mint a new workspace with one terminal. The display NAME is positional
+ *  ("workspace N", by sidebar position) unless a custom `name` is given. */
 export function makeWorkspace(name?: string): Workspace {
-  wsCounter += 1
-  const { root, activePaneId } = initialTree()
+  const pane = makePane({ id: uid('term') })
   return {
     id: `ws-${crypto.randomUUID()}`,
-    name: name ?? `workspace ${wsCounter}`,
+    name: name ?? '',
     cwd: '~',
-    root,
-    activePaneId,
+    root: { type: 'pane', pane },
+    activePaneId: pane.id,
     status: null,
     unread: false,
     attention: false
@@ -47,7 +45,7 @@ export function makeWorkspace(name?: string): Workspace {
 }
 
 export function initialApp(): AppState {
-  const ws = makeWorkspace('main')
+  const ws = makeWorkspace() // positional name → "workspace 1"
   return { workspaces: [ws], activeWorkspaceId: ws.id }
 }
 

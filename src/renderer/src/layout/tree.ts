@@ -16,15 +16,14 @@ import type {
 
 const MIN_FRACTION = 0.1 // a pane can't be shrunk below 10% of its split
 
-let termCounter = 0
-
 export function uid(prefix: string): string {
   return `${prefix}-${crypto.randomUUID()}`
 }
 
 export function makeSurface(): Surface {
-  termCounter += 1
-  return { id: uid('term'), title: `Terminal ${termCounter}` }
+  // No stored number — the "Terminal N" label is derived from position at render
+  // time (see WorkspaceView), so numbers renumber when others close.
+  return { id: uid('term') }
 }
 
 export function makePane(surface: Surface): Pane {
@@ -53,6 +52,9 @@ export function listSurfaceIds(node: LayoutNode): string[] {
   if (node.type === 'pane') return node.pane.surfaces.map((s) => s.id)
   return node.children.flatMap(listSurfaceIds)
 }
+
+// (Numbering is positional now — derived from listSurfaceIds order in the UI — so
+//  the old title/lowest-free helpers were removed.)
 
 /** The id of the first pane found (used to pick a new active pane after a close). */
 export function firstPaneId(node: LayoutNode): string {
