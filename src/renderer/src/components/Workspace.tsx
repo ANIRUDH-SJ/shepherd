@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { computeLayout, findPane } from '../layout/tree'
-import { workspaceReducer, initialWorkspace } from '../state/workspaceReducer'
+import {
+  workspaceReducer,
+  initialWorkspace,
+  splitAction,
+  newSurfaceAction
+} from '../state/workspaceReducer'
 import PaneView from './PaneView'
 import Divider from './Divider'
 
@@ -11,8 +16,12 @@ import Divider from './Divider'
 // splitting/closing never remounts unrelated terminals. See textbook/10.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Computed ONCE at module load (not via a lazy initializer, which StrictMode
+// double-invokes) so the first terminal is reliably "Terminal 1".
+const INITIAL_WORKSPACE = initialWorkspace()
+
 export default function Workspace(): React.JSX.Element {
-  const [state, dispatch] = useReducer(workspaceReducer, undefined, initialWorkspace)
+  const [state, dispatch] = useReducer(workspaceReducer, INITIAL_WORKSPACE)
   const layerRef = useRef<HTMLDivElement | null>(null)
 
   const { panes, dividers } = useMemo(() => computeLayout(state.root), [state.root])
@@ -25,13 +34,13 @@ export default function Workspace(): React.JSX.Element {
       const paneId = state.activePaneId
       switch (e.key.toLowerCase()) {
         case 'd':
-          dispatch({ type: 'split', paneId, direction: 'row' })
+          dispatch(splitAction(paneId, 'row'))
           break
         case 'e':
-          dispatch({ type: 'split', paneId, direction: 'column' })
+          dispatch(splitAction(paneId, 'column'))
           break
         case 't':
-          dispatch({ type: 'newSurface', paneId })
+          dispatch(newSurfaceAction(paneId))
           break
         case 'w': {
           const pane = findPane(state.root, paneId)

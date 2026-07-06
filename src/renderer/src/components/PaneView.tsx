@@ -1,6 +1,6 @@
 import type { Dispatch } from 'react'
 import type { Pane, Rect } from '../layout/types'
-import type { WorkspaceAction } from '../state/workspaceReducer'
+import { type WorkspaceAction, splitAction, newSurfaceAction } from '../state/workspaceReducer'
 import TabBar from './TabBar'
 import TerminalHost from './TerminalHost'
 
@@ -34,9 +34,9 @@ export default function PaneView({ pane, rect, active, dispatch }: Props): React
         pane={pane}
         onSelect={(surfaceId) => dispatch({ type: 'setActiveSurface', paneId: pane.id, surfaceId })}
         onCloseSurface={(surfaceId) => dispatch({ type: 'closeSurface', paneId: pane.id, surfaceId })}
-        onNewSurface={() => dispatch({ type: 'newSurface', paneId: pane.id })}
-        onSplitRight={() => dispatch({ type: 'split', paneId: pane.id, direction: 'row' })}
-        onSplitDown={() => dispatch({ type: 'split', paneId: pane.id, direction: 'column' })}
+        onNewSurface={() => dispatch(newSurfaceAction(pane.id))}
+        onSplitRight={() => dispatch(splitAction(pane.id, 'row'))}
+        onSplitDown={() => dispatch(splitAction(pane.id, 'column'))}
         onClosePane={() => dispatch({ type: 'closePane', paneId: pane.id })}
       />
 

@@ -112,6 +112,13 @@ Holds `{ root, activePaneId }`. Each action maps to a tree op:
 
 Pure and predictable — the whole app state is one tree + one id.
 
+> **⚠️ Gotcha (hit & fixed):** the reducer must be **pure**. New terminals are
+> minted by action creators (`splitAction` / `newSurfaceAction`) in the event
+> handlers, **not** inside the reducer. React StrictMode double-invokes reducers in
+> dev to catch impurity — minting there numbered every new terminal *twice* (the
+> "Terminal 1 → 3 → 5" bug). For the same reason the initial state is computed once
+> at module load, not via a double-invoked lazy initializer.
+
 ---
 
 ## 6. The components

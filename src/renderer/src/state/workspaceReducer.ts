@@ -11,13 +11,17 @@ import {
   findPane,
   firstPaneId
 } from '../layout/tree'
-import type { LayoutNode } from '../layout/types'
+import type { LayoutNode, Pane, Surface } from '../layout/types'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WORKSPACE REDUCER
-// All layout state lives here as one immutable tree + the active pane id. Every
-// user action (split, close, new tab…) is a pure transition over the tree ops
-// from ../layout/tree. See textbook/08 (React state) and /10 (tiling).
+// State = one immutable layout tree + the active pane id.
+//
+// IMPORTANT: the reducer is PURE — it never mints panes/surfaces and never uses
+// randomness. New panes/surfaces are created by the ACTION CREATORS below (called
+// from event handlers, which run once). React StrictMode double-invokes reducers
+// in dev to catch impurity; if we minted (and numbered) terminals inside the
+// reducer, every action would create two — that was the "Terminal N" numbering bug.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface WorkspaceState {
@@ -26,9 +30,9 @@ export interface WorkspaceState {
 }
 
 export type WorkspaceAction =
-  | { type: 'split'; paneId: string; direction: 'row' | 'column' }
+  | { type: 'split'; paneId: string; direction: 'row' | 'column'; newPane: Pane }
   | { type: 'closePane'; paneId: string }
-  | { type: 'newSurface'; paneId: string }
+  | { type: 'newSurface'; paneId: string; surface: Surface }
   | { type: 'closeSurface'; paneId: string; surfaceId: string }
   | { type: 'setActiveSurface'; paneId: string; surfaceId: string }
   | { type: 'setActivePane'; paneId: string }
@@ -38,6 +42,14 @@ export function initialWorkspace(): WorkspaceState {
   return initialTree()
 }
 
+// ── Action creators (mint new terminals — call ONLY from event handlers) ──────
+export function splitAction(paneId: string, direction: 'row' | 'column'): WorkspaceAction {
+  return { type: 'split', paneId, direction, newPane: makePane(makeSurface()) }
+}
+export function newSurfaceAction(paneId: string): WorkspaceAction {
+  return { type: 'newSurface', paneId, surface: makeSurface() }
+}
+
 /** Pick a valid active pane after the tree changed. */
 function reselect(root: LayoutNode, preferred: string): string {
   return findPane(root, preferred) ? preferred : firstPaneId(root)
@@ -45,10 +57,11 @@ function reselect(root: LayoutNode, preferred: string): string {
 
 export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
   switch (action.type) {
-    case 'split': {
-      const newPane = makePane(makeSurface())
-      return { root: splitPane(state.root, action.paneId, action.direction, newPane), activePaneId: newPane.id }
-    }
+    case 'split':
+      return {
+        root: splitPane(state.root, action.paneId, action.direction, action.newPane),
+        activePaneId: action.newPane.id
+      }
 
     case 'closePane': {
       const root = closePane(state.root, action.paneId)
@@ -57,12 +70,12 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
     }
 
     case 'newSurface':
-      return { root: addSurface(state.root, action.paneId, makeSurface()), activePaneId: action.paneId }
+      return { root: addSurface(state.root, action.paneId, action.surface), activePaneId: action.paneId }
 
     case 'closeSurface': {
       const pane = findPane(state.root, action.paneId)
       if (!pane) return state
-      // closing the pane's last tab closes the pane itself…
+      // closing a pane's last tab closes the pane…
       if (pane.surfaces.length <= 1) {
         const root = closePane(state.root, action.paneId)
         if (!root) return state // …unless it's the very last pane in the app
