@@ -1,8 +1,9 @@
-import { ipcMain, type WebContents } from 'electron'
+import { ipcMain, Notification, type WebContents } from 'electron'
 import * as pty from 'node-pty'
 import { homedir, platform } from 'os'
 import { join } from 'path'
 import { socketPath } from './socket'
+import { parseOsc } from './osc'
 import {
   IPC,
   type TermCreateOptions,
@@ -16,8 +17,15 @@ import {
 // and feeds keystrokes back in. One entry per terminal id. See textbook/06.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** One live shell process per terminal id. */
-const terminals = new Map<string, pty.IPty>()
+/** Per-terminal state: the shell process, the workspace it belongs to (so OSC
+ *  notifications route to the right sidebar row), and a buffer for OSC codes that
+ *  split across reads. */
+interface TerminalRec {
+  proc: pty.IPty
+  workspaceId?: string
+  oscBuffer: string
+}
+const terminals = new Map<string, TerminalRec>()
 
 /** Pick a shell: the user's $SHELL, else a sensible platform default. */
 function defaultShell(): string {
@@ -37,7 +45,7 @@ function currentEnv(): Record<string, string> {
 /** Spawn a shell and stream its output to the window that asked for it. */
 function createTerminal(sender: WebContents, opts: TermCreateOptions): void {
   // Defensive: if this id already has a shell, kill the old one first.
-  terminals.get(opts.id)?.kill()
+  terminals.get(opts.id)?.proc.kill()
 
   // Inject cmux env so a `cmux …` command run INSIDE this pane targets the right
   // workspace by default and can reach the socket. (textbook/11 §env injection)
@@ -55,11 +63,13 @@ function createTerminal(sender: WebContents, opts: TermCreateOptions): void {
     cwd: opts.cwd || homedir(),
     env
   })
-  terminals.set(opts.id, proc)
+  terminals.set(opts.id, { proc, workspaceId: opts.workspaceId, oscBuffer: '' })
 
-  // Shell output → renderer (guard against a closed window).
+  // Shell output → renderer (guard against a closed window), then sniff for OSC
+  // notification codes (a copy — the raw data still goes to xterm untouched).
   proc.onData((data) => {
     if (!sender.isDestroyed()) sender.send(IPC.TERM_DATA, { id: opts.id, data })
+    sniffOsc(opts.id, sender, data)
   })
 
   // Shell exited → tell the renderer, then forget it.
@@ -67,6 +77,25 @@ function createTerminal(sender: WebContents, opts: TermCreateOptions): void {
     if (!sender.isDestroyed()) sender.send(IPC.TERM_EXIT, { id: opts.id, exitCode })
     terminals.delete(opts.id)
   })
+}
+
+/** Sniff a chunk of output for OSC notifications and route each one to the sidebar
+ *  (the same `notify` path the socket uses) plus a desktop toast. See osc.ts. */
+function sniffOsc(id: string, sender: WebContents, data: string): void {
+  const rec = terminals.get(id)
+  if (!rec) return
+  const { notifications, rest } = parseOsc(rec.oscBuffer + data)
+  rec.oscBuffer = rest
+  for (const n of notifications) {
+    if (!sender.isDestroyed()) {
+      sender.send(IPC.SOCKET_COMMAND, {
+        method: 'notify',
+        workspaceId: rec.workspaceId ?? null,
+        params: { title: n.title, body: n.body }
+      })
+    }
+    if (Notification.isSupported()) new Notification({ title: n.title, body: n.body }).show()
+  }
 }
 
 /** Register every terminal IPC handler. Call once at startup. */
@@ -78,23 +107,23 @@ export function registerPtyIpc(): void {
 
   // fire-and-forget: keystrokes in
   ipcMain.on(IPC.TERM_INPUT, (_event, msg: TermInput) => {
-    terminals.get(msg.id)?.write(msg.data)
+    terminals.get(msg.id)?.proc.write(msg.data)
   })
 
   // fire-and-forget: resize
   ipcMain.on(IPC.TERM_RESIZE, (_event, msg: TermResize) => {
-    terminals.get(msg.id)?.resize(Math.max(1, msg.cols), Math.max(1, msg.rows))
+    terminals.get(msg.id)?.proc.resize(Math.max(1, msg.cols), Math.max(1, msg.rows))
   })
 
   // fire-and-forget: kill one shell
   ipcMain.on(IPC.TERM_DISPOSE, (_event, id: string) => {
-    terminals.get(id)?.kill()
+    terminals.get(id)?.proc.kill()
     terminals.delete(id)
   })
 }
 
 /** Kill every shell — called on quit so we never leave zombie processes. */
 export function killAllTerminals(): void {
-  for (const proc of terminals.values()) proc.kill()
+  for (const rec of terminals.values()) rec.proc.kill()
   terminals.clear()
 }
