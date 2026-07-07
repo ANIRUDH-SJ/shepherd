@@ -18,11 +18,57 @@ Usage:
   cmux log <text>                     append a status line
   cmux list-workspaces                list open workspaces
   cmux ping                           check the app is reachable
+  cmux hooks setup                    install a Claude Code notify hook
 
 Flags:  --workspace <id|name>   target a specific workspace (default: this pane's)
 
 Inside a cmux-linux pane, CMUX_WORKSPACE_ID and CMUX_SOCKET_PATH are set for you.`)
   process.exit(method ? 0 : 1)
+}
+
+// `cmux hooks setup` is a LOCAL command (it edits ~/.claude/settings.json); it does
+// not talk to the socket, so handle it before connecting.
+if (method === 'hooks') {
+  if (argv[1] !== 'setup') {
+    console.error('usage: cmux hooks setup')
+    process.exit(1)
+  }
+  const os = require('os')
+  const fs = require('fs')
+  const path = require('path')
+  const settingsPath =
+    process.env.CLAUDE_SETTINGS_PATH || path.join(os.homedir(), '.claude', 'settings.json')
+
+  let settings = {}
+  try {
+    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'))
+  } catch {
+    /* no settings file yet — start fresh */
+  }
+  settings.hooks = settings.hooks || {}
+  const list = Array.isArray(settings.hooks.Notification) ? settings.hooks.Notification : []
+
+  // Idempotent: don't add a second cmux hook if one is already present.
+  const already = list.some(
+    (g) =>
+      g &&
+      Array.isArray(g.hooks) &&
+      g.hooks.some((h) => h && typeof h.command === 'string' && h.command.includes('cmux notify'))
+  )
+  if (already) {
+    console.log(`cmux: Claude Code notify hook already installed at ${settingsPath}`)
+    process.exit(0)
+  }
+
+  list.push({
+    hooks: [{ type: 'command', command: 'cmux notify --title Claude --body "needs your attention"' }]
+  })
+  settings.hooks.Notification = list
+  fs.mkdirSync(path.dirname(settingsPath), { recursive: true })
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n')
+  console.log(`cmux: installed Claude Code notify hook -> ${settingsPath}`)
+  console.log('      Claude Code will now flash its cmux-linux workspace when it needs you.')
+  process.exit(0)
 }
 
 // Parse --flags and trailing positional text.
