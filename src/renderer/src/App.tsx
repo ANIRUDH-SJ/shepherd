@@ -1,12 +1,13 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
-import { appReducer, initialApp, createWorkspaceAction, paneAction } from './state/appReducer'
+import { appReducer, initialApp, sanitizeRestored, createWorkspaceAction, paneAction } from './state/appReducer'
 import { splitAction, newSurfaceAction } from './state/workspaceReducer'
 import { findPane } from './layout/tree'
 import Sidebar from './components/Sidebar'
 import WorkspaceView from './components/WorkspaceView'
 
-// Computed once at module load (StrictMode double-invokes lazy initializers).
-const INITIAL_APP = initialApp()
+// Restore the saved session synchronously at startup, else start fresh. Computed
+// once at module load. Optional chaining keeps it safe if the bridge isn't ready.
+const INITIAL_APP = sanitizeRestored(window.api?.session?.loadSync?.() ?? null) ?? initialApp()
 
 const MIN_SIDEBAR = 170
 const MAX_SIDEBAR = 420
@@ -85,6 +86,16 @@ export default function App(): React.JSX.Element {
       }
     })
   }, [])
+
+  // Persist the layout (debounced) so a relaunch reopens where you left off.
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => window.api.session.save(state), 500)
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current)
+    }
+  }, [state])
 
   // Drag the sidebar's right edge to resize it (pixel-based; same idea as the
   // pane Divider, textbook/10).

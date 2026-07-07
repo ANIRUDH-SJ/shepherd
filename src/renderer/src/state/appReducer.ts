@@ -1,5 +1,5 @@
 import type { LayoutNode } from '../layout/types'
-import { makePane, uid } from '../layout/tree'
+import { makePane, uid, firstPaneId } from '../layout/tree'
 import { workspaceReducer, type WorkspaceState, type WorkspaceAction } from './workspaceReducer'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,6 +47,42 @@ export function makeWorkspace(name?: string): Workspace {
 export function initialApp(): AppState {
   const ws = makeWorkspace() // positional name → "workspace 1"
   return { workspaces: [ws], activeWorkspaceId: ws.id }
+}
+
+/** Validate + normalise a restored session into an AppState (or null if unusable).
+ *  We restore only the LAYOUT — transient flags (status/unread/attention) are reset,
+ *  and terminals re-spawn fresh when their panes mount. See textbook/13. */
+export function sanitizeRestored(raw: unknown): AppState | null {
+  if (!raw || typeof raw !== 'object') return null
+  const r = raw as { workspaces?: unknown; activeWorkspaceId?: unknown }
+  if (!Array.isArray(r.workspaces) || r.workspaces.length === 0) return null
+
+  const workspaces: Workspace[] = []
+  for (const item of r.workspaces) {
+    if (!item || typeof item !== 'object') return null
+    const entry = item as Record<string, unknown>
+    // Validate the root's type as `unknown` (untrusted data) before trusting it.
+    const rootType = (entry.root as { type?: unknown } | undefined)?.type
+    if (typeof entry.id !== 'string' || (rootType !== 'pane' && rootType !== 'split')) {
+      return null // unknown shape → fall back to a fresh app rather than crash
+    }
+    const root = entry.root as LayoutNode
+    workspaces.push({
+      id: entry.id,
+      name: typeof entry.name === 'string' ? entry.name : '',
+      cwd: typeof entry.cwd === 'string' ? entry.cwd : '~',
+      root,
+      activePaneId: typeof entry.activePaneId === 'string' ? entry.activePaneId : firstPaneId(root),
+      status: null,
+      unread: false,
+      attention: false
+    })
+  }
+  const active =
+    typeof r.activeWorkspaceId === 'string' && workspaces.some((w) => w.id === r.activeWorkspaceId)
+      ? r.activeWorkspaceId
+      : workspaces[0].id
+  return { workspaces, activeWorkspaceId: active }
 }
 
 export type AppAction =
