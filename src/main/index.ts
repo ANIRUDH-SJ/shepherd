@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { registerPtyIpc, killAllTerminals } from './pty'
 import { startSocketServer, stopSocketServer, updateWorkspaceMirror } from './socket'
+import { loadSession, saveSession } from './session'
 import { IPC, type WorkspacesSync } from '../shared/ipc'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -60,6 +61,12 @@ app.whenReady().then(() => {
   })
   // Renderer mirrors its workspace list here so the socket can resolve ids/names.
   ipcMain.on(IPC.WORKSPACES_SYNC, (_e, sync: WorkspacesSync) => updateWorkspaceMirror(sync))
+
+  // Session persistence: load synchronously at startup, save (debounced) on change.
+  ipcMain.on(IPC.SESSION_LOAD_SYNC, (e) => {
+    e.returnValue = loadSession()
+  })
+  ipcMain.on(IPC.SESSION_SAVE, (_e, state) => saveSession(state))
 
   createWindow()
 
