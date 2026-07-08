@@ -20,9 +20,6 @@ Usage:
   cmux new-workspace [--name N]       create a workspace
   cmux select-workspace --workspace W switch to a workspace
   cmux close-workspace --workspace W  close a workspace
-  cmux new-split [right|down]         split the active pane
-  cmux send-text <text>               type text into the active terminal
-  cmux send-key <enter|tab|up|down|…> send a key to the active terminal
   cmux ping                           check the app is reachable
   cmux hooks setup                    install a Claude Code notify hook
 

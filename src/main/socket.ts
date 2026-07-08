@@ -79,25 +79,7 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
       send(conn, id, { ok: true })
       return
     case 'select-workspace':
-    case 'close-workspace':
-    case 'new-split': {
-      const workspaceId = await resolveWorkspaceRetry(params)
-      if (!workspaceId) {
-        send(conn, id, null, `no matching workspace: ${String(params.workspace ?? '(active)')}`)
-        return
-      }
-      apply({ method, workspaceId, params })
-      send(conn, id, { ok: true })
-      return
-    }
-    case 'send-text':
-    case 'send-key': {
-      // Validate the payload so an empty command isn't silently accepted.
-      const arg = String((method === 'send-key' ? (params.key ?? params.text) : params.text) ?? '')
-      if (!arg) {
-        send(conn, id, null, method === 'send-key' ? 'send-key requires a key' : 'send-text requires text')
-        return
-      }
+    case 'close-workspace': {
       const workspaceId = await resolveWorkspaceRetry(params)
       if (!workspaceId) {
         send(conn, id, null, `no matching workspace: ${String(params.workspace ?? '(active)')}`)
