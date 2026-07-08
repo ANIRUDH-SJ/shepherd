@@ -23,7 +23,7 @@ code as we write it.
 | **M1** | `M1-terminal.md` | One real terminal: node-pty (backend) + xterm.js (UI) + the IPC loop, function by function |
 | **M2** | `M2-panes-tabs-splits.md` | Many terminals: the flat keyed pane layer, tabs, resizable splits, the pure layout engine + its test |
 | **M3** | `M3-workspaces-and-socket.md` | Multi-workspace sidebar (status, markers, resize, collapse) + the unix-socket server + `cmux` CLI |
-| M4 | _(coming)_ | Agent status + notifications + session restore |
+| **M4** | `M4-agents-and-persistence.md` | OSC auto-notifications, `cmux hooks setup`, and session restore (+ the review hardening) |
 | M5 | _(coming)_ | The full socket control API |
 | M6 | _(coming)_ | Theming + packaging |
 
