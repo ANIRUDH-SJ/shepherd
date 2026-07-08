@@ -4,6 +4,7 @@ import {
   appReducer,
   createWorkspaceAction,
   paneAction,
+  sanitizeRestored,
   type AppState
 } from './appReducer'
 import { splitAction } from './workspaceReducer'
@@ -71,6 +72,36 @@ assert(n.workspaces.length === 2, 'two workspaces after closing the middle')
 assert(
   n.workspaces.every((w) => w.id !== midId),
   'closed workspace is gone; the third now sits at position 2 (renumbered in UI)'
+)
+
+// session restore: sanitizeRestored validates a snapshot and resets transients
+const snapshot = initialApp()
+snapshot.workspaces[0].unread = true // a transient that must NOT survive a restore
+const restored = sanitizeRestored(JSON.parse(JSON.stringify(snapshot)))
+assert(restored !== null, 'sanitizeRestored accepts a valid snapshot')
+assert(restored!.workspaces.length === 1, 'restored workspace count matches')
+assert(restored!.workspaces[0].unread === false, 'transient flags are reset on restore')
+assert(sanitizeRestored(null) === null, 'sanitizeRestored(null) → null')
+assert(sanitizeRestored({}) === null, 'sanitizeRestored({}) → null (no workspaces)')
+assert(sanitizeRestored({ workspaces: [] }) === null, 'empty workspaces → null')
+assert(sanitizeRestored({ workspaces: [{ id: 'x' }] }) === null, 'workspace without a valid root → null')
+
+// malformed layouts must fail CLOSED (null), not crash later (Copilot review, PR #4)
+assert(
+  sanitizeRestored({ workspaces: [{ id: 'w', root: { type: 'split' } }] }) === null,
+  'split root with no children → null'
+)
+assert(
+  sanitizeRestored({
+    workspaces: [{ id: 'w', root: { type: 'split', direction: 'row', sizes: [], children: [] } }]
+  }) === null,
+  'split root with empty children → null'
+)
+assert(
+  sanitizeRestored({
+    workspaces: [{ id: 'w', root: { type: 'pane', pane: { id: 'p', surfaces: [], activeSurfaceId: 's' } } }]
+  }) === null,
+  'pane with no surfaces → null'
 )
 
 console.log(failures === 0 ? '\n✅ ALL APP-REDUCER TESTS PASS' : `\n❌ ${failures} FAILURE(S)`)

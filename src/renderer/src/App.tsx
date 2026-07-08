@@ -1,12 +1,20 @@
-import { useEffect, useReducer, useRef, useState } from 'react'
-import { appReducer, initialApp, createWorkspaceAction, paneAction } from './state/appReducer'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import {
+  appReducer,
+  initialApp,
+  sanitizeRestored,
+  toLayoutSnapshot,
+  createWorkspaceAction,
+  paneAction
+} from './state/appReducer'
 import { splitAction, newSurfaceAction } from './state/workspaceReducer'
 import { findPane } from './layout/tree'
 import Sidebar from './components/Sidebar'
 import WorkspaceView from './components/WorkspaceView'
 
-// Computed once at module load (StrictMode double-invokes lazy initializers).
-const INITIAL_APP = initialApp()
+// Restore the saved session synchronously at startup, else start fresh. Computed
+// once at module load. Optional chaining keeps it safe if the bridge isn't ready.
+const INITIAL_APP = sanitizeRestored(window.api?.session?.loadSync?.() ?? null) ?? initialApp()
 
 const MIN_SIDEBAR = 170
 const MAX_SIDEBAR = 420
@@ -85,6 +93,15 @@ export default function App(): React.JSX.Element {
       }
     })
   }, [])
+
+  // Persist only the LAYOUT (not transient status/attention), and only when it
+  // actually changes — so agent status churn can't starve a layout save, and we
+  // don't save fields we throw away on restore. (Copilot review, PR #4)
+  const layoutJson = useMemo(() => JSON.stringify(toLayoutSnapshot(state)), [state])
+  useEffect(() => {
+    const t = setTimeout(() => window.api.session.save(JSON.parse(layoutJson)), 500)
+    return () => clearTimeout(t)
+  }, [layoutJson])
 
   // Drag the sidebar's right edge to resize it (pixel-based; same idea as the
   // pane Divider, textbook/10).

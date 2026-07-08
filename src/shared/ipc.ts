@@ -18,7 +18,10 @@ export const IPC = {
   TERM_EXIT: 'terminal:exit',
   // app ⇄ socket
   SOCKET_COMMAND: 'socket:command', // main → renderer
-  WORKSPACES_SYNC: 'workspaces:sync' // renderer → main
+  WORKSPACES_SYNC: 'workspaces:sync', // renderer → main
+  // session persistence
+  SESSION_LOAD_SYNC: 'session:load', // renderer → main (synchronous, once at startup)
+  SESSION_SAVE: 'session:save' // renderer → main (debounced)
 } as const
 
 // ── Message payloads ─────────────────────────────────────────────────────────
@@ -92,5 +95,11 @@ export interface CmuxApi {
     syncWorkspaces(sync: WorkspacesSync): void
     /** Subscribe to socket commands routed from main. Returns an unsubscribe fn. */
     onCommand(cb: (cmd: SocketApply) => void): () => void
+  }
+  session: {
+    /** Load the saved session synchronously at startup (null if none). */
+    loadSync(): unknown
+    /** Persist the current app state (called debounced on change). */
+    save(state: unknown): void
   }
 }

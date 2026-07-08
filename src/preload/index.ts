@@ -53,6 +53,11 @@ const api: CmuxApi = {
         ipcRenderer.removeListener(IPC.SOCKET_COMMAND, listener)
       }
     }
+  },
+
+  session: {
+    loadSync: () => ipcRenderer.sendSync(IPC.SESSION_LOAD_SYNC),
+    save: (state) => ipcRenderer.send(IPC.SESSION_SAVE, state)
   }
 }
 
