@@ -20,6 +20,19 @@ const MIN_SIDEBAR = 170
 const MAX_SIDEBAR = 420
 const DEFAULT_SIDEBAR = 240
 
+// Key name → terminal escape sequence, for `cmux send-key`.
+const KEY_SEQ: Record<string, string> = {
+  enter: '\r',
+  tab: '\t',
+  escape: '\x1b',
+  backspace: '\x7f',
+  delete: '\x1b[3~',
+  up: '\x1b[A',
+  down: '\x1b[B',
+  right: '\x1b[C',
+  left: '\x1b[D'
+}
+
 // The app shell: owns the whole AppState, renders the sidebar + the stack of
 // workspace views (only the active one visible), and the global keyboard map.
 export default function App(): React.JSX.Element {
@@ -101,6 +114,27 @@ export default function App(): React.JSX.Element {
         dispatch({ type: 'selectWorkspace', id: workspaceId })
       } else if (method === 'close-workspace') {
         dispatch({ type: 'closeWorkspace', id: workspaceId })
+      } else if (method === 'new-split' || method === 'send-text' || method === 'send-key') {
+        // These target the active pane/surface of the workspace — read CURRENT
+        // state via the ref (the handler was installed once).
+        const ws = stateRef.current.workspaces.find((w) => w.id === workspaceId)
+        if (!ws) return
+        if (method === 'new-split') {
+          const raw = String(params.direction ?? params.text ?? 'right')
+          const dir = raw === 'up' || raw === 'down' ? 'column' : 'row'
+          dispatch(paneAction(ws.id, splitAction(ws.activePaneId, dir)))
+        } else {
+          const pane = findPane(ws.root, ws.activePaneId)
+          const surfaceId = pane ? pane.activeSurfaceId : null
+          if (!surfaceId) return
+          if (method === 'send-text') {
+            window.api.terminal.input({ id: surfaceId, data: String(params.text ?? '') })
+          } else {
+            // case-insensitive key names (Enter == enter)
+            const seq = KEY_SEQ[String(params.key ?? params.text ?? '').toLowerCase().trim()]
+            if (seq) window.api.terminal.input({ id: surfaceId, data: seq })
+          }
+        }
       }
     })
   }, [])
