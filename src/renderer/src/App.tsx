@@ -82,6 +82,11 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     return window.api.socket.onCommand((cmd) => {
       const { method, workspaceId, params } = cmd
+      // new-workspace has no target id — handle it before the guard.
+      if (method === 'new-workspace') {
+        dispatch(createWorkspaceAction(typeof params.name === 'string' ? params.name : undefined))
+        return
+      }
       if (!workspaceId) return
       if (method === 'set-status' || method === 'log') {
         const status = String(params.status ?? params.text ?? '')
@@ -90,6 +95,10 @@ export default function App(): React.JSX.Element {
         const body = String(params.body ?? '')
         dispatch({ type: 'setStatus', id: workspaceId, status: body || 'needs your attention' })
         dispatch({ type: 'setAttention', id: workspaceId, unread: true, attention: true })
+      } else if (method === 'select-workspace') {
+        dispatch({ type: 'selectWorkspace', id: workspaceId })
+      } else if (method === 'close-workspace') {
+        dispatch({ type: 'closeWorkspace', id: workspaceId })
       }
     })
   }, [])
