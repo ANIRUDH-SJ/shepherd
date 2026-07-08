@@ -1,5 +1,5 @@
 import type { LayoutNode } from '../layout/types'
-import { makePane, uid, firstPaneId } from '../layout/tree'
+import { makePane, uid, firstPaneId, isValidLayoutNode } from '../layout/tree'
 import { workspaceReducer, type WorkspaceState, type WorkspaceAction } from './workspaceReducer'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -61,10 +61,10 @@ export function sanitizeRestored(raw: unknown): AppState | null {
   for (const item of r.workspaces) {
     if (!item || typeof item !== 'object') return null
     const entry = item as Record<string, unknown>
-    // Validate the root's type as `unknown` (untrusted data) before trusting it.
-    const rootType = (entry.root as { type?: unknown } | undefined)?.type
-    if (typeof entry.id !== 'string' || (rootType !== 'pane' && rootType !== 'split')) {
-      return null // unknown shape → fall back to a fresh app rather than crash
+    // Deep-validate the tree so a corrupt snapshot fails CLOSED (fresh app) instead
+    // of crashing later in firstPaneId / computeLayout.
+    if (typeof entry.id !== 'string' || !isValidLayoutNode(entry.root)) {
+      return null
     }
     const root = entry.root as LayoutNode
     workspaces.push({
@@ -83,6 +83,24 @@ export function sanitizeRestored(raw: unknown): AppState | null {
       ? r.activeWorkspaceId
       : workspaces[0].id
   return { workspaces, activeWorkspaceId: active }
+}
+
+/** The serialisable LAYOUT of the app (no transient status/unread/attention) — this
+ *  is what we persist, so agent status churn doesn't cause needless saves. */
+export function toLayoutSnapshot(state: AppState): {
+  workspaces: Array<{ id: string; name: string; cwd: string; root: LayoutNode; activePaneId: string }>
+  activeWorkspaceId: string
+} {
+  return {
+    workspaces: state.workspaces.map((w) => ({
+      id: w.id,
+      name: w.name,
+      cwd: w.cwd,
+      root: w.root,
+      activePaneId: w.activePaneId
+    })),
+    activeWorkspaceId: state.activeWorkspaceId
+  }
 }
 
 export type AppAction =

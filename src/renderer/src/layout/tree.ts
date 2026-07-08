@@ -61,6 +61,28 @@ export function firstPaneId(node: LayoutNode): string {
   return node.type === 'pane' ? node.pane.id : firstPaneId(node.children[0])
 }
 
+/** Deep-validate an untrusted value as a well-formed LayoutNode. Used to fail a
+ *  session restore CLOSED (fall back to a fresh app) instead of crashing later in
+ *  firstPaneId / computeLayout on a corrupt or old-format snapshot. */
+export function isValidLayoutNode(node: unknown): boolean {
+  if (!node || typeof node !== 'object') return false
+  const n = node as Record<string, unknown>
+  if (n.type === 'pane') {
+    const pane = n.pane as Record<string, unknown> | undefined
+    if (!pane || typeof pane.id !== 'string' || typeof pane.activeSurfaceId !== 'string') return false
+    if (!Array.isArray(pane.surfaces) || pane.surfaces.length === 0) return false
+    return pane.surfaces.every((s) => !!s && typeof (s as Record<string, unknown>).id === 'string')
+  }
+  if (n.type === 'split') {
+    if (typeof n.id !== 'string') return false
+    if (n.direction !== 'row' && n.direction !== 'column') return false
+    if (!Array.isArray(n.children) || n.children.length === 0) return false
+    if (!Array.isArray(n.sizes) || n.sizes.length !== n.children.length) return false
+    return n.children.every((c) => isValidLayoutNode(c))
+  }
+  return false
+}
+
 // ── updates (all return a NEW tree) ──────────────────────────────────────────
 
 /** Replace one pane's contents via `fn`. */

@@ -1,5 +1,12 @@
-import { useEffect, useReducer, useRef, useState } from 'react'
-import { appReducer, initialApp, sanitizeRestored, createWorkspaceAction, paneAction } from './state/appReducer'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import {
+  appReducer,
+  initialApp,
+  sanitizeRestored,
+  toLayoutSnapshot,
+  createWorkspaceAction,
+  paneAction
+} from './state/appReducer'
 import { splitAction, newSurfaceAction } from './state/workspaceReducer'
 import { findPane } from './layout/tree'
 import Sidebar from './components/Sidebar'
@@ -87,15 +94,14 @@ export default function App(): React.JSX.Element {
     })
   }, [])
 
-  // Persist the layout (debounced) so a relaunch reopens where you left off.
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Persist only the LAYOUT (not transient status/attention), and only when it
+  // actually changes — so agent status churn can't starve a layout save, and we
+  // don't save fields we throw away on restore. (Copilot review, PR #4)
+  const layoutJson = useMemo(() => JSON.stringify(toLayoutSnapshot(state)), [state])
   useEffect(() => {
-    if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(() => window.api.session.save(state), 500)
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current)
-    }
-  }, [state])
+    const t = setTimeout(() => window.api.session.save(JSON.parse(layoutJson)), 500)
+    return () => clearTimeout(t)
+  }, [layoutJson])
 
   // Drag the sidebar's right edge to resize it (pixel-based; same idea as the
   // pane Divider, textbook/10).

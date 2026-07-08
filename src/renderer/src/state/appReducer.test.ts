@@ -86,5 +86,23 @@ assert(sanitizeRestored({}) === null, 'sanitizeRestored({}) → null (no workspa
 assert(sanitizeRestored({ workspaces: [] }) === null, 'empty workspaces → null')
 assert(sanitizeRestored({ workspaces: [{ id: 'x' }] }) === null, 'workspace without a valid root → null')
 
+// malformed layouts must fail CLOSED (null), not crash later (Copilot review, PR #4)
+assert(
+  sanitizeRestored({ workspaces: [{ id: 'w', root: { type: 'split' } }] }) === null,
+  'split root with no children → null'
+)
+assert(
+  sanitizeRestored({
+    workspaces: [{ id: 'w', root: { type: 'split', direction: 'row', sizes: [], children: [] } }]
+  }) === null,
+  'split root with empty children → null'
+)
+assert(
+  sanitizeRestored({
+    workspaces: [{ id: 'w', root: { type: 'pane', pane: { id: 'p', surfaces: [], activeSurfaceId: 's' } } }]
+  }) === null,
+  'pane with no surfaces → null'
+)
+
 console.log(failures === 0 ? '\n✅ ALL APP-REDUCER TESTS PASS' : `\n❌ ${failures} FAILURE(S)`)
 if (failures > 0) throw new Error(`${failures} app-reducer test(s) failed`)
