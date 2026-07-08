@@ -78,7 +78,9 @@ export default function App(): React.JSX.Element {
     })
   }, [state.workspaces, state.activeWorkspaceId])
 
-  // Apply incoming socket commands (from `cmux set-status` / `notify` / `log`).
+  // Apply incoming socket commands: set-status / log / notify, plus workspace
+  // control (new-workspace / select / close). new-workspace has no target id, so
+  // it's handled before the workspaceId guard.
   useEffect(() => {
     return window.api.socket.onCommand((cmd) => {
       const { method, workspaceId, params } = cmd

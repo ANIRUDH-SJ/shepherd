@@ -38,11 +38,26 @@ function resolveWorkspace(params: Record<string, unknown>): string | null {
   return mirror.activeWorkspaceId || null
 }
 
+const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
+
+/** Resolve a workspace, retrying briefly. The renderer→main mirror can lag just
+ *  after a new-workspace, so a back-to-back `select-workspace --workspace <name>`
+ *  could otherwise miss it. Only retries when a name/id was actually requested. */
+async function resolveWorkspaceRetry(params: Record<string, unknown>): Promise<string | null> {
+  const named = typeof params.workspace === 'string' && params.workspace !== ''
+  for (let i = 0; i < 10; i++) {
+    const resolved = resolveWorkspace(params)
+    if (resolved || !named) return resolved
+    await delay(50)
+  }
+  return null
+}
+
 function send(conn: net.Socket, id: unknown, result: unknown, error?: string): void {
   conn.write(JSON.stringify(error ? { id, error } : { id, result }) + '\n')
 }
 
-function handleLine(line: string, conn: net.Socket, apply: ApplyFn): void {
+async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promise<void> {
   let msg: { id?: unknown; method?: string; params?: Record<string, unknown> }
   try {
     msg = JSON.parse(line)
@@ -65,9 +80,9 @@ function handleLine(line: string, conn: net.Socket, apply: ApplyFn): void {
       return
     case 'select-workspace':
     case 'close-workspace': {
-      const workspaceId = resolveWorkspace(params)
+      const workspaceId = await resolveWorkspaceRetry(params)
       if (!workspaceId) {
-        send(conn, id, null, 'no matching workspace')
+        send(conn, id, null, `no matching workspace: ${String(params.workspace ?? '(active)')}`)
         return
       }
       apply({ method, workspaceId, params })
@@ -77,9 +92,9 @@ function handleLine(line: string, conn: net.Socket, apply: ApplyFn): void {
     case 'set-status':
     case 'log':
     case 'notify': {
-      const workspaceId = resolveWorkspace(params)
+      const workspaceId = await resolveWorkspaceRetry(params)
       if (!workspaceId) {
-        send(conn, id, null, 'no matching workspace')
+        send(conn, id, null, `no matching workspace: ${String(params.workspace ?? '(active)')}`)
         return
       }
       apply({ method, workspaceId, params })
@@ -118,7 +133,7 @@ export function startSocketServer(apply: ApplyFn): void {
       while ((nl = buffer.indexOf('\n')) >= 0) {
         const line = buffer.slice(0, nl).trim()
         buffer = buffer.slice(nl + 1)
-        if (line) handleLine(line, conn, apply)
+        if (line) void handleLine(line, conn, apply)
       }
     })
     conn.on('error', () => {
