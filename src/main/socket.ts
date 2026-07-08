@@ -71,6 +71,35 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
     case 'ping':
       send(conn, id, { ok: true })
       return
+    case 'capabilities':
+      send(conn, id, {
+        methods: [
+          'ping',
+          'capabilities',
+          'identify',
+          'list-workspaces',
+          'new-workspace',
+          'select-workspace',
+          'close-workspace',
+          'new-split',
+          'send-text',
+          'send-key',
+          'set-status',
+          'log',
+          'notify'
+        ]
+      })
+      return
+    case 'identify': {
+      const wid = resolveWorkspace(params)
+      const ws = mirror.workspaces.find((w) => w.id === wid)
+      send(conn, id, {
+        workspace: wid,
+        name: ws ? ws.name : null,
+        activeWorkspace: mirror.activeWorkspaceId || null
+      })
+      return
+    }
     case 'list-workspaces':
       send(conn, id, { workspaces: mirror.workspaces })
       return
