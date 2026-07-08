@@ -59,6 +59,21 @@ function handleLine(line: string, conn: net.Socket, apply: ApplyFn): void {
     case 'list-workspaces':
       send(conn, id, { workspaces: mirror.workspaces })
       return
+    case 'new-workspace':
+      apply({ method, workspaceId: null, params })
+      send(conn, id, { ok: true })
+      return
+    case 'select-workspace':
+    case 'close-workspace': {
+      const workspaceId = resolveWorkspace(params)
+      if (!workspaceId) {
+        send(conn, id, null, 'no matching workspace')
+        return
+      }
+      apply({ method, workspaceId, params })
+      send(conn, id, { ok: true })
+      return
+    }
     case 'set-status':
     case 'log':
     case 'notify': {
