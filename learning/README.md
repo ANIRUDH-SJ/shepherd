@@ -24,7 +24,7 @@ code as we write it.
 | **M2** | `M2-panes-tabs-splits.md` | Many terminals: the flat keyed pane layer, tabs, resizable splits, the pure layout engine + its test |
 | **M3** | `M3-workspaces-and-socket.md` | Multi-workspace sidebar (status, markers, resize, collapse) + the unix-socket server + `cmux` CLI |
 | **M4** | `M4-agents-and-persistence.md` | OSC auto-notifications, `cmux hooks setup`, and session restore (+ the review hardening) |
-| M5 | _(coming)_ | The full socket control API |
+| **M5** | `M5-socket-control.md` | Full socket control API: workspace + surface control + queries, and the review hardening |
 | M6 | _(coming)_ | Theming + packaging |
 
 ## How to read a milestone file

@@ -26,7 +26,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M2** — Multiple terminals, tabs & split panes ✓
 - [x] **M3** — The cmux sidebar (workspaces, status, notification rings) ✓
 - [x] **M4** — Agent integration & session persistence ✓
-- [ ] **M5** — Socket API & automation (a real cmux feature)
+- [x] **M5** — Socket API & automation (a real cmux feature) ✓
 - [ ] **M6** — Polish, theming & packaging/distribution
 
 ---
