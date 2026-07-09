@@ -9,6 +9,7 @@ import {
 } from './state/appReducer'
 import { splitAction, newSurfaceAction } from './state/workspaceReducer'
 import { findPane } from './layout/tree'
+import { bumpFontSize, resetFontSize } from './settings'
 import Sidebar from './components/Sidebar'
 import WorkspaceView from './components/WorkspaceView'
 
@@ -72,6 +73,18 @@ export default function App(): React.JSX.Element {
           break
         case 'b':
           setCollapsed((c) => !c)
+          break
+        case '+':
+        case '=':
+          bumpFontSize(1)
+          break
+        case '_':
+        case '-':
+          bumpFontSize(-1)
+          break
+        case ')':
+        case '0':
+          resetFontSize()
           break
         default:
           return

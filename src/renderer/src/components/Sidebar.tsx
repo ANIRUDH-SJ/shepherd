@@ -68,6 +68,7 @@ export default function Sidebar({ workspaces, activeWorkspaceId, dispatch, onCol
         <div><kbd>Ctrl+Shift+T</kbd> new tab</div>
         <div><kbd>Ctrl+Shift+N</kbd> new workspace</div>
         <div><kbd>Ctrl+Shift+W</kbd> close</div>
+        <div><kbd>Ctrl+Shift+±</kbd> zoom terminal</div>
       </div>
     </div>
   )
