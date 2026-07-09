@@ -15,5 +15,12 @@ export default tseslint.config(
       sourceType: 'module',
       globals: { ...globals.node, ...globals.browser }
     }
+  },
+  // The `cmux` CLI is plain CommonJS — it runs under bare Node (or Electron in
+  // ELECTRON_RUN_AS_NODE mode), never through the bundler.
+  {
+    files: ['bin/**/*.js'],
+    languageOptions: { sourceType: 'commonjs', globals: { ...globals.node } },
+    rules: { '@typescript-eslint/no-require-imports': 'off' }
   }
 )
