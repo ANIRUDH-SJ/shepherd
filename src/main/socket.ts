@@ -71,6 +71,38 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
     case 'ping':
       send(conn, id, { ok: true })
       return
+    case 'capabilities':
+      send(conn, id, {
+        methods: [
+          'ping',
+          'capabilities',
+          'identify',
+          'list-workspaces',
+          'new-workspace',
+          'select-workspace',
+          'close-workspace',
+          'new-split',
+          'send-text',
+          'send-key',
+          'set-status',
+          'log',
+          'notify'
+        ]
+      })
+      return
+    case 'identify': {
+      // Fall back to the requested id/name if the mirror can't resolve it yet
+      // (e.g. early startup), so identify doesn't report null for a valid caller.
+      const requested = typeof params.workspace === 'string' && params.workspace ? params.workspace : null
+      const wid = resolveWorkspace(params) ?? requested
+      const ws = mirror.workspaces.find((w) => w.id === wid)
+      send(conn, id, {
+        workspace: wid,
+        name: ws ? ws.name : null,
+        activeWorkspace: mirror.activeWorkspaceId || null
+      })
+      return
+    }
     case 'list-workspaces':
       send(conn, id, { workspaces: mirror.workspaces })
       return

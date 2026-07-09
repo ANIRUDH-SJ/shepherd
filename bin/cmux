@@ -24,6 +24,8 @@ Usage:
   cmux send-text <text>               type text into the active terminal
   cmux send-key <enter|tab|up|down|…> send a key to the active terminal
   cmux ping                           check the app is reachable
+  cmux capabilities                   list supported socket methods
+  cmux identify                       show this pane's + the active workspace
   cmux hooks setup                    install a Claude Code notify hook
 
 Flags:  --workspace <id|name>   target a specific workspace (default: this pane's)
@@ -114,8 +116,10 @@ conn.on('data', (d) => {
       conn.end()
       process.exit(1)
     }
-    if (res.result && res.result.workspaces) {
-      console.log(JSON.stringify(res.result.workspaces, null, 2))
+    // Print any query result (list-workspaces / capabilities / identify);
+    // action replies are just {ok:true}, which we don't echo.
+    if (res.result && typeof res.result === 'object' && !res.result.ok) {
+      console.log(JSON.stringify(res.result, null, 2))
     }
   } catch {
     /* ignore malformed reply */
