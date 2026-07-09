@@ -10,7 +10,9 @@ const MIN = 8
 const MAX = 28
 
 export function getFontSize(): number {
-  const v = Number(localStorage.getItem(KEY))
+  // Round on read too: a fractional persisted value shouldn't yield a
+  // non-integer font size (setFontSize already rounds before storing).
+  const v = Math.round(Number(localStorage.getItem(KEY)))
   return Number.isFinite(v) && v >= MIN && v <= MAX ? v : DEFAULT_FONT_SIZE
 }
 
