@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
+import { getFontSize } from '../settings'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TerminalHost — ONE live terminal, bound to ONE backend shell by `surfaceId`.
@@ -29,7 +31,7 @@ export default function TerminalHost({ surfaceId, workspaceId, active }: Props):
 
     const term = new Terminal({
       fontFamily: '"JetBrains Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace',
-      fontSize: 13,
+      fontSize: getFontSize(),
       cursorBlink: true,
       theme: { background: '#0d0d0f', foreground: '#e6e6e6', cursor: '#8ab4ff' }
     })
@@ -38,6 +40,15 @@ export default function TerminalHost({ surfaceId, workspaceId, active }: Props):
     term.open(container)
     fit.fit()
     refs.current = { term, fit }
+
+    // GPU rendering for smooth scrolling; fall back silently if WebGL is unavailable.
+    try {
+      const webgl = new WebglAddon()
+      webgl.onContextLoss(() => webgl.dispose())
+      term.loadAddon(webgl)
+    } catch {
+      /* no WebGL — xterm uses its DOM/canvas renderer */
+    }
 
     const offData = window.api.terminal.onData(surfaceId, (data) => term.write(data))
     const offExit = window.api.terminal.onExit(surfaceId, (code) =>
@@ -55,8 +66,16 @@ export default function TerminalHost({ surfaceId, workspaceId, active }: Props):
     const observer = new ResizeObserver(resize)
     observer.observe(container)
 
+    // Live-update the font when the user zooms (Ctrl+Shift+±).
+    const onFontSize = (e: Event): void => {
+      term.options.fontSize = (e as CustomEvent<number>).detail
+      resize()
+    }
+    window.addEventListener('cmux:fontsize', onFontSize)
+
     return () => {
       observer.disconnect()
+      window.removeEventListener('cmux:fontsize', onFontSize)
       onData.dispose()
       offData()
       offExit()
