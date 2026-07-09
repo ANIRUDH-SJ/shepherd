@@ -5,7 +5,7 @@ import tseslint from 'typescript-eslint'
 // Flat-config ESLint (v9). Minimal for M0: JS + TypeScript recommended rules.
 // React-specific rules get added when real components arrive (M2+).
 export default tseslint.config(
-  { ignores: ['out', 'dist', 'dist-typecheck', 'node_modules'] },
+  { ignores: ['out', 'dist', 'dist-typecheck', 'release', 'node_modules'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

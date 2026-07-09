@@ -13,6 +13,8 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "lint": "eslint .",
+    "dist": "npm run build && electron-builder --linux AppImage deb",
+    "dist:dir": "npm run build && electron-builder --dir",
     "format": "prettier --write .",
     "test": "tsx src/renderer/src/layout/tree.test.ts && tsx src/renderer/src/state/appReducer.test.ts && tsx src/renderer/src/settings.test.ts && tsx src/main/osc.test.ts"
   },
@@ -32,6 +34,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
     "electron": "^43.0.0",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "eslint": "^10.6.0",
     "globals": "^17.7.0",
