@@ -91,7 +91,10 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
       })
       return
     case 'identify': {
-      const wid = resolveWorkspace(params)
+      // Fall back to the requested id/name if the mirror can't resolve it yet
+      // (e.g. early startup), so identify doesn't report null for a valid caller.
+      const requested = typeof params.workspace === 'string' && params.workspace ? params.workspace : null
+      const wid = resolveWorkspace(params) ?? requested
       const ws = mirror.workspaces.find((w) => w.id === wid)
       send(conn, id, {
         workspace: wid,
