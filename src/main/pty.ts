@@ -61,8 +61,11 @@ function createTerminal(sender: WebContents, opts: TermCreateOptions): void {
   if (opts.workspaceId) env.CMUX_WORKSPACE_ID = opts.workspaceId
   env.CMUX_SOCKET_PATH = socketPath()
   // Make the `cmux` CLI resolvable inside panes, and hand it our Electron binary
-  // so it runs without a system Node (see bin/cmux).
-  env.PATH = `${cliBinDir()}:${env.PATH ?? ''}`
+  // so it runs without a system Node (see bin/cmux). Never append to an empty
+  // PATH: the trailing colon would leave an empty element, which POSIX reads as
+  // the current directory — so the shell would search cwd for commands.
+  const parentPath = env.PATH
+  env.PATH = parentPath ? `${cliBinDir()}:${parentPath}` : cliBinDir()
   env.CMUX_ELECTRON = process.execPath
 
   const proc = pty.spawn(defaultShell(), [], {
