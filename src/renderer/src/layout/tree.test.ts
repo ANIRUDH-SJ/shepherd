@@ -28,8 +28,9 @@ const approx = (a: number, b: number): boolean => Math.abs(a - b) < 1e-9
 const splitId = (n: LayoutNode): string => (n.type === 'split' ? n.id : '')
 
 // ── initial tree ─────────────────────────────────────────────
-let { root, activePaneId } = initialTree()
-const firstId = activePaneId
+const initial = initialTree()
+let root = initial.root
+const firstId = initial.activePaneId
 assert(root.type === 'pane', 'initial root is a single pane')
 assert(listSurfaceIds(root).length === 1, 'initial tree has exactly 1 surface')
 

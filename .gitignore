@@ -6,6 +6,9 @@ out
 dist
 dist-typecheck
 
+# electron-builder artifacts (AppImage / .deb)
+release
+
 # logs
 *.log
 npm-debug.log*
