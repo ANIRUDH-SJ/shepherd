@@ -136,13 +136,18 @@ mirroring cmux's method surface. Easier in Node than cmux's Swift version.*
 *Goal: it looks finished and other people can install it.*
 
 - [ ] Final theme pass to match cmux (colors, fonts, spacing, rings)
-- [ ] App icon + window title/branding
-- [ ] Settings: font size, theme, default shell, keybindings
-- [ ] xterm.js WebGL renderer enabled + perf check (scroll, big output)
+- [x] App icon + window title/branding
+- [x] Persisted terminal font-size setting + zoom shortcuts
+- [ ] Settings UI: theme, default shell, keybindings
+- [x] xterm.js WebGL renderer enabled
+- [ ] WebGL perf check (scroll, big output)
 - [ ] Empty/error states, keyboard-shortcut cheat sheet
-- [ ] Configure `electron-builder` for **AppImage**, **.deb**, **Flatpak**
-- [ ] Build artifacts and test-install on a clean Ubuntu
-- [ ] README with screenshots + install instructions
+- [x] Configure `electron-builder` for **AppImage** and **.deb**
+- [ ] Configure **Flatpak** packaging
+- [x] Build AppImage and `.deb` artifacts
+- [ ] Test-install on a clean Ubuntu
+- [x] README install and usage instructions
+- [ ] README screenshots
 - [ ] (Optional) GitHub Actions CI: lint + build on push
 - [ ] Tag a `v0.1.0` release
 
