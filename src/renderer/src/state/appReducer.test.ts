@@ -5,11 +5,11 @@ import {
   createWorkspaceAction,
   paneAction,
   sanitizeRestored,
-  MAX_WORKSPACE_NAME_LENGTH,
   type AppState
 } from './appReducer'
 import { splitAction } from './workspaceReducer'
 import { listSurfaceIds } from '../layout/tree'
+import { MAX_WORKSPACE_NAME_LENGTH } from '../../../shared/workspace'
 
 let failures = 0
 function assert(cond: boolean, msg: string): void {

@@ -1,6 +1,7 @@
 import type { LayoutNode } from '../layout/types'
 import { makePane, uid, firstPaneId, isValidLayoutNode } from '../layout/tree'
 import { workspaceReducer, type WorkspaceState, type WorkspaceAction } from './workspaceReducer'
+import { normalizeWorkspaceName } from '../../../shared/workspace'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // APP REDUCER  (the top of the object model: Window → Workspace → …)
@@ -26,12 +27,6 @@ export interface Workspace {
 export interface AppState {
   workspaces: Workspace[]
   activeWorkspaceId: string
-}
-
-export const MAX_WORKSPACE_NAME_LENGTH = 64
-
-export function normalizeWorkspaceName(name: string): string {
-  return name.trim().slice(0, MAX_WORKSPACE_NAME_LENGTH)
 }
 
 /** Mint a new workspace with one terminal. The display NAME is positional
