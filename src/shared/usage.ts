@@ -20,6 +20,11 @@ export interface UsageTotals {
   hasEstimated: boolean
 }
 
+export interface WorkspaceUsage {
+  totals: UsageTotals
+  latest: UsageReport | null
+}
+
 export type UsageValidation =
   | { ok: true; report: UsageReport }
   | { ok: false; error: string }
@@ -33,6 +38,14 @@ export function emptyUsageTotals(): UsageTotals {
     reportCount: 0,
     hasEstimated: false
   }
+}
+
+export function emptyWorkspaceUsage(): WorkspaceUsage {
+  return { totals: emptyUsageTotals(), latest: null }
+}
+
+export function addWorkspaceUsage(usage: WorkspaceUsage, report: UsageReport): WorkspaceUsage {
+  return { totals: accumulateUsage(usage.totals, report), latest: report }
 }
 
 export function accumulateUsage(totals: UsageTotals, report: UsageReport): UsageTotals {
