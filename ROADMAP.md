@@ -140,6 +140,7 @@ mirroring cmux's method surface. Easier in Node than cmux's Swift version.*
 - [ ] Settings: font size, theme, default shell, keybindings
 - [ ] xterm.js WebGL renderer enabled + perf check (scroll, big output)
 - [ ] Empty/error states, keyboard-shortcut cheat sheet
+- [x] Agent-reported per-workspace token usage with exact/estimated provenance
 - [ ] Configure `electron-builder` for **AppImage**, **.deb**, **Flatpak**
 - [ ] Build artifacts and test-install on a clean Ubuntu
 - [ ] README with screenshots + install instructions

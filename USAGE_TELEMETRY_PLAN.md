@@ -21,42 +21,42 @@ Each report contains non-negative `inputTokens` and `outputTokens`, plus optiona
 
 ### Goal 1 — Contract and aggregation
 
-- [ ] Define shared usage report, totals, accuracy, and socket-command types.
-- [ ] Add pure normalization and aggregation helpers.
-- [ ] Cover valid, partial, estimated, and invalid reports with headless tests.
+- [x] Define shared usage report, totals, accuracy, and socket-command types.
+- [x] Add pure normalization and aggregation helpers.
+- [x] Cover valid, partial, estimated, and invalid reports with headless tests.
 
 ### Goal 2 — Socket and CLI ingestion
 
-- [ ] Add `report-usage` to socket capabilities and dispatch.
-- [ ] Validate all external values before forwarding them to the renderer.
-- [ ] Add `cmux report-usage` flags and help examples.
-- [ ] Add CLI/parser or socket-boundary regression tests where practical.
+- [x] Add `report-usage` to socket capabilities and dispatch.
+- [x] Validate all external values before forwarding them to the renderer.
+- [x] Add `cmux report-usage` flags and help examples.
+- [x] Add CLI/parser or socket-boundary regression tests where practical.
 
 ### Goal 3 — Application state
 
-- [ ] Extend each workspace with usage totals and the latest report.
-- [ ] Accumulate reports without mutating reducer state.
-- [ ] Ensure restored sessions start with empty usage telemetry.
-- [ ] Add reducer tests for exact, estimated, and multi-report totals.
+- [x] Extend each workspace with usage totals and the latest report.
+- [x] Accumulate reports without mutating reducer state.
+- [x] Ensure restored sessions start with empty usage telemetry.
+- [x] Add reducer tests for exact, estimated, and multi-report totals.
 
 ### Goal 4 — User interface
 
-- [ ] Show compact token totals in each workspace row.
-- [ ] Expose input/output/cache, model/provider, cost, accuracy, and latest-report details accessibly.
-- [ ] Keep missing usage visually silent and preserve narrow-sidebar behavior.
+- [x] Show compact token totals in each workspace row.
+- [x] Expose input/output/cache, model/provider, cost, accuracy, and latest-report details accessibly.
+- [x] Keep missing usage visually silent and preserve narrow-sidebar behavior.
 
 ### Goal 5 — Verification
 
-- [ ] Run tests, lint, typecheck, and production build.
-- [ ] Exercise `cmux report-usage` against a live or controlled socket.
-- [ ] Review the final diff for unrelated generated output.
+- [x] Run tests, targeted lint, typecheck, and production build.
+- [x] Exercise `cmux report-usage` against a live or controlled socket.
+- [x] Review the final diff for unrelated generated output.
 
 ### Goal 6 — Post-code documentation
 
-- [ ] After implementation, add `learning/M6-usage-telemetry.md` explaining the exact code written, file by file and message flow by message flow.
-- [ ] After implementation, add a textbook chapter explaining token accounting, provenance, validation, aggregation, provider adapters, UI tradeoffs, and worked examples.
-- [ ] Add the new chapter to `textbook/00-INDEX.md` and update roadmap/learning indexes.
-- [ ] Keep the learning log implementation-specific; keep the textbook conceptual and reusable.
+- [x] After implementation, add `learning/M6-usage-telemetry.md` explaining the exact code written, file by file and message flow by message flow.
+- [x] After implementation, add a textbook chapter explaining token accounting, provenance, validation, aggregation, provider adapters, UI tradeoffs, and worked examples.
+- [x] Add the new chapter to `textbook/00-INDEX.md` and update roadmap/learning indexes.
+- [x] Keep the learning log implementation-specific; keep the textbook conceptual and reusable.
 
 ## Planned Commit Series
 
