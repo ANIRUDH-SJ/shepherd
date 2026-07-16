@@ -36,9 +36,8 @@ async function main() {
   })
 
   const child = spawn(
-    process.execPath,
+    cliPath,
     [
-      cliPath,
       'report-usage',
       '--input-tokens',
       '1200',
@@ -55,7 +54,14 @@ async function main() {
       '--model',
       'model-a'
     ],
-    { env: { ...process.env, CMUX_SOCKET_PATH: socketPath, CMUX_WORKSPACE_ID: 'ws-test' } }
+    {
+      env: {
+        ...process.env,
+        CMUX_ELECTRON: '',
+        CMUX_SOCKET_PATH: socketPath,
+        CMUX_WORKSPACE_ID: 'ws-test'
+      }
+    }
   )
 
   let stderr = ''

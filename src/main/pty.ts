@@ -1,4 +1,4 @@
-import { ipcMain, Notification, type WebContents } from 'electron'
+import { app, ipcMain, Notification, type WebContents } from 'electron'
 import * as pty from 'node-pty'
 import { homedir, platform } from 'os'
 import { join } from 'path'
@@ -33,6 +33,13 @@ function defaultShell(): string {
   return platform() === 'win32' ? 'powershell.exe' : 'bash'
 }
 
+/** Where the bundled `cmux` CLI lives: the unpacked resources dir once packaged,
+ *  the repo's bin/ in dev. `process.cwd()` is useless here — a packaged app
+ *  inherits whatever directory the user launched it from. */
+function cliBinDir(): string {
+  return app.isPackaged ? join(process.resourcesPath, 'bin') : join(app.getAppPath(), 'bin')
+}
+
 /** A clean env for the child (drop undefined values node-pty can't use). */
 function currentEnv(): Record<string, string> {
   const env: Record<string, string> = {}
@@ -53,8 +60,13 @@ function createTerminal(sender: WebContents, opts: TermCreateOptions): void {
   env.CMUX_SURFACE_ID = opts.id
   if (opts.workspaceId) env.CMUX_WORKSPACE_ID = opts.workspaceId
   env.CMUX_SOCKET_PATH = socketPath()
-  // Make the `cmux` CLI resolvable inside panes (dev: <cwd>/bin).
-  env.PATH = `${join(process.cwd(), 'bin')}:${env.PATH ?? ''}`
+  // Make the `cmux` CLI resolvable inside panes, and hand it our Electron binary
+  // so it runs without a system Node (see bin/cmux). Never append to an empty
+  // PATH: the trailing colon would leave an empty element, which POSIX reads as
+  // the current directory — so the shell would search cwd for commands.
+  const parentPath = env.PATH
+  env.PATH = parentPath ? `${cliBinDir()}:${parentPath}` : cliBinDir()
+  env.CMUX_ELECTRON = process.execPath
 
   const proc = pty.spawn(defaultShell(), [], {
     name: 'xterm-color',

@@ -1,0 +1,58 @@
+appId: dev.anirudhsj.cmux-linux
+productName: cmux-linux
+copyright: Copyright © 2026 Anirudh S J
+
+directories:
+  buildResources: build
+  output: release
+
+# Ship the compiled bundles + the manifest. electron-builder always adds the
+# production dependencies' node_modules on top of this, so the exclusions below
+# prune what we'd otherwise carry for nothing:
+#   - react / @xterm are already inlined into the renderer bundle by vite
+#   - node-pty ships prebuilt binaries for every platform; we only run on Linux
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+  - '!node_modules/{react,react-dom}/**'
+  - '!node_modules/@xterm/**'
+  - '!**/node_modules/node-pty/prebuilds/{darwin,win32}*/**'
+
+# node-pty is a native addon — it must sit on the real filesystem, not inside the
+# asar archive, or dlopen() can't load its .node binary.
+asarUnpack:
+  - '**/node_modules/node-pty/**'
+
+# The `cmux` CLI is prepended to every pane's PATH at runtime (src/main/pty.ts
+# resolves it from resourcesPath once packaged).
+extraResources:
+  - from: bin
+    to: bin
+
+linux:
+  target:
+    - AppImage
+    - deb
+  icon: build/icon.png
+  # electron-builder derives the .desktop Comment from `description` and
+  # Categories from `category`, overriding anything set under desktop.entry —
+  # so both are authored here rather than there.
+  category: Utility;TerminalEmulator;Development
+  description: A terminal built for multitasking with AI agents
+  synopsis: A terminal built for multitasking with AI agents
+  maintainer: Anirudh S J <developer.aktsk.anirudhsj@gmail.com>
+  # Lets the desktop environment associate the running window with this entry
+  # (taskbar icon / app grid), instead of showing a generic placeholder.
+  syncDesktopName: true
+  desktop:
+    entry:
+      Name: cmux-linux
+      Keywords: terminal;multiplexer;tiling;agents;claude;
+      StartupWMClass: cmux-linux
+
+appImage:
+  artifactName: ${productName}-${version}-${arch}.AppImage
+
+deb:
+  artifactName: ${productName}_${version}_${arch}.deb

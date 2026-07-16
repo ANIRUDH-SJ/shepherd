@@ -1,5 +1,6 @@
 out
 dist
 dist-typecheck
+release
 node_modules
 package-lock.json
