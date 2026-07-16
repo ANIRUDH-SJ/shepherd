@@ -14,7 +14,7 @@
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "tsx src/renderer/src/layout/tree.test.ts && tsx src/renderer/src/state/appReducer.test.ts && tsx src/renderer/src/settings.test.ts && tsx src/main/osc.test.ts"
+    "test": "tsx src/renderer/src/layout/tree.test.ts && tsx src/renderer/src/state/appReducer.test.ts && tsx src/renderer/src/settings.test.ts && tsx src/main/osc.test.ts && tsx src/shared/usage.test.ts"
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
