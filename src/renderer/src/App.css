@@ -8,7 +8,12 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   background: #0d0d0f;
   color: #e6e6e6;
   -webkit-font-smoothing: antialiased;
@@ -85,11 +90,16 @@ body.resizing * {
   width: 100%;
   text-align: left;
   border: 0;
+  font: inherit;
   background: transparent;
   color: inherit;
   cursor: pointer;
   padding: 8px 10px;
   border-radius: 7px;
+}
+.ws-row:focus-visible {
+  outline: 2px solid #8ab4ff;
+  outline-offset: -2px;
 }
 .ws-row:hover {
   background: #1c1c22;
@@ -132,16 +142,41 @@ body.resizing * {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.ws-name-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  outline: none;
+  background: rgba(0, 0, 0, 0.28);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 1px 4px;
+}
+.ws-name-input:focus {
+  border-color: #b9d0ff;
+}
+.ws-rename,
 .ws-close {
+  border: 0;
+  background: transparent;
   color: #9aa0aa;
   opacity: 0;
   font-size: 14px;
+  line-height: 1;
   padding: 0 3px;
   border-radius: 4px;
+  cursor: pointer;
 }
+.ws-row:hover .ws-rename,
+.ws-row:focus-within .ws-rename,
+.ws-row:focus-within .ws-close,
 .ws-row:hover .ws-close {
   opacity: 0.8;
 }
+.ws-rename:hover,
 .ws-close:hover {
   background: rgba(255, 255, 255, 0.15);
   opacity: 1;
@@ -188,7 +223,7 @@ kbd {
   z-index: 6;
 }
 .sidebar-resizer::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 2px;
   top: 0;
@@ -320,7 +355,7 @@ kbd {
   cursor: row-resize;
 }
 .divider::before {
-  content: "";
+  content: '';
   position: absolute;
   background: #232329;
 }
