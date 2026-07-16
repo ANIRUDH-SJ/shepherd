@@ -8,7 +8,12 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   background: #0d0d0f;
   color: #e6e6e6;
   -webkit-font-smoothing: antialiased;
@@ -149,9 +154,27 @@ body.resizing * {
 .ws-status {
   font-size: 11.5px;
   color: #7a808a;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.ws-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.ws-usage {
+  flex: 0 0 auto;
+  color: #8a90a0;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ws-row.active .ws-usage {
+  color: #dbe6ff;
 }
 
 /* Shortcut legend pinned to the bottom */
@@ -188,7 +211,7 @@ kbd {
   z-index: 6;
 }
 .sidebar-resizer::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 2px;
   top: 0;
@@ -320,7 +343,7 @@ kbd {
   cursor: row-resize;
 }
 .divider::before {
-  content: "";
+  content: '';
   position: absolute;
   background: #232329;
 }
