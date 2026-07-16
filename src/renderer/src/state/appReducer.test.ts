@@ -8,7 +8,8 @@ import {
   type AppState
 } from './appReducer'
 import { splitAction } from './workspaceReducer'
-import { listSurfaceIds } from '../layout/tree'
+import { findPane, listSurfaceIds } from '../layout/tree'
+import type { AgentReport } from '../../../shared/agent'
 import type { UsageReport } from '../../../shared/usage'
 
 let failures = 0
@@ -102,6 +103,124 @@ assert(
   'closed workspace is gone; the third now sits at position 2 (renumbered in UI)'
 )
 
+// agent lifecycle: reports bind to a real surface, reject stale updates, focus the
+// exact terminal, expire, and disappear with their pane/workspace.
+let agentsState = initialApp()
+const agentWorkspace = agentsState.workspaces[0]
+const agentSurfaceId = listSurfaceIds(agentWorkspace.root)[0]
+agentsState = appReducer(agentsState, createWorkspaceAction('other'))
+const otherWorkspaceId = agentsState.activeWorkspaceId
+const blockedReport: AgentReport = {
+  agentId: 'codex:term-1',
+  provider: 'codex',
+  displayName: 'Codex',
+  workspaceId: agentWorkspace.id,
+  surfaceId: agentSurfaceId,
+  state: 'blocked',
+  blockReason: 'approval',
+  message: 'Approve command',
+  source: 'codex:hooks',
+  revision: 2,
+  updatedAt: 20
+}
+agentsState = appReducer(agentsState, { type: 'reportAgent', report: blockedReport })
+assert(agentsState.agents.length === 1, 'agent report creates a record')
+assert(agentsState.agents[0].paneId === agentWorkspace.activePaneId, 'agent binds to owning pane')
+assert(
+  agentsState.workspaces.find((w) => w.id === agentWorkspace.id)!.agentAttention,
+  'actionable block marks an inactive workspace'
+)
+assert(
+  agentsState.workspaces.find((w) => w.id === agentWorkspace.id)!.agentUnread,
+  'blocked agent is unread in an inactive workspace'
+)
+
+agentsState = appReducer(agentsState, {
+  type: 'reportAgent',
+  report: { ...blockedReport, state: 'done', revision: 1, updatedAt: 30 }
+})
+assert(agentsState.agents[0].state === 'blocked', 'stale sequenced report is ignored')
+
+agentsState = appReducer(agentsState, { type: 'focusAgent', id: blockedReport.agentId })
+const focusedAgentWorkspace = agentsState.workspaces.find((w) => w.id === agentWorkspace.id)!
+assert(agentsState.activeWorkspaceId === agentWorkspace.id, 'focusAgent selects the workspace')
+assert(
+  focusedAgentWorkspace.activePaneId === agentsState.agents[0].paneId,
+  'focusAgent selects pane'
+)
+assert(
+  findPane(focusedAgentWorkspace.root, focusedAgentWorkspace.activePaneId)!.activeSurfaceId ===
+    agentSurfaceId,
+  'focusAgent selects terminal surface'
+)
+assert(
+  !focusedAgentWorkspace.agentUnread && !focusedAgentWorkspace.agentAttention,
+  'focusing an agent acknowledges its workspace markers'
+)
+
+agentsState = appReducer(agentsState, {
+  type: 'reportAgent',
+  report: {
+    ...blockedReport,
+    state: 'working',
+    blockReason: undefined,
+    revision: 3,
+    updatedAt: 40,
+    expiresAt: 50
+  }
+})
+agentsState = appReducer(agentsState, { type: 'expireAgents', now: 49 })
+assert(agentsState.agents.length === 1, 'agent remains before expiry')
+agentsState = appReducer(agentsState, { type: 'expireAgents', now: 50 })
+assert(agentsState.agents.length === 0, 'agent is removed at expiry')
+
+agentsState = appReducer(
+  agentsState,
+  paneAction(agentWorkspace.id, splitAction(focusedAgentWorkspace.activePaneId, 'row'))
+)
+const splitWorkspace = agentsState.workspaces.find((w) => w.id === agentWorkspace.id)!
+const splitPane = findPane(splitWorkspace.root, splitWorkspace.activePaneId)!
+const splitAgent: AgentReport = {
+  ...blockedReport,
+  agentId: 'claude:split',
+  provider: 'claude',
+  displayName: 'Claude Code',
+  surfaceId: splitPane.activeSurfaceId,
+  state: 'working',
+  blockReason: undefined,
+  revision: undefined,
+  updatedAt: 60,
+  source: 'claude:hooks'
+}
+agentsState = appReducer(agentsState, { type: 'reportAgent', report: splitAgent })
+assert(agentsState.agents.length === 1, 'agent can bind to a split pane')
+agentsState = appReducer(
+  agentsState,
+  paneAction(agentWorkspace.id, { type: 'closePane', paneId: splitPane.id })
+)
+assert(agentsState.agents.length === 0, 'closing a pane removes its agents')
+
+const otherWorkspace = agentsState.workspaces.find((w) => w.id === otherWorkspaceId)!
+const otherSurfaceId = listSurfaceIds(otherWorkspace.root)[0]
+agentsState = appReducer(agentsState, {
+  type: 'reportAgent',
+  report: {
+    ...blockedReport,
+    agentId: 'opencode:other',
+    provider: 'opencode',
+    displayName: 'OpenCode',
+    workspaceId: otherWorkspaceId,
+    surfaceId: otherSurfaceId,
+    state: 'idle',
+    blockReason: undefined,
+    revision: undefined,
+    updatedAt: 70,
+    source: 'opencode:hooks'
+  }
+})
+agentsState = appReducer(agentsState, { type: 'closeWorkspace', id: otherWorkspaceId })
+assert(agentsState.agents.length === 0, 'closing a workspace removes its agents')
+
 // session restore: sanitizeRestored validates a snapshot and resets transients
 const snapshot = initialApp()
 snapshot.workspaces[0].unread = true // a transient that must NOT survive a restore
@@ -111,6 +230,7 @@ assert(restored!.workspaces.length === 1, 'restored workspace count matches')
 assert(restored!.workspaces[0].unread === false, 'transient flags are reset on restore')
 assert(restored!.workspaces[0].usage.totals.reportCount === 0, 'usage is reset on restore')
 assert(restored!.workspaces[0].usage.latest === null, 'latest usage is reset on restore')
+assert(restored!.agents.length === 0, 'agent lifecycle state is reset on restore')
 assert(sanitizeRestored(null) === null, 'sanitizeRestored(null) → null')
 assert(sanitizeRestored({}) === null, 'sanitizeRestored({}) → null (no workspaces)')
 assert(sanitizeRestored({ workspaces: [] }) === null, 'empty workspaces → null')

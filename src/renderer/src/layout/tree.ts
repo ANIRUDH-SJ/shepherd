@@ -47,6 +47,18 @@ export function findPane(node: LayoutNode, paneId: string): Pane | null {
   return null
 }
 
+/** Find the pane that owns a terminal surface id. */
+export function findPaneBySurfaceId(node: LayoutNode, surfaceId: string): Pane | null {
+  if (node.type === 'pane') {
+    return node.pane.surfaces.some((surface) => surface.id === surfaceId) ? node.pane : null
+  }
+  for (const child of node.children) {
+    const pane = findPaneBySurfaceId(child, surfaceId)
+    if (pane) return pane
+  }
+  return null
+}
+
 /** Every surface id in the tree (used to reconcile which terminals should exist). */
 export function listSurfaceIds(node: LayoutNode): string[] {
   if (node.type === 'pane') return node.pane.surfaces.map((s) => s.id)
