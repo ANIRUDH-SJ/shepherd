@@ -28,13 +28,19 @@ export interface AppState {
   activeWorkspaceId: string
 }
 
+export const MAX_WORKSPACE_NAME_LENGTH = 64
+
+export function normalizeWorkspaceName(name: string): string {
+  return name.trim().slice(0, MAX_WORKSPACE_NAME_LENGTH)
+}
+
 /** Mint a new workspace with one terminal. The display NAME is positional
  *  ("workspace N", by sidebar position) unless a custom `name` is given. */
 export function makeWorkspace(name?: string): Workspace {
   const pane = makePane({ id: uid('term') })
   return {
     id: `ws-${crypto.randomUUID()}`,
-    name: name ?? '',
+    name: normalizeWorkspaceName(name ?? ''),
     cwd: '~',
     root: { type: 'pane', pane },
     activePaneId: pane.id,
@@ -151,7 +157,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     }
 
     case 'renameWorkspace':
-      return mapWorkspace(state, action.id, (w) => ({ ...w, name: action.name }))
+      return mapWorkspace(state, action.id, (w) => ({
+        ...w,
+        name: normalizeWorkspaceName(action.name)
+      }))
 
     case 'setStatus':
       return mapWorkspace(state, action.id, (w) => ({ ...w, status: action.status }))

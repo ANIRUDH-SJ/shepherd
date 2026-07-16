@@ -5,6 +5,7 @@ import {
   createWorkspaceAction,
   paneAction,
   sanitizeRestored,
+  MAX_WORKSPACE_NAME_LENGTH,
   type AppState
 } from './appReducer'
 import { splitAction } from './workspaceReducer'
@@ -31,6 +32,27 @@ s = appReducer(s, createWorkspaceAction('agent-2'))
 assert(s.workspaces.length === 2, 'two workspaces after create')
 assert(active(s).name === 'agent-2', 'new workspace becomes active')
 const secondWs = s.activeWorkspaceId
+
+// workspace names are normalized without disturbing workspace-owned state
+const secondBeforeRename = active(s)
+s = appReducer(s, { type: 'renameWorkspace', id: secondWs, name: '  build agent  ' })
+assert(active(s).name === 'build agent', 'rename trims surrounding whitespace')
+assert(active(s).root === secondBeforeRename.root, 'rename preserves the workspace layout')
+assert(active(s).activePaneId === secondBeforeRename.activePaneId, 'rename preserves active pane')
+s = appReducer(s, {
+  type: 'renameWorkspace',
+  id: secondWs,
+  name: 'x'.repeat(MAX_WORKSPACE_NAME_LENGTH + 20)
+})
+assert(active(s).name.length === MAX_WORKSPACE_NAME_LENGTH, 'rename caps names at 64 characters')
+s = appReducer(s, { type: 'renameWorkspace', id: secondWs, name: '   ' })
+assert(active(s).name === '', 'empty rename restores the positional fallback')
+
+const normalizedCreate = createWorkspaceAction('  named workspace  ')
+assert(
+  normalizedCreate.type === 'createWorkspace' && normalizedCreate.workspace.name === 'named workspace',
+  'workspace creation uses the same normalization rule'
+)
 
 // attention on the FIRST (inactive) workspace
 s = appReducer(s, { type: 'setAttention', id: firstWs, unread: true, attention: true })
