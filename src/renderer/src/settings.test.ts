@@ -49,7 +49,6 @@ store.clear()
 assert(getFontSize() === DEFAULT_FONT_SIZE, 'unset → default')
 
 // set persists, returns the clamped value, and broadcasts the detail
-lastDetail = null
 assert(setFontSize(16) === 16 && getFontSize() === 16, 'set 16 → persisted')
 assert(lastDetail === 16, 'set broadcasts cmux:fontsize detail')
 
