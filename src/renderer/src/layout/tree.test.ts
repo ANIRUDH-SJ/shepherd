@@ -11,6 +11,7 @@ import {
   computeLayout,
   listSurfaceIds,
   findPane,
+  findPaneBySurfaceId,
   makePane,
   makeSurface
 } from './tree'
@@ -33,6 +34,9 @@ let root = initial.root
 const firstId = initial.activePaneId
 assert(root.type === 'pane', 'initial root is a single pane')
 assert(listSurfaceIds(root).length === 1, 'initial tree has exactly 1 surface')
+const firstSurfaceId = listSurfaceIds(root)[0]
+assert(findPaneBySurfaceId(root, firstSurfaceId)?.id === firstId, 'finds a pane by surface id')
+assert(findPaneBySurfaceId(root, 'missing') === null, 'missing surface has no pane')
 
 // ── split right (row) ────────────────────────────────────────
 const paneB = makePane(makeSurface())
