@@ -2,6 +2,7 @@ import net from 'net'
 import { existsSync, unlinkSync } from 'fs'
 import { Notification } from 'electron'
 import type { SocketApply, WorkspacesSync } from '../shared/ipc'
+import { normalizeWorkspaceName } from '../shared/workspace'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SOCKET SERVER  (main process — the programmable control channel)
@@ -79,6 +80,7 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
           'identify',
           'list-workspaces',
           'new-workspace',
+          'rename-workspace',
           'select-workspace',
           'close-workspace',
           'new-split',
@@ -119,6 +121,24 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
         return
       }
       apply({ method, workspaceId, params })
+      send(conn, id, { ok: true })
+      return
+    }
+    case 'rename-workspace': {
+      if (typeof params.name !== 'string') {
+        send(conn, id, null, 'rename-workspace requires --name')
+        return
+      }
+      const workspaceId = await resolveWorkspaceRetry(params)
+      if (!workspaceId) {
+        send(conn, id, null, `no matching workspace: ${String(params.workspace ?? '(active)')}`)
+        return
+      }
+      apply({
+        method,
+        workspaceId,
+        params: { ...params, name: normalizeWorkspaceName(params.name) }
+      })
       send(conn, id, { ok: true })
       return
     }
