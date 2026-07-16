@@ -23,12 +23,23 @@ Usage:
   cmux new-split [right|down]         split the active pane
   cmux send-text <text>               type text into the active terminal
   cmux send-key <enter|tab|up|down|…> send a key to the active terminal
+  cmux report-usage --input-tokens N --output-tokens N --accuracy exact|estimated
+                                      add trustworthy usage to this workspace
   cmux ping                           check the app is reachable
   cmux capabilities                   list supported socket methods
   cmux identify                       show this pane's + the active workspace
   cmux hooks setup                    install a Claude Code notify hook
 
-Flags:  --workspace <id|name>   target a specific workspace (default: this pane's)
+Usage flags:
+  --input-tokens N       required non-negative integer
+  --output-tokens N      required non-negative integer
+  --accuracy A           required: exact or estimated
+  --cached-tokens N      optional cache-read tokens
+  --cost-usd N           optional provider-reported cost; never calculated here
+  --model NAME           optional model provenance
+  --provider NAME        optional provider provenance
+
+Global: --workspace <id|name>   target a specific workspace (default: this pane's)
 
 Inside a cmux-linux pane, CMUX_WORKSPACE_ID and CMUX_SOCKET_PATH are set for you.`)
   process.exit(method ? 0 : 1)
@@ -84,7 +95,11 @@ const params = {}
 const positional = []
 for (let i = 1; i < argv.length; i++) {
   const a = argv[i]
-  if (a.startsWith('--')) params[a.slice(2)] = argv[++i]
+  if (a.startsWith('--')) {
+    // CLI flags are kebab-case; the JSON protocol uses JavaScript-style camelCase.
+    const key = a.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
+    params[key] = argv[++i]
+  }
   else positional.push(a)
 }
 if (positional.length) {
