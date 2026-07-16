@@ -17,27 +17,27 @@ Let users rename sidebar workspaces without recreating them, while preserving th
 
 ### Goal 1 — Naming rules and reducer coverage
 
-- [ ] Add a pure workspace-name normalizer.
-- [ ] Apply normalization in workspace creation and rename actions.
-- [ ] Test whitespace, empty fallback, maximum length, and state preservation.
+- [x] Add a pure workspace-name normalizer.
+- [x] Apply normalization in workspace creation and rename actions.
+- [x] Test whitespace, empty fallback, maximum length, and state preservation.
 
 ### Goal 2 — Inline sidebar editing
 
-- [ ] Add accessible inline editing without nesting interactive controls.
-- [ ] Support pointer, `F2`, `Enter`, `Escape`, blur-save, and focus restoration.
-- [ ] Preserve selection, unread indicators, close behavior, and narrow sidebar layout.
+- [x] Add accessible inline editing without nesting interactive controls.
+- [x] Support pointer, `F2`, `Enter`, `Escape`, blur-save, and focus restoration.
+- [x] Preserve selection, unread indicators, close behavior, and narrow sidebar layout.
 
 ### Goal 3 — Socket and CLI automation
 
-- [ ] Add `rename-workspace` to socket capabilities.
-- [ ] Validate `--name` and resolve the target workspace before forwarding.
-- [ ] Add CLI help and a controlled socket integration test.
+- [x] Add `rename-workspace` to socket capabilities.
+- [x] Validate `--name` and resolve the target workspace before forwarding.
+- [x] Add CLI help and a controlled socket integration test.
 
 ### Goal 4 — Documentation and verification
 
-- [ ] Document UI and CLI usage in the README and M5 learning log.
-- [ ] Run tests, lint, typecheck, production build, and diff validation.
-- [ ] Review the final branch for generated or unrelated files.
+- [x] Document UI and CLI usage in the README and M5 learning log.
+- [x] Run tests, lint, typecheck, production build, and diff validation.
+- [x] Review the final branch for generated or unrelated files.
 
 ## Planned Commit Series
 
