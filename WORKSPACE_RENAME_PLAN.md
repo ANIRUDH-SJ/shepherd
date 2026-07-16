@@ -11,6 +11,7 @@ Let users rename sidebar workspaces without recreating them, while preserving th
 - Renaming changes metadata only; it must not recreate the workspace or its PTYs.
 - `Enter` saves and `Escape` cancels inline editing.
 - Double-clicking a name or pressing `F2` on a focused row starts editing.
+- Right-clicking a workspace opens a context menu with a rename action.
 - Socket automation targets the workspace by its current id/name and supplies the new name separately.
 
 ## Implementation Checklist
@@ -26,6 +27,7 @@ Let users rename sidebar workspaces without recreating them, while preserving th
 - [x] Add accessible inline editing without nesting interactive controls.
 - [x] Support pointer, `F2`, `Enter`, `Escape`, blur-save, and focus restoration.
 - [x] Preserve selection, unread indicators, close behavior, and narrow sidebar layout.
+- [x] Add a dismissible, viewport-clamped right-click context menu.
 
 ### Goal 3 — Socket and CLI automation
 

@@ -52,8 +52,9 @@ cmux-linux            # or launch it from your app menu
 | `Ctrl+Shift+=` / `-` / `0` | zoom terminal in / out / reset |
 | `F2` on a workspace | rename workspace (`Enter` saves, `Escape` cancels) |
 
-You can also double-click a workspace name or use its pencil action to rename it.
-Submitting an empty name returns to positional labels such as `workspace 2`.
+You can also right-click a workspace and choose **Rename workspace**, double-click
+its name, or use its pencil action. Submitting an empty name returns to positional
+labels such as `workspace 2`.
 
 Every pane gets a `cmux` command on its `PATH`, which drives the app over its
 unix socket — this is how an agent reports status back to the sidebar:
