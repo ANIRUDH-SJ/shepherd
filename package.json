@@ -16,7 +16,7 @@
     "dist": "npm run build && electron-builder --linux AppImage deb",
     "dist:dir": "npm run build && electron-builder --dir",
     "format": "prettier --write .",
-    "test": "tsx src/renderer/src/layout/tree.test.ts && tsx src/renderer/src/state/appReducer.test.ts && tsx src/renderer/src/settings.test.ts && tsx src/renderer/src/usageView.test.ts && tsx src/main/osc.test.ts && tsx src/shared/usage.test.ts && node bin/cmux.test.js"
+    "test": "tsx src/renderer/src/layout/tree.test.ts && tsx src/renderer/src/state/appReducer.test.ts && tsx src/renderer/src/settings.test.ts && tsx src/renderer/src/usageView.test.ts && tsx src/main/osc.test.ts && tsx src/shared/agent.test.ts && tsx src/shared/usage.test.ts && node bin/cmux.test.js"
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
