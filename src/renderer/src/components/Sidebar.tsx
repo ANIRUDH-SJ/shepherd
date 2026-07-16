@@ -1,4 +1,4 @@
-import { useRef, useState, type Dispatch } from 'react'
+import { useEffect, useRef, useState, type Dispatch } from 'react'
 import { type AppAction, createWorkspaceAction, type Workspace } from '../state/appReducer'
 import { usageDetails, usageSummary } from '../usageView'
 
@@ -15,6 +15,12 @@ interface Props {
   onCollapse: () => void
 }
 
+interface WorkspaceContextMenu {
+  workspaceId: string
+  x: number
+  y: number
+}
+
 export default function Sidebar({
   workspaces,
   activeWorkspaceId,
@@ -23,14 +29,34 @@ export default function Sidebar({
 }: Props): React.JSX.Element {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draftName, setDraftName] = useState('')
+  const [contextMenu, setContextMenu] = useState<WorkspaceContextMenu | null>(null)
   const rowRefs = useRef(new Map<string, HTMLDivElement>())
   const ignoreNextBlur = useRef(false)
 
   const startRename = (workspace: Workspace): void => {
+    setContextMenu(null)
     ignoreNextBlur.current = false
     setEditingId(workspace.id)
     setDraftName(workspace.name)
   }
+
+  useEffect(() => {
+    if (!contextMenu) return
+    const dismiss = (): void => setContextMenu(null)
+    const dismissOnEscape = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') dismiss()
+    }
+    document.addEventListener('pointerdown', dismiss)
+    document.addEventListener('keydown', dismissOnEscape)
+    window.addEventListener('blur', dismiss)
+    window.addEventListener('scroll', dismiss, true)
+    return () => {
+      document.removeEventListener('pointerdown', dismiss)
+      document.removeEventListener('keydown', dismissOnEscape)
+      window.removeEventListener('blur', dismiss)
+      window.removeEventListener('scroll', dismiss, true)
+    }
+  }, [contextMenu])
 
   const finishRename = (workspace: Workspace, save: boolean, restoreFocus: boolean): void => {
     if (save) dispatch({ type: 'renameWorkspace', id: workspace.id, name: draftName })
@@ -77,6 +103,17 @@ export default function Sidebar({
                 (w.attention ? ' attention' : '')
               }
               onClick={() => dispatch({ type: 'selectWorkspace', id: w.id })}
+              onContextMenu={(event) => {
+                if (event.target instanceof HTMLInputElement) return
+                event.preventDefault()
+                const width = 160
+                const height = 44
+                setContextMenu({
+                  workspaceId: w.id,
+                  x: Math.max(8, Math.min(event.clientX, window.innerWidth - width - 8)),
+                  y: Math.max(8, Math.min(event.clientY, window.innerHeight - height - 8))
+                })
+              }}
               onKeyDown={(event) => {
                 if (event.target !== event.currentTarget || editing) return
                 if (event.key === 'F2') {
@@ -177,6 +214,28 @@ export default function Sidebar({
           )
         })}
       </div>
+
+      {contextMenu && (
+        <div
+          className="ws-context-menu"
+          role="menu"
+          aria-label="Workspace actions"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            autoFocus
+            onClick={() => {
+              const workspace = workspaces.find((item) => item.id === contextMenu.workspaceId)
+              if (workspace) startRename(workspace)
+            }}
+          >
+            Rename workspace
+          </button>
+        </div>
+      )}
 
       <div className="shortcuts">
         <div className="shortcuts-title">shortcuts</div>
