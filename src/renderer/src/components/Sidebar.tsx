@@ -76,7 +76,7 @@ export default function Sidebar({
               }
               onClick={() => dispatch({ type: 'selectWorkspace', id: w.id })}
               onKeyDown={(event) => {
-                if (editing) return
+                if (event.target !== event.currentTarget || editing) return
                 if (event.key === 'F2') {
                   event.preventDefault()
                   startRename(w)
