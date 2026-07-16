@@ -2,6 +2,7 @@ import net from 'net'
 import { existsSync, unlinkSync } from 'fs'
 import { Notification } from 'electron'
 import type { SocketApply, WorkspacesSync } from '../shared/ipc'
+import { normalizeUsageReport } from '../shared/usage'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SOCKET SERVER  (main process — the programmable control channel)
@@ -85,6 +86,7 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
           'send-text',
           'send-key',
           'set-status',
+          'report-usage',
           'log',
           'notify'
         ]
@@ -154,6 +156,21 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
           body: String(params.body ?? '')
         }).show()
       }
+      send(conn, id, { ok: true })
+      return
+    }
+    case 'report-usage': {
+      const validation = normalizeUsageReport(params)
+      if (!validation.ok) {
+        send(conn, id, null, validation.error)
+        return
+      }
+      const workspaceId = await resolveWorkspaceRetry(params)
+      if (!workspaceId) {
+        send(conn, id, null, `no matching workspace: ${String(params.workspace ?? '(active)')}`)
+        return
+      }
+      apply({ method, workspaceId, params: { report: validation.report } })
       send(conn, id, { ok: true })
       return
     }

@@ -10,6 +10,7 @@ import {
 import { splitAction, newSurfaceAction } from './state/workspaceReducer'
 import { findPane } from './layout/tree'
 import { bumpFontSize, resetFontSize } from './settings'
+import type { UsageReport } from '../../shared/usage'
 import Sidebar from './components/Sidebar'
 import WorkspaceView from './components/WorkspaceView'
 
@@ -123,6 +124,11 @@ export default function App(): React.JSX.Element {
         const body = String(params.body ?? '')
         dispatch({ type: 'setStatus', id: workspaceId, status: body || 'needs your attention' })
         dispatch({ type: 'setAttention', id: workspaceId, unread: true, attention: true })
+      } else if (method === 'report-usage') {
+        const report = params.report
+        if (report && typeof report === 'object') {
+          dispatch({ type: 'reportUsage', id: workspaceId, report: report as UsageReport })
+        }
       } else if (method === 'select-workspace') {
         dispatch({ type: 'selectWorkspace', id: workspaceId })
       } else if (method === 'close-workspace') {
