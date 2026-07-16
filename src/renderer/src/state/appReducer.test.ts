@@ -9,6 +9,7 @@ import {
 } from './appReducer'
 import { splitAction } from './workspaceReducer'
 import { listSurfaceIds } from '../layout/tree'
+import { MAX_WORKSPACE_NAME_LENGTH } from '../../../shared/workspace'
 import type { UsageReport } from '../../../shared/usage'
 
 let failures = 0
@@ -33,6 +34,28 @@ s = appReducer(s, createWorkspaceAction('agent-2'))
 assert(s.workspaces.length === 2, 'two workspaces after create')
 assert(active(s).name === 'agent-2', 'new workspace becomes active')
 const secondWs = s.activeWorkspaceId
+
+// workspace names are normalized without disturbing workspace-owned state
+const secondBeforeRename = active(s)
+s = appReducer(s, { type: 'renameWorkspace', id: secondWs, name: '  build agent  ' })
+assert(active(s).name === 'build agent', 'rename trims surrounding whitespace')
+assert(active(s).root === secondBeforeRename.root, 'rename preserves the workspace layout')
+assert(active(s).activePaneId === secondBeforeRename.activePaneId, 'rename preserves active pane')
+s = appReducer(s, {
+  type: 'renameWorkspace',
+  id: secondWs,
+  name: 'x'.repeat(MAX_WORKSPACE_NAME_LENGTH + 20)
+})
+assert(active(s).name.length === MAX_WORKSPACE_NAME_LENGTH, 'rename caps names at 64 characters')
+s = appReducer(s, { type: 'renameWorkspace', id: secondWs, name: '   ' })
+assert(active(s).name === '', 'empty rename restores the positional fallback')
+
+const normalizedCreate = createWorkspaceAction('  named workspace  ')
+assert(
+  normalizedCreate.type === 'createWorkspace' &&
+    normalizedCreate.workspace.name === 'named workspace',
+  'workspace creation uses the same normalization rule'
+)
 
 const exactUsage: UsageReport = {
   inputTokens: 1000,
@@ -73,7 +96,10 @@ assert(!active(s).attention && !active(s).unread, 'selecting clears unread + att
 const firstPaneId = active(s).activePaneId
 s = appReducer(s, paneAction(firstWs, splitAction(firstPaneId, 'row')))
 assert(listSurfaceIds(active(s).root).length === 2, 'active workspace now has 2 terminals')
-assert(listSurfaceIds(s.workspaces.find((w) => w.id === secondWs)!.root).length === 1, 'other workspace untouched')
+assert(
+  listSurfaceIds(s.workspaces.find((w) => w.id === secondWs)!.root).length === 1,
+  'other workspace untouched'
+)
 
 // setStatus
 s = appReducer(s, { type: 'setStatus', id: firstWs, status: 'Claude is waiting for your input' })
@@ -114,7 +140,10 @@ assert(restored!.workspaces[0].usage.latest === null, 'latest usage is reset on 
 assert(sanitizeRestored(null) === null, 'sanitizeRestored(null) → null')
 assert(sanitizeRestored({}) === null, 'sanitizeRestored({}) → null (no workspaces)')
 assert(sanitizeRestored({ workspaces: [] }) === null, 'empty workspaces → null')
-assert(sanitizeRestored({ workspaces: [{ id: 'x' }] }) === null, 'workspace without a valid root → null')
+assert(
+  sanitizeRestored({ workspaces: [{ id: 'x' }] }) === null,
+  'workspace without a valid root → null'
+)
 
 // malformed layouts must fail CLOSED (null), not crash later (Copilot review, PR #4)
 assert(
@@ -129,7 +158,9 @@ assert(
 )
 assert(
   sanitizeRestored({
-    workspaces: [{ id: 'w', root: { type: 'pane', pane: { id: 'p', surfaces: [], activeSurfaceId: 's' } } }]
+    workspaces: [
+      { id: 'w', root: { type: 'pane', pane: { id: 'p', surfaces: [], activeSurfaceId: 's' } } }
+    ]
   }) === null,
   'pane with no surfaces → null'
 )

@@ -50,6 +50,11 @@ cmux-linux            # or launch it from your app menu
 | `Ctrl+Shift+W` | close surface |
 | `Ctrl+Shift+B` | toggle sidebar |
 | `Ctrl+Shift+=` / `-` / `0` | zoom terminal in / out / reset |
+| `F2` on a workspace | rename workspace (`Enter` saves, `Escape` cancels) |
+
+You can also right-click a workspace and choose **Rename workspace**, double-click
+its name, or use its pencil action. Submitting an empty name returns to positional
+labels such as `workspace 2`.
 
 Every pane gets a `cmux` command on its `PATH`, which drives the app over its
 unix socket — this is how an agent reports status back to the sidebar:
@@ -57,6 +62,7 @@ unix socket — this is how an agent reports status back to the sidebar:
 ```bash
 cmux set-status "running tests"
 cmux notify --title Claude --body "needs your attention"
+cmux rename-workspace --workspace "workspace 1" --name build
 cmux hooks setup      # install a Claude Code notify hook
 cmux --help
 ```
