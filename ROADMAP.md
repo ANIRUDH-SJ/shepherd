@@ -143,6 +143,7 @@ mirroring cmux's method surface. Easier in Node than cmux's Swift version.*
 - [x] xterm.js WebGL renderer enabled
 - [ ] WebGL perf check (scroll, big output)
 - [ ] Empty/error states, keyboard-shortcut cheat sheet
+- [x] Agent-reported per-workspace token usage with exact/estimated provenance
 - [x] Configure `electron-builder` for **AppImage** and **.deb**
 - [ ] Configure **Flatpak** packaging
 - [x] Build AppImage and `.deb` artifacts

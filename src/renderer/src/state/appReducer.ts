@@ -2,6 +2,12 @@ import type { LayoutNode } from '../layout/types'
 import { makePane, uid, firstPaneId, isValidLayoutNode } from '../layout/tree'
 import { workspaceReducer, type WorkspaceState, type WorkspaceAction } from './workspaceReducer'
 import { normalizeWorkspaceName } from '../../../shared/workspace'
+import {
+  addWorkspaceUsage,
+  emptyWorkspaceUsage,
+  type UsageReport,
+  type WorkspaceUsage
+} from '../../../shared/usage'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // APP REDUCER  (the top of the object model: Window → Workspace → …)
@@ -22,6 +28,7 @@ export interface Workspace {
   status: string | null // subtitle line, e.g. "Claude is waiting for your input"
   unread: boolean // new activity → a quiet badge
   attention: boolean // an agent is blocked on you right now → the ring/flash
+  usage: WorkspaceUsage // ephemeral, agent-reported token/cost telemetry
 }
 
 export interface AppState {
@@ -41,7 +48,8 @@ export function makeWorkspace(name?: string): Workspace {
     activePaneId: pane.id,
     status: null,
     unread: false,
-    attention: false
+    attention: false,
+    usage: emptyWorkspaceUsage()
   }
 }
 
@@ -51,7 +59,7 @@ export function initialApp(): AppState {
 }
 
 /** Validate + normalise a restored session into an AppState (or null if unusable).
- *  We restore only the LAYOUT — transient flags (status/unread/attention) are reset,
+ *  We restore only the LAYOUT — transient flags and usage telemetry are reset,
  *  and terminals re-spawn fresh when their panes mount. See textbook/13. */
 export function sanitizeRestored(raw: unknown): AppState | null {
   if (!raw || typeof raw !== 'object') return null
@@ -76,7 +84,8 @@ export function sanitizeRestored(raw: unknown): AppState | null {
       activePaneId: typeof entry.activePaneId === 'string' ? entry.activePaneId : firstPaneId(root),
       status: null,
       unread: false,
-      attention: false
+      attention: false,
+      usage: emptyWorkspaceUsage()
     })
   }
   const active =
@@ -89,7 +98,13 @@ export function sanitizeRestored(raw: unknown): AppState | null {
 /** The serialisable LAYOUT of the app (no transient status/unread/attention) — this
  *  is what we persist, so agent status churn doesn't cause needless saves. */
 export function toLayoutSnapshot(state: AppState): {
-  workspaces: Array<{ id: string; name: string; cwd: string; root: LayoutNode; activePaneId: string }>
+  workspaces: Array<{
+    id: string
+    name: string
+    cwd: string
+    root: LayoutNode
+    activePaneId: string
+  }>
   activeWorkspaceId: string
 } {
   return {
@@ -111,6 +126,7 @@ export type AppAction =
   | { type: 'renameWorkspace'; id: string; name: string }
   | { type: 'setStatus'; id: string; status: string | null }
   | { type: 'setAttention'; id: string; unread?: boolean; attention?: boolean }
+  | { type: 'reportUsage'; id: string; report: UsageReport }
   | { type: 'pane'; workspaceId: string; action: WorkspaceAction }
 
 // ── Action creators ──────────────────────────────────────────────────────────
@@ -130,7 +146,10 @@ function mapWorkspace(state: AppState, id: string, fn: (w: Workspace) => Workspa
 export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'createWorkspace':
-      return { workspaces: [...state.workspaces, action.workspace], activeWorkspaceId: action.workspace.id }
+      return {
+        workspaces: [...state.workspaces, action.workspace],
+        activeWorkspaceId: action.workspace.id
+      }
 
     case 'selectWorkspace': {
       if (!state.workspaces.some((w) => w.id === action.id)) return state
@@ -165,6 +184,12 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         ...w,
         unread: action.unread ?? w.unread,
         attention: action.attention ?? w.attention
+      }))
+
+    case 'reportUsage':
+      return mapWorkspace(state, action.id, (w) => ({
+        ...w,
+        usage: addWorkspaceUsage(w.usage, action.report)
       }))
 
     case 'pane':

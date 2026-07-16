@@ -3,6 +3,7 @@ import { existsSync, unlinkSync } from 'fs'
 import { Notification } from 'electron'
 import type { SocketApply, WorkspacesSync } from '../shared/ipc'
 import { normalizeWorkspaceName } from '../shared/workspace'
+import { normalizeUsageReport } from '../shared/usage'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SOCKET SERVER  (main process — the programmable control channel)
@@ -87,6 +88,7 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
           'send-text',
           'send-key',
           'set-status',
+          'report-usage',
           'log',
           'notify'
         ]
@@ -95,7 +97,8 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
     case 'identify': {
       // Fall back to the requested id/name if the mirror can't resolve it yet
       // (e.g. early startup), so identify doesn't report null for a valid caller.
-      const requested = typeof params.workspace === 'string' && params.workspace ? params.workspace : null
+      const requested =
+        typeof params.workspace === 'string' && params.workspace ? params.workspace : null
       const wid = resolveWorkspace(params) ?? requested
       const ws = mirror.workspaces.find((w) => w.id === wid)
       send(conn, id, {
@@ -147,7 +150,12 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
       // Validate the payload so an empty command isn't silently accepted.
       const arg = String((method === 'send-key' ? (params.key ?? params.text) : params.text) ?? '')
       if (!arg) {
-        send(conn, id, null, method === 'send-key' ? 'send-key requires a key' : 'send-text requires text')
+        send(
+          conn,
+          id,
+          null,
+          method === 'send-key' ? 'send-key requires a key' : 'send-text requires text'
+        )
         return
       }
       const workspaceId = await resolveWorkspaceRetry(params)
@@ -174,6 +182,21 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
           body: String(params.body ?? '')
         }).show()
       }
+      send(conn, id, { ok: true })
+      return
+    }
+    case 'report-usage': {
+      const validation = normalizeUsageReport(params)
+      if (!validation.ok) {
+        send(conn, id, null, validation.error)
+        return
+      }
+      const workspaceId = await resolveWorkspaceRetry(params)
+      if (!workspaceId) {
+        send(conn, id, null, `no matching workspace: ${String(params.workspace ?? '(active)')}`)
+        return
+      }
+      apply({ method, workspaceId, params: { report: validation.report } })
       send(conn, id, { ok: true })
       return
     }

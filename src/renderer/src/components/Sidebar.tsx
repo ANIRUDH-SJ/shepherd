@@ -1,5 +1,6 @@
 import { useRef, useState, type Dispatch } from 'react'
 import { type AppAction, createWorkspaceAction, type Workspace } from '../state/appReducer'
+import { usageDetails, usageSummary } from '../usageView'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sidebar — the vertical list of workspaces (cmux's signature). Each row shows a
@@ -59,6 +60,7 @@ export default function Sidebar({
         {workspaces.map((w, i) => {
           const displayName = w.name || `workspace ${i + 1}`
           const editing = editingId === w.id
+          const summary = usageSummary(w.usage)
           return (
             <div
               key={w.id}
@@ -159,7 +161,18 @@ export default function Sidebar({
                   </button>
                 )}
               </div>
-              <div className="ws-status">{w.status ?? w.cwd}</div>
+              <div className="ws-meta">
+                <span className="ws-status">{w.status ?? w.cwd}</span>
+                {summary && (
+                  <span
+                    className="ws-usage"
+                    title={usageDetails(w.usage)}
+                    aria-label={usageDetails(w.usage)}
+                  >
+                    {summary}
+                  </span>
+                )}
+              </div>
             </div>
           )
         })}

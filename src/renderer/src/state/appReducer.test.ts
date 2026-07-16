@@ -10,6 +10,7 @@ import {
 import { splitAction } from './workspaceReducer'
 import { listSurfaceIds } from '../layout/tree'
 import { MAX_WORKSPACE_NAME_LENGTH } from '../../../shared/workspace'
+import type { UsageReport } from '../../../shared/usage'
 
 let failures = 0
 function assert(cond: boolean, msg: string): void {
@@ -25,6 +26,7 @@ const active = (s: AppState) => s.workspaces.find((w) => w.id === s.activeWorksp
 let s = initialApp()
 assert(s.workspaces.length === 1, 'starts with 1 workspace')
 assert(active(s).name === '', 'first workspace has no custom name (shown positionally)')
+assert(active(s).usage.totals.reportCount === 0, 'new workspace starts without usage')
 const firstWs = s.activeWorkspaceId
 
 // create a second workspace → becomes active
@@ -50,9 +52,36 @@ assert(active(s).name === '', 'empty rename restores the positional fallback')
 
 const normalizedCreate = createWorkspaceAction('  named workspace  ')
 assert(
-  normalizedCreate.type === 'createWorkspace' && normalizedCreate.workspace.name === 'named workspace',
+  normalizedCreate.type === 'createWorkspace' &&
+    normalizedCreate.workspace.name === 'named workspace',
   'workspace creation uses the same normalization rule'
 )
+
+const exactUsage: UsageReport = {
+  inputTokens: 1000,
+  outputTokens: 250,
+  cachedTokens: 600,
+  costUsd: 0.04,
+  provider: 'provider-a',
+  model: 'model-a',
+  accuracy: 'exact',
+  timestamp: 1
+}
+const estimatedUsage: UsageReport = {
+  inputTokens: 400,
+  outputTokens: 100,
+  cachedTokens: 0,
+  accuracy: 'estimated',
+  timestamp: 2
+}
+s = appReducer(s, { type: 'reportUsage', id: secondWs, report: exactUsage })
+s = appReducer(s, { type: 'reportUsage', id: secondWs, report: estimatedUsage })
+assert(active(s).usage.totals.inputTokens === 1400, 'usage reports accumulate per workspace')
+assert(active(s).usage.totals.outputTokens === 350, 'output usage accumulates')
+assert(active(s).usage.totals.cachedTokens === 600, 'cached usage accumulates')
+assert(active(s).usage.totals.costUsd === 0.04, 'known cost accumulates')
+assert(active(s).usage.totals.hasEstimated, 'cumulative usage remembers estimates')
+assert(active(s).usage.latest?.timestamp === 2, 'latest usage report is retained')
 
 // attention on the FIRST (inactive) workspace
 s = appReducer(s, { type: 'setAttention', id: firstWs, unread: true, attention: true })
@@ -67,7 +96,10 @@ assert(!active(s).attention && !active(s).unread, 'selecting clears unread + att
 const firstPaneId = active(s).activePaneId
 s = appReducer(s, paneAction(firstWs, splitAction(firstPaneId, 'row')))
 assert(listSurfaceIds(active(s).root).length === 2, 'active workspace now has 2 terminals')
-assert(listSurfaceIds(s.workspaces.find((w) => w.id === secondWs)!.root).length === 1, 'other workspace untouched')
+assert(
+  listSurfaceIds(s.workspaces.find((w) => w.id === secondWs)!.root).length === 1,
+  'other workspace untouched'
+)
 
 // setStatus
 s = appReducer(s, { type: 'setStatus', id: firstWs, status: 'Claude is waiting for your input' })
@@ -103,10 +135,15 @@ const restored = sanitizeRestored(JSON.parse(JSON.stringify(snapshot)))
 assert(restored !== null, 'sanitizeRestored accepts a valid snapshot')
 assert(restored!.workspaces.length === 1, 'restored workspace count matches')
 assert(restored!.workspaces[0].unread === false, 'transient flags are reset on restore')
+assert(restored!.workspaces[0].usage.totals.reportCount === 0, 'usage is reset on restore')
+assert(restored!.workspaces[0].usage.latest === null, 'latest usage is reset on restore')
 assert(sanitizeRestored(null) === null, 'sanitizeRestored(null) → null')
 assert(sanitizeRestored({}) === null, 'sanitizeRestored({}) → null (no workspaces)')
 assert(sanitizeRestored({ workspaces: [] }) === null, 'empty workspaces → null')
-assert(sanitizeRestored({ workspaces: [{ id: 'x' }] }) === null, 'workspace without a valid root → null')
+assert(
+  sanitizeRestored({ workspaces: [{ id: 'x' }] }) === null,
+  'workspace without a valid root → null'
+)
 
 // malformed layouts must fail CLOSED (null), not crash later (Copilot review, PR #4)
 assert(
@@ -121,7 +158,9 @@ assert(
 )
 assert(
   sanitizeRestored({
-    workspaces: [{ id: 'w', root: { type: 'pane', pane: { id: 'p', surfaces: [], activeSurfaceId: 's' } } }]
+    workspaces: [
+      { id: 'w', root: { type: 'pane', pane: { id: 'p', surfaces: [], activeSurfaceId: 's' } } }
+    ]
   }) === null,
   'pane with no surfaces → null'
 )
