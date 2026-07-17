@@ -4,12 +4,14 @@ A Linux desktop recreation of [cmux](https://cmux.com) — *the terminal built f
 multitasking with AI agents*. cmux is a native macOS app; this is an open-source
 Linux equivalent built on web technologies.
 
-Vertical named sidebar with live per-agent status, notification rings when an
-agent needs you, split terminal panes, and a socket API for automation.
+Vertical named sidebar with live project/branch context and per-agent status,
+notification rings when an agent needs you, split terminal panes, and a socket
+API for automation.
 
-> **Status: early development.** Milestones **M0–M5** are complete — real shells in
-> split panes, a workspace sidebar, OSC notifications, session restore, and the
-> unix-socket control API. **M6** (polish & packaging) is in progress. See
+> **Status: early development.** Core runtime milestones **M0–M5** and **M7–M11**
+> are complete — real shells, split panes, live workspace/Git context, automatic
+> agent discovery, session restore, and the Unix-socket API. **M6** (polish &
+> packaging) is in progress. See
 > `ROADMAP.md` for the plan and `learning/` for a running, plain-English log of
 > what each milestone built.
 

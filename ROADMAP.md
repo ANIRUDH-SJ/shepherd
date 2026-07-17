@@ -32,6 +32,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M8** — Git worktree workspace creation and cwd propagation ✓
 - [x] **M9** — Filtered live agent subscriptions ✓
 - [x] **M10** — Automatic terminal-agent discovery with no provider setup ✓
+- [x] **M11** — Live workspace project and Git branch metadata ✓
 
 ---
 
@@ -227,6 +228,23 @@ configuration edits, or manual lifecycle reports.*
 - [x] Cover classification, precedence, deduplication, rediscovery, and cleanup
 - [x] Prove detection and cleanup against a live isolated Electron app
 - [x] Add the implementation walkthrough and architecture textbook chapter
+
+## M11 — Live workspace project and Git branch
+*Goal: replace the static cwd placeholder with project and branch context that
+tracks the active terminal after `cd`, `git switch`, or `git checkout`.*
+
+- [x] Mirror the active terminal surface for every workspace
+- [x] Read the interactive shell cwd from bounded Linux `/proc` state
+- [x] Resolve Git worktree root and absolute Git directory without shell interpolation
+- [x] Cache Git location and observe branch changes cheaply through `HEAD`
+- [x] Re-probe bounded non-Git locations so `git init` is discovered
+- [x] Reject late metadata from a previously active pane or tab
+- [x] Persist the last active cwd while deriving fresh project/branch data on restore
+- [x] Propagate restored/worktree cwd through TerminalHost into node-pty
+- [x] Render separate accessible project and branch rows in the sidebar
+- [x] Cover helpers, Git parsing, cache behavior, reducer ownership, and cwd changes
+- [x] Verify real `cd` and `git switch` transitions in an isolated Electron window
+- [x] Add implementation learning notes and the full architecture chapter
 
 ---
 
