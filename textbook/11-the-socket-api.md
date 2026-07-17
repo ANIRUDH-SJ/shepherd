@@ -437,6 +437,7 @@ Read this as the "API reference" for the socket. Each row is one key in the
 | Method | Params | Returns | CLI |
 |---|---|---|---|
 | `workspace.create` | `{name, cwd?}` | `{id, name}` | `cmux new-workspace` |
+| `new-worktree` | absolute repo/path plus existing or new branch | worktree metadata; opens workspace | `cmux new-worktree ...` |
 | `workspace.list` | `{}` | `{workspaces: [...]}` | `cmux list-workspaces --json` |
 | `workspace.select` | `{workspaceId}` | `{ok}` | `cmux select-workspace --workspace <id>` |
 | `workspace.current` | `{}` | `{workspaceId, name}` | `cmux current-workspace` |
@@ -717,25 +718,61 @@ client is subject to the exact same byte-stream physics.
 
 ### How an agent invokes it
 
-Claude Code (and similar agents) support **hooks** — shell commands the agent runs
-at lifecycle moments. `cmux hooks setup` installs a `Notification` hook that is
-literally:
+Agents can call the public CLI directly, and supported providers can publish
+structured lifecycle events through installed hooks/plugins:
 
-```jsonc
-// ~/.claude/settings.json (installed by `cmux hooks setup`)
-{
-  "hooks": {
-    "Notification": [
-      { "hooks": [{ "type": "command", "command": "cmux notify --title Claude --body \"$CLAUDE_NOTIFICATION\"" }] }
-    ]
-  }
-}
+```bash
+cmux integrations setup codex
+cmux integrations setup claude
+cmux integrations setup opencode
+cmux integrations setup all
 ```
 
-So when Claude finishes and wants your attention, the *agent* shells out to
-`cmux notify …`, which connects to our socket, which lights up the sidebar. **No
-polling, no shared files** — a push, straight through the front door. That's Loop C,
-now fully concrete.
+Codex and Claude Code configurations receive guarded command hooks of this form:
+
+```sh
+command -v cmux >/dev/null 2>&1 && cmux agent-hook <provider>
+```
+
+The provider sends event JSON on stdin. The internal `agent-hook` command maps a
+tool call, permission request, completion, failure, or session event into
+`agent-report` / `agent-clear`, then uses this chapter's socket exactly like any
+other client. OpenCode uses a managed plugin to call the same CLI contract.
+
+Manual `cmux notify …` and `cmux set-status …` commands still use the original
+explicit notification/status path. `cmux hooks setup` remains a compatibility
+alias for Claude Code lifecycle setup.
+
+Current agent queries use the same request/reply framing:
+
+| Method           | Important params                                       | Returns                                                    |
+| ---------------- | ------------------------------------------------------ | ---------------------------------------------------------- |
+| `list-agents`    | workspace plus provider/state/detail/exact filters     | bounded records, match count, truncation flag, and summary |
+| `agent-snapshot` | the same filters, `updatedAfter`, and `limit`           | versioned workspace and current-agent bootstrap            |
+| `focus-agent`    | `agentId`                                              | `{ok: true}` after routing exact terminal focus            |
+| `inspect-agent`  | `agentId`, bounded `lines` and `maxBytes`               | agent plus terminal/process context and plain output tail  |
+| `wait-agent`     | `agentId`, semantic state list, and bounded timeout     | matching current record or timeout error                   |
+| `agent-schema`   | none                                                   | versioned JSON Schema for the semantic-agent wire contract |
+| `agent-capabilities` | optional provider                                  | supported methods, features, limits, and adapter behavior  |
+
+Query limits default to 200 and cannot exceed 1,000. `matched` counts the full
+filtered set while `agents` is the newest bounded subset, so clients can detect
+truncation without receiving an unbounded response. See Chapter 19 for the full
+query model and lifecycle semantics.
+
+`agent-capabilities` describes support compiled into the running app; it does not
+claim that provider configuration has been installed for the current user. That
+separation keeps protocol discovery read-only and deterministic.
+
+`inspect-agent` is intentionally not a general arbitrary-surface read. The
+server first resolves an existing agent and follows its verified surface binding.
+Its output tail is opt-in, ANSI/control-stripped, and bounded independently by
+line and byte limits; Chapter 19 covers the security and fidelity tradeoffs.
+
+There is still **no polling and no shared state file** in the reporting path. A
+provider event is pushed through the socket and then reduced into UI state. Read
+Chapter 19 for the semantic state model, identity, ordering, focus/wait controls,
+and provider-specific setup.
 
 > **🔧 In cmux-linux:** the `cmux` binary is shipped inside the app and placed on the
 > user's `PATH` (or the hook uses its absolute path). Because it reads
@@ -990,6 +1027,12 @@ should never take down the door for everyone.
 invocation is request→reply→done. The server writes the reply and keeps the socket
 open; the *client* calls `socket.end()` after reading. Don't have the server slam the
 connection shut before the reply flushes.
+
+**7. Subscriptions keep framing and add backpressure.** `subscribe-agents` replies
+with a snapshot and then keeps the connection open for `agent-update` frames. The
+client must continue its buffer-and-split loop. The server caps subscribers and
+disconnects a slow reader rather than allowing queued output to grow without bound.
+See chapter 21 for the snapshot-plus-delta design.
 
 ---
 

@@ -28,6 +28,8 @@ frontend", IPC = "the API calls between them".
 - [x] **M4** — Agent integration & session persistence ✓
 - [x] **M5** — Socket API & automation (a real cmux feature) ✓
 - [ ] **M6** — Polish, theming & packaging/distribution
+- [x] **M7** — Semantic agent runtime, sidebar, control API, and provider integrations ✓
+- [x] **M8** — Git worktree workspace creation and cwd propagation ✓
 
 ---
 
@@ -153,6 +155,61 @@ mirroring cmux's method surface. Easier in Node than cmux's Swift version.*
 - [ ] (Optional) GitHub Actions CI: lint + build on push
 - [ ] Tag a `v0.1.0` release
 
+## M7 — Semantic agent runtime
+*Goal: show provider-neutral live agent state, make it actionable, and connect
+documented provider lifecycle events without scraping terminal prose.*
+
+- [x] Define semantic states (`working`, `blocked`, `done`, `idle`, `unknown`)
+      separately from working activity and blocked reason
+- [x] Validate identity, ownership, source, sequencing, display text, stale
+      policy, and TTL at the Unix-socket boundary
+- [x] Bind every report to an existing workspace, pane, and terminal surface
+- [x] Derive workspace unread/attention state and clean records on expiry, pane
+      close, workspace close, terminal exit, explicit clear, and session restore
+- [x] Add `agent-report`, `agent-clear`, `list-agents`, `focus-agent`, and
+      `wait-agent` socket/CLI methods
+- [x] Add validated multi-field agent queries, bounded summaries, and a versioned
+      reconnect snapshot
+- [x] Publish a versioned machine-readable agent schema and build capability
+      discovery with shared runtime limits
+- [x] Add agent-scoped terminal inspection with capped capture, bounded plain-text
+      output, dimensions, cwd, and safe Linux foreground-process identity
+- [x] Add a keyboard-accessible Agents section with urgent-first ordering,
+      reduced-motion support, and exact terminal focus
+- [x] Add workspace agent-state rollups, elapsed observation labels, and a
+      stale-to-unknown lifecycle transition before final expiry
+- [x] Add idempotent lifecycle setup for Codex and Claude Code plus a managed
+      OpenCode plugin, preserving existing user configuration
+- [x] Bound Codex stale state with lifecycle-aware expiry, sequence OpenCode
+      reports, and degrade unsupported events without retaining their payloads
+- [x] Cover the contract, reducer, view, wait logic, socket, CLI, event mapping,
+      and installers with regression tests
+- [x] Add the implementation walkthrough and full architecture chapter
+
+## M8 — Git worktree workspaces
+*Goal: create or attach an isolated Git branch directory and open it as a normal
+workspace without shell interpolation or hidden cleanup.*
+
+- [x] Validate absolute repository/target paths and exactly one branch mode
+- [x] Support new branches with optional start point and existing branches
+- [x] Run bounded Git argv processes in Electron main without a shell
+- [x] Create the renderer workspace only after Git succeeds
+- [x] Propagate canonical worktree cwd into the first node-pty shell
+- [x] Cover real temporary repositories, reducer cwd, socket validation, and CLI flags
+- [x] Add implementation learning notes and the architecture textbook chapter
+
+## M9 — Live agent subscriptions
+*Goal: let automation observe filtered semantic state without polling or scraping.*
+
+- [x] Reuse validated agent queries for long-lived subscriptions
+- [x] Start every stream with a versioned sequence-zero snapshot
+- [x] Emit ordered upserts, removal tombstones, and replacement summaries
+- [x] Bound subscriber count and disconnect slow consumers
+- [x] Clean subscriptions on connection close and server shutdown
+- [x] Add `watch-agents` CLI streaming with correct NDJSON framing
+- [x] Publish the subscription envelope in schema/capability discovery
+- [x] Add socket, protocol, CLI, learning, and architecture coverage
+
 ---
 
 ## Stretch / later (post-v1)
@@ -161,7 +218,7 @@ mirroring cmux's method surface. Easier in Node than cmux's Swift version.*
 - [ ] PR status/number + listening ports per workspace (git branch lands in v1)
 - [ ] In-app browser panels + browser automation API (`Panel='browser'`)
 - [ ] Remote SSH workspaces + localhost routing; Claude Code Teams mode
-- [ ] Worktree-per-workspace workflow (our value-add; cmux only shows the branch)
+- [ ] Worktree cleanup and diff/review UI (creation workflow landed in M8)
 - [ ] Cross-platform builds (Windows/Mac) — Electron makes this nearly free
 - [ ] Investigate libghostty embedding once its C API stabilizes (most authentic
       renderer — currently too unstable to depend on)
@@ -176,5 +233,6 @@ mirroring cmux's method surface. Easier in Node than cmux's Swift version.*
 - Chose **Electron over libghostty embed**: libghostty is the renderer cmux
   itself uses, but its embedding C API is still unstable and it's Zig — wrong
   effort-to-payoff for now. Revisit at Level 3.
-- The **state-dir + file-watch** pattern (M3/M4) is the backbone that makes
-  agent statuses appear in the sidebar — design it early, everything hangs off it.
+- The **Unix socket + renderer reducer** is the backbone for live agent state.
+  Provider hooks/plugins publish structured lifecycle reports; a watched state
+  directory is not required for the implemented runtime.

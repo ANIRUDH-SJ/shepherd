@@ -20,6 +20,7 @@ const valid = normalizeAgentReport(
     displayName: ' Codex\nResearch ',
     message: '  researching\tthe API  ',
     revision: '4',
+    staleAfterMs: '2000',
     ttlMs: '5000'
   },
   1000
@@ -31,6 +32,7 @@ if (valid.ok) {
   assert(valid.report.displayName === 'Codex Research', 'normalizes control characters in labels')
   assert(valid.report.message === 'researching the API', 'collapses display whitespace')
   assert(valid.report.revision === 4, 'normalizes a numeric revision')
+  assert(valid.report.staleAt === 3000, 'calculates stale time from ingestion time')
   assert(valid.report.expiresAt === 6000, 'calculates expiry from ingestion time')
 }
 
@@ -82,6 +84,18 @@ assert(
     ttlMs: 0
   }).ok,
   'rejects invalid expiry windows'
+)
+assert(
+  !normalizeAgentReport({
+    provider: 'codex',
+    state: 'working',
+    workspaceId: 'ws',
+    surfaceId: 'term',
+    source: 'codex',
+    staleAfterMs: 1000,
+    ttlMs: 1000
+  }).ok,
+  'requires stale transition before expiry'
 )
 
 const approval: Pick<AgentReport, 'state' | 'blockReason'> = {

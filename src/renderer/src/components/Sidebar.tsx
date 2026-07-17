@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type Dispatch } from 'react'
 import type { AgentRecord } from '../../../shared/agent'
+import { agentRollupLabel } from '../agentView'
 import { type AppAction, createWorkspaceAction, type Workspace } from '../state/appReducer'
 import { usageDetails, usageSummary } from '../usageView'
 import AgentList from './AgentList'
@@ -91,6 +92,9 @@ export default function Sidebar({
           const displayName = w.name || `workspace ${i + 1}`
           const editing = editingId === w.id
           const summary = usageSummary(w.usage)
+          const agentSummary = agentRollupLabel(
+            agents.filter((agent) => agent.workspaceId === w.id)
+          )
           return (
             <div
               key={w.id}
@@ -100,7 +104,7 @@ export default function Sidebar({
               }}
               role="button"
               tabIndex={0}
-              aria-label={`${displayName}${w.id === activeWorkspaceId ? ', active workspace' : ''}`}
+              aria-label={`${displayName}${w.id === activeWorkspaceId ? ', active workspace' : ''}${agentSummary ? `, ${agentSummary}` : ''}`}
               className={
                 'ws-row' +
                 (w.id === activeWorkspaceId ? ' active' : '') +
@@ -214,6 +218,11 @@ export default function Sidebar({
                   </span>
                 )}
               </div>
+              {agentSummary && (
+                <div className="ws-agent-rollup" title={`Agents: ${agentSummary}`}>
+                  {agentSummary}
+                </div>
+              )}
             </div>
           )
         })}

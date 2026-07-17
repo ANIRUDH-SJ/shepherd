@@ -1,4 +1,7 @@
 import { AGENT_STATES, type AgentRecord, type AgentState } from '../shared/agent'
+import { DEFAULT_AGENT_WAIT_TIMEOUT_MS, MAX_AGENT_WAIT_TIMEOUT_MS } from '../shared/agentLimits'
+
+export { DEFAULT_AGENT_WAIT_TIMEOUT_MS, MAX_AGENT_WAIT_TIMEOUT_MS } from '../shared/agentLimits'
 
 export interface AgentWaitOptions {
   agentId: string
@@ -10,9 +13,6 @@ export type AgentWaitValidation =
   { ok: true; options: AgentWaitOptions } | { ok: false; error: string }
 
 export type AgentWaitResult = { ok: true; agent: AgentRecord } | { ok: false; error: string }
-
-const DEFAULT_TIMEOUT_MS = 30_000
-const MAX_TIMEOUT_MS = 300_000
 
 export function normalizeAgentWait(params: Record<string, unknown>): AgentWaitValidation {
   const agentId = typeof params.agentId === 'string' ? params.agentId.trim() : ''
@@ -31,15 +31,18 @@ export function normalizeAgentWait(params: Record<string, unknown>): AgentWaitVa
     return { ok: false, error: `state must be one of: ${AGENT_STATES.join(', ')}` }
   }
 
-  const timeoutValue = params.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  const timeoutValue = params.timeoutMs ?? DEFAULT_AGENT_WAIT_TIMEOUT_MS
   const timeoutMs = typeof timeoutValue === 'string' ? Number(timeoutValue) : timeoutValue
   if (
     typeof timeoutMs !== 'number' ||
     !Number.isInteger(timeoutMs) ||
     timeoutMs < 1 ||
-    timeoutMs > MAX_TIMEOUT_MS
+    timeoutMs > MAX_AGENT_WAIT_TIMEOUT_MS
   ) {
-    return { ok: false, error: `timeoutMs must be an integer from 1 to ${MAX_TIMEOUT_MS}` }
+    return {
+      ok: false,
+      error: `timeoutMs must be an integer from 1 to ${MAX_AGENT_WAIT_TIMEOUT_MS}`
+    }
   }
 
   return { ok: true, options: { agentId, states: [...new Set(requested)], timeoutMs } }

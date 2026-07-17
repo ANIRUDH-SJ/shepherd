@@ -1,5 +1,11 @@
 import type { AgentRecord } from '../../shared/agent'
-import { agentAriaLabel, agentStatusLabel, sortAgentsForSidebar } from './agentView'
+import {
+  agentAriaLabel,
+  agentRollupLabel,
+  agentStatusLabel,
+  formatAgentElapsed,
+  sortAgentsForSidebar
+} from './agentView'
 
 let failures = 0
 function assert(condition: boolean, message: string): void {
@@ -61,9 +67,27 @@ const ariaAgent = agent('Codex', 'blocked', 1, {
   message: 'Choose an option'
 })
 assert(
-  agentAriaLabel(ariaAgent, 'cmux-linux').includes('waiting input, cmux-linux, Choose an option'),
+  agentAriaLabel(ariaAgent, 'cmux-linux', 61_001).includes(
+    'waiting input, cmux-linux, Choose an option, updated 1m ago'
+  ),
   'accessible label includes state, workspace, and detail'
 )
+
+assert(formatAgentElapsed(10_000, 12_000) === 'now', 'formats a fresh report as now')
+assert(formatAgentElapsed(10_000, 27_000) === '15s', 'buckets recent reports by five seconds')
+assert(formatAgentElapsed(10_000, 130_000) === '2m', 'formats elapsed minutes')
+assert(formatAgentElapsed(10_000, 7_210_000) === '2h', 'formats elapsed hours')
+assert(formatAgentElapsed(10_000, 172_810_000) === '2d', 'formats elapsed days')
+
+const rollup = agentRollupLabel([
+  agent('blocked-1', 'blocked', 1),
+  agent('blocked-2', 'blocked', 1),
+  agent('working-1', 'working', 1),
+  agent('done-1', 'done', 1),
+  agent('idle-1', 'idle', 1)
+])
+assert(rollup === '2 blocked · 1 working · +2', 'summarizes urgent states and hidden agents')
+assert(agentRollupLabel([]) === undefined, 'omits an empty workspace rollup')
 
 if (failures > 0) throw new Error(`${failures} agent view test(s) failed`)
 console.log('\n✅ ALL AGENT VIEW TESTS PASS')

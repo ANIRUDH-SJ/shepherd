@@ -57,6 +57,11 @@ assert(
     normalizedCreate.workspace.name === 'named workspace',
   'workspace creation uses the same normalization rule'
 )
+const cwdCreate = createWorkspaceAction('worktree', '/tmp/project-worktree')
+assert(
+  cwdCreate.type === 'createWorkspace' && cwdCreate.workspace.cwd === '/tmp/project-worktree',
+  'workspace creation preserves an explicit worktree cwd'
+)
 
 const exactUsage: UsageReport = {
   inputTokens: 1000,
@@ -200,6 +205,29 @@ assert(agentsState.agents.length === 1, 'agent remains before expiry')
 agentsState = appReducer(agentsState, { type: 'expireAgents', now: 50 })
 assert(agentsState.agents.length === 0, 'agent is removed at expiry')
 
+agentsState = appReducer(agentsState, {
+  type: 'reportAgent',
+  report: {
+    ...blockedReport,
+    revision: 4,
+    updatedAt: 50,
+    staleAt: 60,
+    expiresAt: 100
+  }
+})
+agentsState = appReducer(agentsState, { type: 'expireAgents', now: 59 })
+assert(agentsState.agents[0].state === 'blocked', 'agent remains authoritative before stale time')
+agentsState = appReducer(agentsState, { type: 'expireAgents', now: 60 })
+assert(agentsState.agents[0].state === 'unknown', 'stale agent transitions to unknown')
+assert(agentsState.agents[0].revision === 4, 'stale transition preserves producer sequence')
+assert(agentsState.agents[0].blockReason === undefined, 'stale state drops obsolete block reason')
+assert(
+  !agentsState.workspaces.find((w) => w.id === agentWorkspace.id)!.agentAttention,
+  'stale blocked state no longer requests attention'
+)
+agentsState = appReducer(agentsState, { type: 'expireAgents', now: 100 })
+assert(agentsState.agents.length === 0, 'stale agent is removed at expiry')
+
 agentsState = appReducer(
   agentsState,
   paneAction(agentWorkspace.id, splitAction(focusedAgentWorkspace.activePaneId, 'row'))
@@ -246,6 +274,37 @@ agentsState = appReducer(agentsState, {
 })
 agentsState = appReducer(agentsState, { type: 'closeWorkspace', id: otherWorkspaceId })
 assert(agentsState.agents.length === 0, 'closing a workspace removes its agents')
+
+let exitedSurfaceState = initialApp()
+const exitedWorkspace = exitedSurfaceState.workspaces[0]
+const exitedSurfaceId = listSurfaceIds(exitedWorkspace.root)[0]
+for (const [agentId, provider] of [
+  ['codex:exited', 'codex'],
+  ['claude:exited', 'claude']
+] as const) {
+  exitedSurfaceState = appReducer(exitedSurfaceState, {
+    type: 'reportAgent',
+    report: {
+      ...blockedReport,
+      agentId,
+      provider,
+      displayName: provider,
+      workspaceId: exitedWorkspace.id,
+      surfaceId: exitedSurfaceId,
+      source: `${provider}:hooks`
+    }
+  })
+}
+assert(exitedSurfaceState.agents.length === 2, 'multiple agents can bind to one live surface')
+exitedSurfaceState = appReducer(exitedSurfaceState, {
+  type: 'clearAgentsForSurface',
+  surfaceId: exitedSurfaceId
+})
+assert(exitedSurfaceState.agents.length === 0, 'terminal exit clears every surface agent')
+assert(
+  !exitedSurfaceState.workspaces[0].agentAttention,
+  'terminal exit recalculates workspace attention'
+)
 
 // session restore: sanitizeRestored validates a snapshot and resets transients
 const snapshot = initialApp()
