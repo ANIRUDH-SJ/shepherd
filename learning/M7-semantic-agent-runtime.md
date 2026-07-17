@@ -183,9 +183,9 @@ The reducer removes agents when:
 Lifecycle state is intentionally ephemeral. The saved session still contains
 layout and cwd, not claims about processes that may no longer exist.
 
-## 6. `agentQuery.ts`, `socket.ts`, and `agentWait.ts` — external control
+## 6. Protocol, query, socket, and wait modules — external control
 
-The socket advertises six lifecycle methods.
+The socket advertises eight lifecycle methods.
 
 | Method           | Purpose                                                          |
 | ---------------- | ---------------------------------------------------------------- |
@@ -195,6 +195,8 @@ The socket advertises six lifecycle methods.
 | `agent-snapshot` | return a versioned workspace/agent snapshot for reconnecting     |
 | `focus-agent`    | ask the renderer to select an agent's exact terminal             |
 | `wait-agent`     | wait until an agent reaches one of the requested semantic states |
+| `agent-schema`   | return the machine-readable versioned wire contract              |
+| `agent-capabilities` | discover semantic, feature, limit, and adapter support       |
 
 Main keeps a read-only mirror of renderer workspace names, the active workspace,
 and current agents. This mirror lets external commands resolve targets and answer
@@ -215,6 +217,22 @@ counts actionable blocks, even when only the newest subset is returned.
 `agent-snapshot` uses the same query path and adds schema version, generation
 time, active workspace id, and workspace identities. It is a current reconnect
 snapshot, not persisted history.
+
+`src/shared/agentProtocol.ts` publishes a JSON Schema Draft 2020-12 document for
+all eight methods. It describes newline-delimited socket envelopes, canonical
+params and results, enum values, conditional state/detail rules, record and
+summary shapes, and numeric bounds. Numeric inputs include both integers and
+digit strings because the plain CLI really sends flag values as strings.
+
+`agentProtocolCapabilities()` reports what this application build supports:
+method names, semantics, lifecycle/query/wait limits, feature flags, and shipped
+adapter behavior. An optional provider narrows the adapter list. It deliberately
+does not claim that a hook is installed in the user's home directory; build
+support and local installation state are different facts.
+
+`src/shared/agentLimits.ts` is the single source for lifecycle, query, and wait
+bounds. Validation and discovery import those constants, preventing the schema
+from advertising numbers that runtime code no longer accepts.
 
 `normalizeAgentWait()` requires a stable agent id, one or more semantic states,
 and a timeout between 1 ms and 300 seconds. `waitForAgent()` polls the in-memory
@@ -237,6 +255,8 @@ cmux agent-report --provider codex --state working \
 
 cmux list-agents --provider codex,claude --state blocked,done --limit 50
 cmux agent-snapshot --updated-after 1784271000000
+cmux agent-schema
+cmux agent-capabilities codex
 cmux focus-agent codex:hooks:term-1
 cmux wait-agent codex:hooks:term-1 --state blocked,done --timeout-ms 30000
 cmux agent-clear codex:hooks:term-1 --source codex:hooks
@@ -385,6 +405,8 @@ The feature adds coverage at every meaningful boundary:
   combinations, stale/TTL ordering, sequencing inputs, and attention semantics.
 - `src/shared/agentQuery.test.ts`: enum/exact filters, cursor and limit bounds,
   newest-first selection, truncation metadata, and summaries.
+- `src/shared/agentProtocol.test.ts`: schema version, method/enum/ownership fields,
+  CLI numeric shapes, feature discovery, and provider filtering.
 - `src/renderer/src/state/appReducer.test.ts`: binding, stale-event rejection,
   unread/attention, exact focus, stale-to-unknown transition, expiry,
   terminal-exit cleanup, pane cleanup, workspace cleanup, and restore behavior.
@@ -429,3 +451,4 @@ an isolated install smoke test for all three provider integrations.
 7. What happens between clicking an agent row and xterm receiving keyboard focus?
 8. Why do global provider hooks silently do nothing outside a cmux-linux pane?
 9. Why does a limited query summarize all matches instead of only returned rows?
+10. Why must capability discovery distinguish build support from local install state?

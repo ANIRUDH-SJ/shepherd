@@ -169,6 +169,8 @@ documented provider lifecycle events without scraping terminal prose.*
       `wait-agent` socket/CLI methods
 - [x] Add validated multi-field agent queries, bounded summaries, and a versioned
       reconnect snapshot
+- [x] Publish a versioned machine-readable agent schema and build capability
+      discovery with shared runtime limits
 - [x] Add a keyboard-accessible Agents section with urgent-first ordering,
       reduced-motion support, and exact terminal focus
 - [x] Add workspace agent-state rollups, elapsed observation labels, and a
