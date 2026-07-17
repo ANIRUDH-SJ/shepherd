@@ -27,6 +27,7 @@ code as we write it.
 | **M4**    | `M4-agents-and-persistence.md` | OSC auto-notifications, `cmux hooks setup`, and session restore (+ the review hardening)             |
 | **M5**    | `M5-socket-control.md`         | Full socket control API: workspace + surface control + queries, and the review hardening             |
 | **M6**    | `M6-usage-telemetry.md`        | Agent-reported token usage: validation, socket/CLI flow, reducer aggregation, sidebar UI, and tests  |
+| **M7**    | `M7-semantic-agent-runtime.md` | Semantic lifecycle state: contract, socket controls, reducer ownership, sidebar, focus, and adapters |
 
 ## How to read a milestone file
 

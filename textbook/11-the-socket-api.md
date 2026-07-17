@@ -717,25 +717,35 @@ client is subject to the exact same byte-stream physics.
 
 ### How an agent invokes it
 
-Claude Code (and similar agents) support **hooks** — shell commands the agent runs
-at lifecycle moments. `cmux hooks setup` installs a `Notification` hook that is
-literally:
+Agents can call the public CLI directly, and supported providers can publish
+structured lifecycle events through installed hooks/plugins:
 
-```jsonc
-// ~/.claude/settings.json (installed by `cmux hooks setup`)
-{
-  "hooks": {
-    "Notification": [
-      { "hooks": [{ "type": "command", "command": "cmux notify --title Claude --body \"$CLAUDE_NOTIFICATION\"" }] }
-    ]
-  }
-}
+```bash
+cmux integrations setup codex
+cmux integrations setup claude
+cmux integrations setup opencode
+cmux integrations setup all
 ```
 
-So when Claude finishes and wants your attention, the *agent* shells out to
-`cmux notify …`, which connects to our socket, which lights up the sidebar. **No
-polling, no shared files** — a push, straight through the front door. That's Loop C,
-now fully concrete.
+Codex and Claude Code configurations receive guarded command hooks of this form:
+
+```sh
+command -v cmux >/dev/null 2>&1 && cmux agent-hook <provider>
+```
+
+The provider sends event JSON on stdin. The internal `agent-hook` command maps a
+tool call, permission request, completion, failure, or session event into
+`agent-report` / `agent-clear`, then uses this chapter's socket exactly like any
+other client. OpenCode uses a managed plugin to call the same CLI contract.
+
+Manual `cmux notify …` and `cmux set-status …` commands still use the original
+explicit notification/status path. `cmux hooks setup` remains a compatibility
+alias for Claude Code lifecycle setup.
+
+There is still **no polling and no shared state file** in the reporting path. A
+provider event is pushed through the socket and then reduced into UI state. Read
+Chapter 19 for the semantic state model, identity, ordering, focus/wait controls,
+and provider-specific setup.
 
 > **🔧 In cmux-linux:** the `cmux` binary is shipped inside the app and placed on the
 > user's `PATH` (or the hook uses its absolute path). Because it reads

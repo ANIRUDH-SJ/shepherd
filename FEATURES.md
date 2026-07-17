@@ -133,7 +133,7 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | 7 | **Socket API + `cmux` CLI** | `net` server in main + tiny Node CLI client (Part 2) | 🟢 |
 | 8 | **Sidebar status API** (`set-status`, `set-progress`, `log`) | socket methods → workspace metadata → React status pills / progress bar | 🟢 (status/notify) · 🟡 (pills+progress polish) |
 | 9 | **OSC 9/99/777 detection** (auto notifications from terminal output) | scan pty output stream in main for these escape codes → fire notification | 🟢 |
-| 10 | **Agent hook wiring** (Claude Code etc. → notifications) | `cmux hooks setup` writes a Claude Code `Notification` hook that calls our CLI | 🟢 |
+| 10 | **Semantic agent runtime + integrations** | validated provider-neutral lifecycle state, Agents sidebar, exact focus/wait controls, Codex/Claude Code hooks, and a managed OpenCode plugin | 🟢 |
 | 11 | **Session restoration** (layout, cwd, workspaces) | serialize the Window store to JSON on change; restore + re-spawn shells on launch | 🟢 (layout+cwd) · 🟡 (scrollback) |
 | 12 | **Git branch in sidebar** | main runs `git branch --show-current` in each workspace cwd (read-only) | 🟢 |
 | 13 | **Keyboard shortcuts** (new/close/split/focus/nav) | a React keymap; mirror cmux's bindings (⌘→Ctrl/Super on Linux) | 🟢 |
@@ -165,8 +165,11 @@ channels** that both end in the same visual state:
 1. **Automatic** — cmux watches terminal output for **OSC 9 / 99 / 777** escape
    sequences (the standard "desktop notification" terminal codes). Any program
    (or agent) that emits one triggers a notification with no setup.
-2. **Explicit** — the `cmux notify` / `set-status` / `log` CLI, wired into agent
-   hooks (`cmux hooks setup` installs a Claude Code `Notification` hook).
+2. **Explicit** — the `cmux notify` / `set-status` / `log` CLI. The compatibility
+   command `cmux hooks setup` installs the Claude Code integration.
+3. **Structured lifecycle** — provider hooks/plugins call `agent-report` with a
+   semantic state plus optional activity or blocked reason. This feeds the Agents
+   section and exact terminal navigation without parsing terminal prose.
 
 **Visual result (what we replicate):**
 - The pane gets a **ring**; the workspace row in the sidebar **lights up / flashes**;
@@ -184,6 +187,17 @@ channels** that both end in the same visual state:
                                       ├─► update Workspace metadata + unread/attention
                                       ├─► webContents.send → React (ring + flash + badge)
                                       └─► OS desktop notification (Electron Notification API)
+```
+
+The semantic lifecycle path is separate but shares the same transport:
+
+```text
+provider hook/plugin
+  → cmux agent-report
+  → main validates + resolves workspace
+  → renderer binds the real pane/surface
+  → agent list + derived unread/attention
+  → click or focus-agent selects the exact terminal
 ```
 
 ---
@@ -221,12 +235,12 @@ which is 90% of why the screenshot looks the way it does.
 
 ## v1 definition of done (the "it feels like cmux" bar)
 
-- [ ] Left sidebar of workspaces: name + live status subtitle + active highlight
-- [ ] Notification ring/flash + unread badge, from BOTH OSC parse and `cmux notify`
-- [ ] Real terminals (node-pty + xterm.js/WebGL), split into panes, tabs (surfaces) per pane
-- [ ] Socket API + `cmux` CLI driving workspaces/status/notifications
-- [ ] Claude Code hook wired so a real agent lights up the sidebar
-- [ ] Layout + cwd restored on relaunch
+- [x] Left sidebar of workspaces: name + live status subtitle + active highlight
+- [x] Notification ring/flash + unread badge, from BOTH OSC parse and `cmux notify`
+- [x] Real terminals (node-pty + xterm.js/WebGL), split into panes, tabs (surfaces) per pane
+- [x] Socket API + `cmux` CLI driving workspaces/status/notifications
+- [x] Semantic Agents section driven by Codex, Claude Code, OpenCode, or custom reporters
+- [x] Layout + cwd restored on relaunch
 - [ ] Git branch shown per workspace; dark theme matching cmux
 
 ---

@@ -96,62 +96,54 @@ runs it, and the command prints its result. Now the **output** flows back:
 
 ---
 
-## 17.3 Journey 2 — an agent finishes and the sidebar lights up
+## 17.3 Journey 2 — an agent needs approval and its terminal comes to you
 
-This is the journey that makes cmux *cmux*. Claude Code has been running in one of
-your panes. It finishes its work and now needs your approval.
+This is the structured lifecycle journey. Claude Code is running in one pane and
+reaches a permission request.
 
-```
- STEP 1  Claude Code's "Notification" hook runs a command:
-            cmux notify --title "Claude" --body "waiting for your input"
-         (the hook was installed earlier by `cmux hooks setup`, ch 11/12)
+```text
+ STEP 1  Claude Code emits a PermissionRequest lifecycle event as JSON.
+         A hook installed by `cmux integrations setup claude` runs:
+           command -v cmux >/dev/null 2>&1 && cmux agent-hook claude
 
- STEP 2  That command runs INSIDE the pane, so its env already has
-            CMUX_WORKSPACE_ID  and  CMUX_SOCKET_PATH   (injected by node-pty, ch 6)
+ STEP 2  The hook runs inside the pane, so its environment has:
+           CMUX_WORKSPACE_ID, CMUX_SURFACE_ID, CMUX_SOCKET_PATH
 
- STEP 3  The tiny `cmux` CLI (ch 11) connects to the unix socket
-            /tmp/cmux-linux.sock  and writes one newline-terminated JSON line:
-            {"id":7,"method":"notification.create",
-             "params":{"workspace":"<CMUX_WORKSPACE_ID>",
-                       "title":"Claude","body":"waiting for your input"}}
-```
+ STEP 3  bin/agent-events.js maps the provider event to:
+           state=blocked, blockReason=approval
 
-Now we're inside the MAIN process:
-
-```
- ┌───────────────────────────────── MAIN (Node.js) ──────────────────────────────┐
- │ STEP 4  net server gets a "data" event; it BUFFERS and splits on "\n"          │
- │         to get one complete JSON message  (message framing, ch 11)             │
- │ STEP 5  dispatch by method → notification.create handler                        │
- │ STEP 6  markWorkspaceAttention(wsId, payload):                                  │
- │           • workspace.unread   = true                                           │
- │           • workspace.attention = true                                          │
- │           • push the notification onto workspace.notifications  (ch 9 model)    │
- │ STEP 7  webContents.send("workspace:update", newWorkspaceState)   (ch 4 push)   │
- │ STEP 8  also fire an OS toast:  new Notification({title, body}).show()  (ch 12) │
- └───────────────────────────────────────┬────────────────────────────────────────┘
-                                          │  IPC push
-                                          ▼
- ┌───────────────────────────────── RENDERER (React) ────────────────────────────┐
- │ STEP 9  a useEffect subscription (window.api.onWorkspaceUpdate, ch 8) receives │
- │         the new state and updates the workspaces store                          │
- │ STEP 10 React re-renders the Sidebar:                                           │
- │           • that workspace's row gets the "attention" CSS class                 │
- │           • a CSS @keyframes ring/flash plays  (ch 12)                          │
- │           • an unread badge appears; the status subtitle shows "waiting…"       │
- │ STEP 11 you glance over, see the glowing row, click it → onSelect (ch 8)        │
- │           → the workspace's panes come to the foreground                        │
- └───────────────────────────────────────────────────────────────────────────────┘
+ STEP 4  The CLI sends one newline-terminated `agent-report` request to the
+         Unix socket, including the pane's workspace and surface identity.
 ```
 
-There's a second way STEP 1–3 can happen with **zero setup**: if the agent (or any
-program) simply emits an **OSC 9/99/777** escape sequence in its output, the OSC
-scanner from Journey 1 STEP 8 catches it (ch 12) and jumps straight to STEP 6 —
-same destination, no CLI, no hook. Two on-ramps, one highway.
+Now the report crosses main and renderer:
 
-> **🔧 In cmux-linux:** Journey 2 is milestones **M3** (the sidebar + minimal socket
-> server that receives STEP 4–7) and **M4** (wiring real agent hooks + OSC parsing).
-> This is "Loop C" from chapter 1, fully expanded.
+```text
+ ┌───────────────────────────────── MAIN (Node.js) ───────────────────────────┐
+ │ STEP 5  buffer socket bytes and split complete lines on "\n"                │
+ │ STEP 6  resolve the workspace using the renderer mirror                    │
+ │ STEP 7  validate provider/state/reason/source/ids; stamp local time         │
+ │ STEP 8  push a typed socket:command through the preload IPC bridge          │
+ └───────────────────────────────────────┬─────────────────────────────────────┘
+                                         │
+                                         ▼
+ ┌────────────────────────────── RENDERER (React) ────────────────────────────┐
+ │ STEP 9  appReducer proves the surface exists and derives its pane          │
+ │ STEP 10 upsert the AgentRecord and derive workspace unread/attention       │
+ │ STEP 11 AgentList renders "Claude Code · waiting approval" first           │
+ │ STEP 12 you click the row; focusAgent selects workspace, pane, and surface │
+ │ STEP 13 TerminalHost refits and focuses the exact xterm.js instance        │
+ └────────────────────────────────────────────────────────────────────────────┘
+```
+
+OSC 9/99/777 remains a second, zero-setup notification channel. It can light a
+workspace for any compatible program, but it does not manufacture a structured
+agent identity or semantic state. Explicit notifications and semantic lifecycle
+reports share the socket/IPC infrastructure while keeping different contracts.
+
+> **🔧 In cmux-linux:** the socket and notification foundation comes from M3/M4;
+> the semantic contract, lifecycle controls, exact focus, and provider adapters
+> are M7 and Chapter 19.
 
 ---
 
