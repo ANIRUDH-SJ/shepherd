@@ -431,11 +431,53 @@ one navigation implementation for mouse and automation.
 The socket adds:
 
 ```text
-agent-report  agent-clear  list-agents  focus-agent  wait-agent
+agent-report  agent-clear  list-agents  agent-snapshot  focus-agent  wait-agent
 ```
 
-`list-agents` can filter by workspace. `focus-agent` rejects missing identities
-before routing to React. `agent-clear` can require the stored reporter source.
+`list-agents` accepts filters for workspace, provider, semantic state, activity,
+block reason, reporter source, provider session, terminal surface, and local
+update time. Values within one enum field are comma-separated OR choices; filter
+dimensions combine with AND:
+
+```bash
+cmux list-agents \
+  --provider codex,claude \
+  --state blocked,done \
+  --updated-after 1784271000000 \
+  --limit 50
+```
+
+`src/shared/agentQuery.ts` owns validation and selection so the CLI/socket layer
+does not grow a second interpretation of the agent enums. Results are sorted by
+local `updatedAt` descending with `agentId` as a deterministic tie-breaker. The
+default limit is 200 and the accepted maximum is 1,000.
+
+The reply contains:
+
+- `agents`: the bounded newest subset;
+- `matched`: the count before limiting;
+- `truncated`: whether more matches exist;
+- `summary`: all matching counts by state/provider plus actionable blocks.
+
+Summarizing all matches rather than returned rows is deliberate. `--limit 1`
+answers “show the newest record” without falsely claiming there is only one
+working or blocked agent.
+
+`agent-snapshot` reuses the exact query semantics and adds a schema `version`,
+`generatedAt`, active workspace id, and workspace identities:
+
+```bash
+cmux agent-snapshot --session-id session-1
+```
+
+This is a versioned current-state bootstrap for reconnecting clients. It is not a
+history endpoint and it does not change the decision to omit live agent records
+from disk persistence. Exact-match filters are bounded strings rather than regex,
+and enum/number filters are validated before querying. These choices keep reply
+size and evaluation cost predictable at the local socket boundary.
+
+`focus-agent` rejects missing identities before routing to React. `agent-clear`
+can require the stored reporter source.
 
 `wait-agent` accepts one or more semantic states and a timeout:
 
@@ -758,3 +800,4 @@ The architecture leaves clear places for future work:
 9. Why are live records excluded from persistence?
 10. Where would you add a new provider without leaking its schema into React?
 11. Why is stale state converted to `unknown` before the record is removed?
+12. Why do list limits need `matched` and `truncated` metadata?
