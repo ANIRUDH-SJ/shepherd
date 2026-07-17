@@ -34,7 +34,8 @@ Usage:
   cmux agent-report --provider P --state S [--activity A | --reason R]
                                       report this terminal agent's semantic state
   cmux agent-clear <agent-id>         remove an agent record
-  cmux list-agents                    list agents (current workspace inside a pane)
+  cmux list-agents [query flags]      list and summarize matching agents
+  cmux agent-snapshot [query flags]   snapshot workspaces and matching agents
   cmux focus-agent <agent-id>         focus an agent's exact terminal
   cmux wait-agent <agent-id> --state S [--timeout-ms N]
                                       wait for semantic state blocked/done/etc.
@@ -64,6 +65,17 @@ Agent report flags:
   --revision N           optional monotonic sequence number
   --stale-after-ms N     optional transition to unknown before expiry
   --ttl-ms N             optional state expiry from 1 ms to 24 hours
+
+Agent query flags:
+  --provider P[,P]       filter by one or more providers
+  --state S[,S]          filter by one or more semantic states
+  --activity A[,A]       filter by working activity
+  --reason R[,R]         filter by blocked reason
+  --source ID            exact reporter-source filter
+  --session-id ID        exact provider-session filter
+  --surface-id ID        exact terminal-surface filter
+  --updated-after MS     only reports newer than this ingestion timestamp
+  --limit N              newest results to return (default 200, maximum 1000)
 
 Global: --workspace <id|name>   target a specific workspace (default: this pane's)
 

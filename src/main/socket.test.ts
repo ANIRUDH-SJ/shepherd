@@ -54,6 +54,12 @@ async function main(): Promise<void> {
     })
   }
 
+  const capabilities = await request('capabilities', {})
+  assert(
+    (capabilities.result?.methods as string[]).includes('agent-snapshot'),
+    'advertises the agent snapshot query'
+  )
+
   const reported = await request('agent-report', {
     workspace: 'project',
     surfaceId: 'term-1',
@@ -93,13 +99,51 @@ async function main(): Promise<void> {
       source: 'codex:hooks',
       revision: 2,
       updatedAt: 20
+    },
+    {
+      agentId: 'opencode:plugin:term-2',
+      provider: 'opencode',
+      displayName: 'OpenCode',
+      workspaceId: 'ws-1',
+      paneId: 'pane-2',
+      surfaceId: 'term-2',
+      state: 'done',
+      source: 'opencode:plugin',
+      sessionId: 'session-2',
+      revision: 3,
+      updatedAt: 30
     }
   ]
   updateWorkspaceMirror(mirror)
 
   const listed = await request('list-agents', { workspace: 'project' })
   const agents = listed.result?.agents as unknown[]
-  assert(agents.length === 1, 'lists agents for a resolved workspace')
+  assert(agents.length === 2, 'lists agents for a resolved workspace')
+  assert(listed.result?.matched === 2, 'reports the total query match count')
+
+  const filtered = await request('list-agents', {
+    workspace: 'project',
+    provider: 'codex',
+    state: 'blocked',
+    limit: 1
+  })
+  const filteredAgents = filtered.result?.agents as Array<Record<string, unknown>>
+  assert(filteredAgents.length === 1, 'filters agents by provider and state')
+  assert(filteredAgents[0]?.agentId === 'codex:hooks:term-1', 'returns the matching identity')
+  const summary = filtered.result?.summary as Record<string, unknown>
+  assert(summary?.actionable === 1, 'summarizes actionable query matches')
+
+  const invalidQuery = await request('list-agents', { state: 'busy' })
+  assert(invalidQuery.error?.includes('state must be') === true, 'rejects invalid query filters')
+
+  const snapshot = await request('agent-snapshot', { updatedAfter: 20 })
+  const snapshotAgents = snapshot.result?.agents as Array<Record<string, unknown>>
+  assert(snapshot.result?.version === 1, 'versions reconnect snapshots')
+  assert(snapshotAgents.length === 1, 'snapshot applies the shared query filters')
+  assert(
+    (snapshot.result?.workspaces as unknown[]).length === 1,
+    'snapshot includes workspace identity'
+  )
 
   const focused = await request('focus-agent', { agentId: 'codex:hooks:term-1' })
   assert(focused.result?.ok === true, 'accepts an existing focus target')
