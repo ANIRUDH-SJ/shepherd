@@ -9,6 +9,7 @@ import {
 } from '../layout/tree'
 import { workspaceReducer, type WorkspaceState, type WorkspaceAction } from './workspaceReducer'
 import { agentNeedsAttention, type AgentRecord, type AgentReport } from '../../../shared/agent'
+import { normalizeWorkspaceName } from '../../../shared/workspace'
 import {
   addWorkspaceUsage,
   emptyWorkspaceUsage,
@@ -52,7 +53,7 @@ export function makeWorkspace(name?: string): Workspace {
   const pane = makePane({ id: uid('term') })
   return {
     id: `ws-${crypto.randomUUID()}`,
-    name: name ?? '',
+    name: normalizeWorkspaceName(name ?? ''),
     cwd: '~',
     root: { type: 'pane', pane },
     activePaneId: pane.id,
@@ -112,7 +113,13 @@ export function sanitizeRestored(raw: unknown): AppState | null {
 /** The serialisable LAYOUT of the app (no transient status/unread/attention) — this
  *  is what we persist, so agent status churn doesn't cause needless saves. */
 export function toLayoutSnapshot(state: AppState): {
-  workspaces: Array<{ id: string; name: string; cwd: string; root: LayoutNode; activePaneId: string }>
+  workspaces: Array<{
+    id: string
+    name: string
+    cwd: string
+    root: LayoutNode
+    activePaneId: string
+  }>
   activeWorkspaceId: string
 } {
   return {
@@ -265,7 +272,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     }
 
     case 'renameWorkspace':
-      return mapWorkspace(state, action.id, (w) => ({ ...w, name: action.name }))
+      return mapWorkspace(state, action.id, (w) => ({
+        ...w,
+        name: normalizeWorkspaceName(action.name)
+      }))
 
     case 'setStatus':
       return mapWorkspace(state, action.id, (w) => ({ ...w, status: action.status }))

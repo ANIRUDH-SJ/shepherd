@@ -152,6 +152,8 @@ export default function App(): React.JSX.Element {
         if (agentId) dispatch({ type: 'focusAgent', id: agentId })
       } else if (method === 'select-workspace') {
         dispatch({ type: 'selectWorkspace', id: workspaceId })
+      } else if (method === 'rename-workspace') {
+        dispatch({ type: 'renameWorkspace', id: workspaceId, name: String(params.name ?? '') })
       } else if (method === 'close-workspace') {
         dispatch({ type: 'closeWorkspace', id: workspaceId })
       } else if (method === 'new-split' || method === 'send-text' || method === 'send-key') {
