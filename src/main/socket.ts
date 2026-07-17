@@ -12,6 +12,7 @@ import { normalizeAgentQuery, queryAgents } from '../shared/agentQuery'
 import { normalizeWorkspaceName } from '../shared/workspace'
 import { normalizeUsageReport } from '../shared/usage'
 import { normalizeAgentWait, waitForAgent } from './agentWait'
+import { inspectTerminal, normalizeTerminalInspection } from './terminalInspection'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SOCKET SERVER  (main process — the programmable control channel)
@@ -174,6 +175,30 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
       }
       apply({ method, workspaceId: agent.workspaceId, params: { agentId } })
       send(conn, id, { ok: true })
+      return
+    }
+    case 'inspect-agent': {
+      const agentId = typeof params.agentId === 'string' ? params.agentId.trim() : ''
+      if (!agentId) {
+        send(conn, id, null, 'inspect-agent requires an agent id')
+        return
+      }
+      const validation = normalizeTerminalInspection(params)
+      if (!validation.ok) {
+        send(conn, id, null, validation.error)
+        return
+      }
+      const agent = mirror.agents.find((candidate) => candidate.agentId === agentId)
+      if (!agent) {
+        send(conn, id, null, `no matching agent: ${agentId}`)
+        return
+      }
+      const terminal = inspectTerminal(agent.surfaceId, validation.options)
+      if (!terminal || terminal.workspaceId !== agent.workspaceId) {
+        send(conn, id, null, `agent terminal is not running: ${agentId}`)
+        return
+      }
+      send(conn, id, { agent, terminal })
       return
     }
     case 'wait-agent': {

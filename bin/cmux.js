@@ -39,6 +39,7 @@ Usage:
   cmux agent-schema                   print the machine-readable agent contract
   cmux agent-capabilities [provider]  discover protocol and adapter support
   cmux focus-agent <agent-id>         focus an agent's exact terminal
+  cmux inspect-agent <agent-id>       read bounded terminal/process context
   cmux wait-agent <agent-id> --state S [--timeout-ms N]
                                       wait for semantic state blocked/done/etc.
   cmux ping                           check the app is reachable
@@ -78,6 +79,10 @@ Agent query flags:
   --surface-id ID        exact terminal-surface filter
   --updated-after MS     only reports newer than this ingestion timestamp
   --limit N              newest results to return (default 200, maximum 1000)
+
+Agent inspection flags:
+  --lines N              recent plain-text lines (default 50, maximum 500)
+  --max-bytes N          output bytes (default 16384, maximum 65536)
 
 Global: --workspace <id|name>   target a specific workspace (default: this pane's)
 
@@ -139,7 +144,7 @@ for (let i = hookRequest ? argv.length : 1; i < argv.length; i++) {
     params[key] = argv[++i]
   } else positional.push(a)
 }
-if (method === 'focus-agent' || method === 'agent-clear') {
+if (method === 'focus-agent' || method === 'agent-clear' || method === 'inspect-agent') {
   if (positional[0] && !params.agentId) params.agentId = positional[0]
 } else if (method === 'agent-capabilities') {
   if (positional[0] && !params.provider) params.provider = positional[0]

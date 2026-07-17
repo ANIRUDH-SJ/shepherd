@@ -171,6 +171,8 @@ documented provider lifecycle events without scraping terminal prose.*
       reconnect snapshot
 - [x] Publish a versioned machine-readable agent schema and build capability
       discovery with shared runtime limits
+- [x] Add agent-scoped terminal inspection with capped capture, bounded plain-text
+      output, dimensions, cwd, and safe Linux foreground-process identity
 - [x] Add a keyboard-accessible Agents section with urgent-first ordering,
       reduced-motion support, and exact terminal focus
 - [x] Add workspace agent-state rollups, elapsed observation labels, and a

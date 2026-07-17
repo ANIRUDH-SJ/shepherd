@@ -185,7 +185,7 @@ layout and cwd, not claims about processes that may no longer exist.
 
 ## 6. Protocol, query, socket, and wait modules — external control
 
-The socket advertises eight lifecycle methods.
+The socket advertises nine agent methods.
 
 | Method           | Purpose                                                          |
 | ---------------- | ---------------------------------------------------------------- |
@@ -194,6 +194,7 @@ The socket advertises eight lifecycle methods.
 | `list-agents`    | filter, bound, and summarize current records                     |
 | `agent-snapshot` | return a versioned workspace/agent snapshot for reconnecting     |
 | `focus-agent`    | ask the renderer to select an agent's exact terminal             |
+| `inspect-agent`  | return bounded terminal, cwd, and foreground-process context     |
 | `wait-agent`     | wait until an agent reaches one of the requested semantic states |
 | `agent-schema`   | return the machine-readable versioned wire contract              |
 | `agent-capabilities` | discover semantic, feature, limit, and adapter support       |
@@ -219,20 +220,34 @@ time, active workspace id, and workspace identities. It is a current reconnect
 snapshot, not persisted history.
 
 `src/shared/agentProtocol.ts` publishes a JSON Schema Draft 2020-12 document for
-all eight methods. It describes newline-delimited socket envelopes, canonical
+all nine methods. It describes newline-delimited socket envelopes, canonical
 params and results, enum values, conditional state/detail rules, record and
 summary shapes, and numeric bounds. Numeric inputs include both integers and
 digit strings because the plain CLI really sends flag values as strings.
 
 `agentProtocolCapabilities()` reports what this application build supports:
-method names, semantics, lifecycle/query/wait limits, feature flags, and shipped
+method names, semantics, lifecycle/query/inspection/wait limits, feature flags, and shipped
 adapter behavior. An optional provider narrows the adapter list. It deliberately
 does not claim that a hook is installed in the user's home directory; build
 support and local installation state are different facts.
 
-`src/shared/agentLimits.ts` is the single source for lifecycle, query, and wait
-bounds. Validation and discovery import those constants, preventing the schema
-from advertising numbers that runtime code no longer accepts.
+`src/shared/agentLimits.ts` is the single source for lifecycle, query, inspection,
+and wait bounds. Validation and discovery import those constants, preventing the
+schema from advertising numbers that runtime code no longer accepts.
+
+`src/main/terminalInspection.ts` owns a separate live-terminal projection. Each
+PTY gets a 256 KiB byte ring registered at spawn, refreshed on `onData`, updated
+on resize, and removed on exit/dispose. `inspect-agent` first resolves a current
+agent record, then uses its verified surface id to read that capture. This avoids
+letting a caller invent an unrelated surface target.
+
+Inspection converts raw terminal bytes to diagnostic plain text by removing
+ANSI/OSC sequences, carriage-return redraws, control bytes, and bidi controls.
+The reply has independent line and byte limits (50/16 KiB by default, 500/64 KiB
+maximum) plus a truncation flag. On Linux it reads `/proc` for the foreground
+process-group leader and cwd, exposing only PID and process name—not command-line
+arguments that may contain secrets. Other platforms safely return no foreground
+identity and retain the initial cwd.
 
 `normalizeAgentWait()` requires a stable agent id, one or more semantic states,
 and a timeout between 1 ms and 300 seconds. `waitForAgent()` polls the in-memory
@@ -257,6 +272,7 @@ cmux list-agents --provider codex,claude --state blocked,done --limit 50
 cmux agent-snapshot --updated-after 1784271000000
 cmux agent-schema
 cmux agent-capabilities codex
+cmux inspect-agent codex:hooks:term-1 --lines 25 --max-bytes 4096
 cmux focus-agent codex:hooks:term-1
 cmux wait-agent codex:hooks:term-1 --state blocked,done --timeout-ms 30000
 cmux agent-clear codex:hooks:term-1 --source codex:hooks
@@ -413,8 +429,10 @@ The feature adds coverage at every meaningful boundary:
 - `src/renderer/src/agentView.test.ts`: labels, urgency ordering, elapsed-time
   buckets, workspace rollups, and accessibility text.
 - `src/main/agentWait.test.ts`: wait validation, state transitions, and timeout.
+- `src/main/terminalInspection.test.ts`: option bounds, ANSI removal, line/byte
+  tails, capture-ring truncation, process metadata, resize, and cleanup.
 - `src/main/socket.test.ts`: report validation, routing, filtered list, reconnect
-  snapshot, focus, wait, source protection, and clear.
+  snapshot, bounded inspection, focus, wait, source protection, and clear.
 - `bin/agent-events.test.js`: provider-event/tool mappings, safe fallback,
   producer revision handling, and Codex expiry policy.
 - `bin/integrations.test.js`: config preservation, all installed events,
@@ -452,3 +470,4 @@ an isolated install smoke test for all three provider integrations.
 8. Why do global provider hooks silently do nothing outside a cmux-linux pane?
 9. Why does a limited query summarize all matches instead of only returned rows?
 10. Why must capability discovery distinguish build support from local install state?
+11. Why does inspection resolve an agent id instead of accepting any surface id?

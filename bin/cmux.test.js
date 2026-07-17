@@ -144,6 +144,13 @@ async function main() {
   assert(capabilities?.method === 'agent-capabilities', 'requests agent capabilities')
   assert(capabilities?.params.provider === 'codex', 'maps the positional capability provider')
 
+  await runCli(['inspect-agent', 'codex:term-test', '--lines', '25', '--max-bytes', '4096'])
+  const inspection = requests[8]
+  assert(inspection?.method === 'inspect-agent', 'requests bounded agent inspection')
+  assert(inspection?.params.agentId === 'codex:term-test', 'maps the inspected agent id')
+  assert(inspection?.params.lines === '25', 'maps the inspection line limit')
+  assert(inspection?.params.maxBytes === '4096', 'maps the inspection byte limit')
+
   await runCli(
     ['agent-hook', 'codex'],
     JSON.stringify({
@@ -152,7 +159,7 @@ async function main() {
       tool_name: 'Bash'
     })
   )
-  const hook = requests[8]
+  const hook = requests[9]
   assert(hook?.method === 'agent-report', 'hook event becomes an agent report')
   assert(hook?.params.provider === 'codex', 'hook preserves provider identity')
   assert(hook?.params.state === 'blocked', 'permission hook reports blocked')

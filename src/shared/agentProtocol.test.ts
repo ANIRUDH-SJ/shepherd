@@ -31,6 +31,9 @@ assert(
   AGENT_PROTOCOL_SCHEMA.methods['list-agents'].kind === 'query',
   'classifies list-agents as a query'
 )
+const inspectionByteSchema = AGENT_PROTOCOL_SCHEMA.methods['inspect-agent'].params.properties
+  .maxBytes as { oneOf: unknown[] }
+assert(inspectionByteSchema.oneOf.length === 2, 'publishes bounded inspection inputs')
 assert(AGENT_PROTOCOL_METHODS.includes('agent-capabilities'), 'advertises capability discovery')
 
 const all = agentProtocolCapabilities()
