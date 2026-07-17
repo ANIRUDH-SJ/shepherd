@@ -200,6 +200,15 @@ provider hook/plugin
   → click or focus-agent selects the exact terminal
 ```
 
+Automation can observe the same validated state without polling:
+
+```text
+cmux watch-agents + query filters
+  → sequence-zero snapshot
+  → ordered agent-update upserts/removal tombstones
+  → reconnect snapshot after disconnect or sequence gap
+```
+
 ---
 
 ## Part 5 — What we deliberately cut for v1 (and why)

@@ -198,6 +198,18 @@ workspace without shell interpolation or hidden cleanup.*
 - [x] Cover real temporary repositories, reducer cwd, socket validation, and CLI flags
 - [x] Add implementation learning notes and the architecture textbook chapter
 
+## M9 — Live agent subscriptions
+*Goal: let automation observe filtered semantic state without polling or scraping.*
+
+- [x] Reuse validated agent queries for long-lived subscriptions
+- [x] Start every stream with a versioned sequence-zero snapshot
+- [x] Emit ordered upserts, removal tombstones, and replacement summaries
+- [x] Bound subscriber count and disconnect slow consumers
+- [x] Clean subscriptions on connection close and server shutdown
+- [x] Add `watch-agents` CLI streaming with correct NDJSON framing
+- [x] Publish the subscription envelope in schema/capability discovery
+- [x] Add socket, protocol, CLI, learning, and architecture coverage
+
 ---
 
 ## Stretch / later (post-v1)

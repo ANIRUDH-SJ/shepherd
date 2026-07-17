@@ -1028,6 +1028,12 @@ invocation is request→reply→done. The server writes the reply and keeps the 
 open; the *client* calls `socket.end()` after reading. Don't have the server slam the
 connection shut before the reply flushes.
 
+**7. Subscriptions keep framing and add backpressure.** `subscribe-agents` replies
+with a snapshot and then keeps the connection open for `agent-update` frames. The
+client must continue its buffer-and-split loop. The server caps subscribers and
+disconnects a slow reader rather than allowing queued output to grow without bound.
+See chapter 21 for the snapshot-plus-delta design.
+
 ---
 
 ## 🧪 Checkpoint
