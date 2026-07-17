@@ -431,7 +431,8 @@ one navigation implementation for mouse and automation.
 The socket adds:
 
 ```text
-agent-report  agent-clear  list-agents  agent-snapshot  focus-agent  wait-agent
+agent-report  agent-clear  list-agents  agent-snapshot  focus-agent
+inspect-agent  wait-agent  agent-schema  agent-capabilities
 ```
 
 `list-agents` accepts filters for workspace, provider, semantic state, activity,
@@ -496,6 +497,48 @@ An event subscription registry would reduce wakeups and latency variance, but it
 would require connection cancellation, waiter cleanup, and race-safe notification
 logic. It is a reasonable future change if wait volume grows.
 
+### Bounded terminal inspection
+
+Semantic state says what an agent claims; sometimes a person or coordinator also
+needs a small amount of terminal context to diagnose a failure. The opt-in query
+is deliberately agent-scoped:
+
+```bash
+cmux inspect-agent codex:hooks:term-1 --lines 25 --max-bytes 4096
+```
+
+The socket resolves the current `AgentRecord` and uses its already-verified
+`surfaceId`. It does not accept an arbitrary surface id from the caller. The
+returned object combines the agent record with terminal dimensions, creation
+time, shell PID, current cwd, a safe foreground `{pid, name}` when Linux `/proc`
+permits it, and bounded recent plain text.
+
+`src/main/terminalInspection.ts` is a live side projection of the PTY stream:
+
+```text
+node-pty onData ─┬─→ raw bytes to xterm.js (unchanged)
+                 ├─→ OSC notification parser
+                 └─→ capped 256 KiB inspection ring
+```
+
+The renderer still receives untouched bytes. Only an inspection reply strips
+ANSI/OSC sequences, carriage-return redraw controls, other control bytes, and
+bidi controls. It then takes the requested line tail and byte tail. Defaults are
+50 lines/16 KiB; maxima are 500 lines/64 KiB. `truncated` is true if the capture
+ring, line limit, or byte limit discarded earlier content.
+
+Why a capture ring instead of reading xterm.js scrollback? Main already owns the
+PTY and answers the Unix socket, so no renderer round trip or DOM/terminal API is
+needed. The cost is that this is a byte-stream tail, not a perfect reconstruction
+of screen cells after every cursor movement. It is diagnostic context, not a
+terminal transcript.
+
+Foreground inspection intentionally omits command arguments and environment
+variables because both commonly contain tokens or user data. Linux exposes the
+foreground process-group id through `/proc/<shell-pid>/stat`; the implementation
+returns its PID, `comm` name, and cwd when readable. Failure or a non-Linux host
+degrades to `foreground: null` and the terminal's initial cwd.
+
 ### Machine-readable schema and capability discovery
 
 Human documentation is necessary but insufficient for integrations. Clients also
@@ -518,9 +561,9 @@ as strings before runtime normalization.
 `agent-capabilities` returns:
 
 - every semantic enum and agent method supported by this build;
-- feature flags for sequencing, freshness, expiry, focus, wait, queries, and
-  reconnect snapshots;
-- lifecycle, query, and wait limits;
+- feature flags for sequencing, freshness, expiry, focus, bounded inspection,
+  wait, queries, and reconnect snapshots;
+- lifecycle, query, inspection, and wait limits;
 - shipped adapter mode, high-level signal coverage, sequencing, and cleanup
   behavior, optionally filtered by provider.
 
@@ -642,7 +685,7 @@ workflow.
 
 ## 19.16 Security and trust boundaries
 
-There are four relevant trust decisions.
+There are five relevant trust decisions.
 
 ### External JSON is data, not TypeScript
 
@@ -660,6 +703,15 @@ The Unix socket currently has no cryptographic authentication. Another local
 process with access to the socket can claim a source. A multi-user threat model
 would require restrictive socket permissions, peer credential checks, or an
 application-issued capability token.
+
+### Terminal output is sensitive local data
+
+Inspection is explicit, agent-scoped, local-socket access. It is never included
+in sidebar state, persistence, lifecycle reports, or reconnect snapshots. Output
+may still contain source code or secrets printed by a process, so callers must
+treat the reply as sensitive. Limits reduce exposure and memory cost; they are
+not an authorization boundary. A stronger multi-user model would apply the same
+peer credentials or capability tokens needed for report authentication.
 
 ### Provider configuration requires care
 
@@ -726,6 +778,12 @@ Use a temporary Unix socket and controlled mirror to prove resolution,
 validation, query results, source mismatch behavior, focus routing, satisfied
 waits, and bounded timeouts.
 
+### Terminal inspection tests
+
+Exercise option validation, ANSI/control removal, line and byte tails, capture
+ring truncation, foreground metadata, resize tracking, and terminal cleanup
+without starting Electron.
+
 ### CLI process tests
 
 Spawn the real CLI against a controlled socket. This catches argument parsing,
@@ -754,6 +812,7 @@ the pure modules.
 | Provider-specific React records | preserves all provider detail | spreads schema churn through core state and UI                             |
 | Persist live records            | survives restart              | displays stale claims about dead processes                                 |
 | Remove as soon as state is stale | smallest live projection       | loses the useful identity and last-observed context before retention ends  |
+| Return full terminal scrollback | maximum debugging context      | unbounded memory/reply size and unnecessary sensitive-data exposure         |
 | Event-driven waiter registry    | efficient at scale            | more race, cancellation, and cleanup complexity for little current gain    |
 | Overwrite integration files     | simplest installer            | destroys user configuration and breaks trust                               |
 | Fail hook calls loudly          | easier adapter diagnosis      | provider work could fail because the observer/app is unavailable           |
@@ -842,3 +901,4 @@ The architecture leaves clear places for future work:
 11. Why is stale state converted to `unknown` before the record is removed?
 12. Why do list limits need `matched` and `truncated` metadata?
 13. Why does the wire schema accept both integer values and numeric strings?
+14. Why is terminal inspection both agent-scoped and independently byte-limited?

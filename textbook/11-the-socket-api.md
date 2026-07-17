@@ -749,6 +749,7 @@ Current agent queries use the same request/reply framing:
 | `list-agents`    | workspace plus provider/state/detail/exact filters     | bounded records, match count, truncation flag, and summary |
 | `agent-snapshot` | the same filters, `updatedAfter`, and `limit`           | versioned workspace and current-agent bootstrap            |
 | `focus-agent`    | `agentId`                                              | `{ok: true}` after routing exact terminal focus            |
+| `inspect-agent`  | `agentId`, bounded `lines` and `maxBytes`               | agent plus terminal/process context and plain output tail  |
 | `wait-agent`     | `agentId`, semantic state list, and bounded timeout     | matching current record or timeout error                   |
 | `agent-schema`   | none                                                   | versioned JSON Schema for the semantic-agent wire contract |
 | `agent-capabilities` | optional provider                                  | supported methods, features, limits, and adapter behavior  |
@@ -761,6 +762,11 @@ query model and lifecycle semantics.
 `agent-capabilities` describes support compiled into the running app; it does not
 claim that provider configuration has been installed for the current user. That
 separation keeps protocol discovery read-only and deterministic.
+
+`inspect-agent` is intentionally not a general arbitrary-surface read. The
+server first resolves an existing agent and follows its verified surface binding.
+Its output tail is opt-in, ANSI/control-stripped, and bounded independently by
+line and byte limits; Chapter 19 covers the security and fidelity tradeoffs.
 
 There is still **no polling and no shared state file** in the reporting path. A
 provider event is pushed through the socket and then reduced into UI state. Read
