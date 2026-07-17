@@ -5,11 +5,13 @@ import { join } from 'path'
 import { socketPath } from './socket'
 import { parseOsc } from './osc'
 import {
-  IPC,
-  type TermCreateOptions,
-  type TermInput,
-  type TermResize
-} from '../shared/ipc'
+  appendTerminalInspectionOutput,
+  clearTerminalInspections,
+  registerTerminalInspection,
+  removeTerminalInspection,
+  resizeTerminalInspection
+} from './terminalInspection'
+import { IPC, type TermCreateOptions, type TermInput, type TermResize } from '../shared/ipc'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PTY MANAGER  (main process — the "real shell" half of the terminal)
@@ -53,6 +55,7 @@ function currentEnv(): Record<string, string> {
 function createTerminal(sender: WebContents, opts: TermCreateOptions): void {
   // Defensive: if this id already has a shell, kill the old one first.
   terminals.get(opts.id)?.proc.kill()
+  removeTerminalInspection(opts.id)
 
   // Inject cmux env so a `cmux …` command run INSIDE this pane targets the right
   // workspace by default and can reach the socket. (textbook/11 §env injection)
@@ -68,18 +71,30 @@ function createTerminal(sender: WebContents, opts: TermCreateOptions): void {
   env.PATH = parentPath ? `${cliBinDir()}:${parentPath}` : cliBinDir()
   env.CMUX_ELECTRON = process.execPath
 
+  const cols = opts.cols || 80
+  const rows = opts.rows || 24
+  const cwd = opts.cwd || homedir()
   const proc = pty.spawn(defaultShell(), [], {
     name: 'xterm-color',
-    cols: opts.cols || 80,
-    rows: opts.rows || 24,
-    cwd: opts.cwd || homedir(),
+    cols,
+    rows,
+    cwd,
     env
   })
   terminals.set(opts.id, { proc, workspaceId: opts.workspaceId, oscBuffer: '' })
+  registerTerminalInspection({
+    surfaceId: opts.id,
+    ...(opts.workspaceId ? { workspaceId: opts.workspaceId } : {}),
+    pid: proc.pid,
+    cols,
+    rows,
+    cwd
+  })
 
   // Shell output → renderer (guard against a closed window), then sniff for OSC
   // notification codes (a copy — the raw data still goes to xterm untouched).
   proc.onData((data) => {
+    appendTerminalInspectionOutput(opts.id, data)
     if (!sender.isDestroyed()) sender.send(IPC.TERM_DATA, { id: opts.id, data })
     sniffOsc(opts.id, sender, data)
   })
@@ -87,7 +102,10 @@ function createTerminal(sender: WebContents, opts: TermCreateOptions): void {
   // Shell exited → tell the renderer, then forget it.
   proc.onExit(({ exitCode }) => {
     if (!sender.isDestroyed()) sender.send(IPC.TERM_EXIT, { id: opts.id, exitCode })
-    terminals.delete(opts.id)
+    if (terminals.get(opts.id)?.proc === proc) {
+      terminals.delete(opts.id)
+      removeTerminalInspection(opts.id)
+    }
   })
 }
 
@@ -124,13 +142,17 @@ export function registerPtyIpc(): void {
 
   // fire-and-forget: resize
   ipcMain.on(IPC.TERM_RESIZE, (_event, msg: TermResize) => {
-    terminals.get(msg.id)?.proc.resize(Math.max(1, msg.cols), Math.max(1, msg.rows))
+    const cols = Math.max(1, msg.cols)
+    const rows = Math.max(1, msg.rows)
+    terminals.get(msg.id)?.proc.resize(cols, rows)
+    resizeTerminalInspection(msg.id, cols, rows)
   })
 
   // fire-and-forget: kill one shell
   ipcMain.on(IPC.TERM_DISPOSE, (_event, id: string) => {
     terminals.get(id)?.proc.kill()
     terminals.delete(id)
+    removeTerminalInspection(id)
   })
 }
 
@@ -138,4 +160,5 @@ export function registerPtyIpc(): void {
 export function killAllTerminals(): void {
   for (const rec of terminals.values()) rec.proc.kill()
   terminals.clear()
+  clearTerminalInspections()
 }
