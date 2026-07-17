@@ -25,6 +25,13 @@ Usage:
   cmux send-key <enter|tab|up|down|…> send a key to the active terminal
   cmux report-usage --input-tokens N --output-tokens N --accuracy exact|estimated
                                       add trustworthy usage to this workspace
+  cmux agent-report --provider P --state S [--activity A | --reason R]
+                                      report this terminal agent's semantic state
+  cmux agent-clear <agent-id>         remove an agent record
+  cmux list-agents                    list agents (current workspace inside a pane)
+  cmux focus-agent <agent-id>         focus an agent's exact terminal
+  cmux wait-agent <agent-id> --state S [--timeout-ms N]
+                                      wait for semantic state blocked/done/etc.
   cmux ping                           check the app is reachable
   cmux capabilities                   list supported socket methods
   cmux identify                       show this pane's + the active workspace
@@ -38,6 +45,17 @@ Usage flags:
   --cost-usd N           optional provider-reported cost; never calculated here
   --model NAME           optional model provenance
   --provider NAME        optional provider provenance
+
+Agent report flags:
+  --provider P           required: codex, claude, opencode, or custom
+  --state S              required: working, blocked, done, idle, or unknown
+  --activity A           optional working detail, including web-search or testing
+  --reason R             optional blocked reason, including approval or user-input
+  --message TEXT         optional short display detail
+  --source ID            reporter authority (defaults to cli:<provider>)
+  --agent-id ID          stable identity (defaults from source + terminal)
+  --revision N           optional monotonic sequence number
+  --ttl-ms N             optional state expiry from 1 ms to 24 hours
 
 Global: --workspace <id|name>   target a specific workspace (default: this pane's)
 
@@ -102,7 +120,12 @@ for (let i = 1; i < argv.length; i++) {
   }
   else positional.push(a)
 }
-if (positional.length) {
+if (method === 'focus-agent' || method === 'agent-clear') {
+  if (positional[0] && !params.agentId) params.agentId = positional[0]
+} else if (method === 'wait-agent') {
+  if (positional[0] && !params.agentId) params.agentId = positional[0]
+  if (positional[1] && !params.state) params.state = positional[1]
+} else if (positional.length) {
   const text = positional.join(' ')
   params.text = text
   if (method === 'notify') {
@@ -113,6 +136,13 @@ if (positional.length) {
 }
 if (process.env.CMUX_WORKSPACE_ID && !params.workspace) {
   params.workspace = process.env.CMUX_WORKSPACE_ID
+}
+if (process.env.CMUX_SURFACE_ID && !params.surfaceId) {
+  params.surfaceId = process.env.CMUX_SURFACE_ID
+}
+if (method === 'agent-report' && !params.source) {
+  const provider = params.provider || params.agent
+  if (provider) params.source = `cli:${provider}`
 }
 
 const conn = net.createConnection(socketPath, () => {
