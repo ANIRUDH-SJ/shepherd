@@ -22,6 +22,8 @@ Usage:
   cmux log <text>                     append a status line
   cmux list-workspaces                list open workspaces
   cmux new-workspace [--name N]       create a workspace
+  cmux rename-workspace --workspace W --name N
+                                      rename a workspace (empty N resets its name)
   cmux select-workspace --workspace W switch to a workspace
   cmux close-workspace --workspace W  close a workspace
   cmux new-split [right|down]         split the active pane

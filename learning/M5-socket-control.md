@@ -42,6 +42,7 @@ applies them to the reducer or writes to a terminal.
 | `identify` | this pane's workspace + the active one |
 | `list-workspaces` | open workspaces |
 | `new-workspace [--name N]` | create a workspace |
+| `rename-workspace --workspace W --name N` | change or clear a workspace's custom name |
 | `select-workspace --workspace W` | switch (by id or name) |
 | `close-workspace --workspace W` | close |
 | `new-split [right\|down]` | split the active pane |
@@ -64,6 +65,18 @@ cmux select-workspace --workspace build
 cmux send-text "npm run build"
 cmux send-key enter
 ```
+
+Renaming uses the same address-by-name rule, but keeps the target and replacement
+separate: `--workspace` identifies the current workspace and `--name` supplies its
+new label. Main resolves the old id/name before forwarding the normalized new name:
+
+```bash
+cmux rename-workspace --workspace build --name "build and test"
+```
+
+An empty `--name ""` removes the custom label, so the sidebar falls back to its
+positional `workspace N` display. The renderer changes only metadata; the layout,
+PTYs, cwd, status, and session identity stay intact.
 
 ### The mirror race (and the retry)
 There's a subtlety: the renderer creates the workspace, then syncs its list to
@@ -109,6 +122,7 @@ With the app running (`npm run dev`), from any pane:
 cmux capabilities                 # → the method list
 cmux identify                     # → this pane's workspace + the active one
 cmux new-workspace --name demo
+cmux rename-workspace --workspace demo --name "demo agent"
 cmux send-text "echo hello from a script"
 cmux send-key enter
 ```

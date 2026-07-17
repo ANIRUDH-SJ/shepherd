@@ -94,6 +94,7 @@ subtitle per item, active highlight, and notification markers.*
 - [ ] Status subtitle line under each name ("Claude is waiting for your input")
 - [ ] Notification markers: the `*` / dot + tab/row flash animation (CSS)
 - [ ] Click a workspace → switch to its tab/pane group
+- [x] Rename a workspace inline or through the socket/CLI without recreating it
 - [ ] **State source = socket API:** stand up a minimal `net` unix-socket server in
       main handling `set-status` / `log` / `notify` — this is what feeds the sidebar
       (the full control API comes in M5). See FEATURES.md Part 2.
