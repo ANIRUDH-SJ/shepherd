@@ -85,6 +85,8 @@ Think of the book in five "acts":
 - `15-packaging-and-distribution.md` — turning it into an AppImage/.deb others install.
 - `18-usage-telemetry.md` — trustworthy token/cost measurements: provenance,
   validation, aggregation, adapters, UI tradeoffs, and testing.
+- `19-semantic-agent-runtime.md` — provider-neutral lifecycle state, identity,
+  ordering, socket automation, sidebar focus, integrations, and trust boundaries.
 
 **Reference**
 
@@ -118,6 +120,7 @@ Think of the book in five "acts":
 | `16-glossary.md`                        | Every term defined                                                                                    | —           |
 | `17-how-it-all-connects.md`             | End-to-end trace of a keystroke + a notification                                                      | all         |
 | `18-usage-telemetry.md`                 | Token accounting, accuracy, provider-neutral events, validation, aggregation, adapters, and UI design | 09, 11, 13  |
+| `19-semantic-agent-runtime.md`          | Semantic state machines, lifecycle reports, identity, ordering, adapters, agent UI, and automation     | 09, 11, 12  |
 
 ---
 
