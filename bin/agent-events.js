@@ -1,6 +1,13 @@
 'use strict'
 
 const PROVIDERS = new Set(['codex', 'claude', 'custom'])
+const CODEX_TTL_MS = {
+  working: 7_200_000,
+  blocked: 86_400_000,
+  done: 1_800_000,
+  idle: 7_200_000,
+  unknown: 1_800_000
+}
 
 function activityForTool(toolName, toolInput) {
   const tool = String(toolName || '').toLowerCase()
@@ -18,7 +25,15 @@ function activityForTool(toolName, toolInput) {
   return 'thinking'
 }
 
+function eventRevision(event) {
+  const raw = event.revision ?? event.sequence
+  const parsed = typeof raw === 'string' ? Number(raw) : raw
+  return typeof parsed === 'number' && Number.isInteger(parsed) && parsed >= 0 ? parsed : undefined
+}
+
 function report(provider, event, state, detail = {}) {
+  const revision = eventRevision(event)
+  const ttlMs = provider === 'codex' ? CODEX_TTL_MS[state] : undefined
   return {
     method: 'agent-report',
     params: {
@@ -26,6 +41,8 @@ function report(provider, event, state, detail = {}) {
       state,
       source: `${provider}:hooks`,
       ...(typeof event.session_id === 'string' ? { sessionId: event.session_id } : {}),
+      ...(revision === undefined ? {} : { revision }),
+      ...(ttlMs === undefined ? {} : { ttlMs }),
       ...detail
     }
   }
@@ -63,6 +80,26 @@ function mapAgentEvent(provider, event, env = process.env) {
     case 'PostToolUse':
     case 'PermissionDenied':
       return report(provider, event, 'working', { activity: 'thinking' })
+    case 'PreCompact':
+      return report(provider, event, 'working', {
+        activity: 'thinking',
+        message: 'Compacting context'
+      })
+    case 'PostCompact':
+      return report(provider, event, 'working', {
+        activity: 'thinking',
+        message: 'Context compacted'
+      })
+    case 'SubagentStart':
+      return report(provider, event, 'working', {
+        activity: 'thinking',
+        message: 'Subagent started'
+      })
+    case 'SubagentStop':
+      return report(provider, event, 'working', {
+        activity: 'thinking',
+        message: 'Subagent finished'
+      })
     case 'PostToolUseFailure':
     case 'StopFailure':
       return report(provider, event, 'blocked', {
@@ -83,8 +120,10 @@ function mapAgentEvent(provider, event, env = process.env) {
       }
     }
     default:
-      return null
+      return report(provider, event, 'unknown', {
+        message: name ? `${name} event` : 'Unrecognized lifecycle event'
+      })
   }
 }
 
-module.exports = { activityForTool, mapAgentEvent }
+module.exports = { CODEX_TTL_MS, activityForTool, eventRevision, mapAgentEvent }

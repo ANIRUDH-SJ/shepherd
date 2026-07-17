@@ -7,6 +7,10 @@ const CODEX_EVENTS = [
   'PreToolUse',
   'PermissionRequest',
   'PostToolUse',
+  'PreCompact',
+  'PostCompact',
+  'SubagentStart',
+  'SubagentStop',
   'Stop'
 ]
 

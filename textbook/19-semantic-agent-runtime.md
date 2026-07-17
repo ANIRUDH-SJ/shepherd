@@ -305,6 +305,13 @@ unsequenced report, the reducer assigns `previous revision + 1`. This preserves 
 useful local ordering without pretending it can identify network reordering the
 producer did not describe.
 
+Current Codex hook input includes session and turn identity but does not document
+a monotonic numeric event sequence. The adapter therefore does not manufacture
+one; it preserves a numeric `revision` or `sequence` only when a producer supplies
+it. OpenCode's plugin is long-lived, so it can emit a real monotonic counter. The
+counter starts at `Date.now()` to remain above the previous run after a plugin
+reload.
+
 TTL addresses a different failure: missing cleanup. Main converts `ttlMs` into an
 absolute `expiresAt` based on ingestion time. `App.tsx` dispatches an expiry action
 once per second. The pure reducer removes elapsed records and recalculates
@@ -312,6 +319,11 @@ workspace attention.
 
 TTL is optional because provider hooks can have explicit stop/session-end events.
 A custom integration that cannot guarantee cleanup should use it.
+
+Codex currently lacks a session-end hook, so its adapter supplies state-sensitive
+TTL values: blocked approval can remain for 24 hours, working/idle for two hours,
+and done/unknown for 30 minutes. Claude Code and OpenCode expose explicit cleanup
+events and do not receive this fallback expiry policy.
 
 ## 19.9 Unread versus attention
 
@@ -445,7 +457,10 @@ fallback is thinking.
 
 The installer adds supported lifecycle commands to `~/.codex/hooks.json` and
 preserves other groups. Codex requires explicit review/trust of new hooks through
-`/hooks`, so setup reminds the user instead of assuming authority.
+`/hooks`, so setup reminds the user instead of assuming authority. Compact and
+subagent lifecycle events refresh working state with bounded, non-sensitive
+detail; unrecognized lifecycle events become `unknown` and retain only the event
+name.
 
 ### Claude Code
 
@@ -458,7 +473,8 @@ notification, failure, stop, and session-end coverage. The older
 OpenCode plugins receive tool, permission, session, and status events. The
 generated plugin uses `Bun.spawn` to call the same CLI contract. A marker declares
 the file managed by cmux-linux; setup updates only a marked file and refuses to
-overwrite an unrelated plugin.
+overwrite an unrelated plugin. Its session-local monotonic revision counter lets
+the reducer reject late reports.
 
 ### Custom reporters
 
@@ -496,7 +512,7 @@ events and could make attention flicker.
 Lifecycle reporting is observational; it must not break the agent being observed.
 
 - Invalid hook stdin is ignored.
-- Unknown hook events are ignored.
+- Unknown hook events degrade to `unknown` while retaining only their event name.
 - Hooks outside a cmux pane exit successfully.
 - A missing socket or closed app is ignored by hook-mode CLI calls.
 - The OpenCode plugin catches spawn failures and discards output.
@@ -558,6 +574,12 @@ The session snapshot therefore excludes:
 
 Layout and cwd still restore. New provider events repopulate current truth.
 
+Live terminal exit is another cleanup boundary. `TerminalHost` publishes a local
+`cmux:terminal-exit` event when main reports that the PTY ended. `App.tsx` converts
+it into `clearAgentsForSurface`; the reducer removes every agent on that surface
+and derives attention again. This covers a shell that exits while its tab remains
+open, which layout cleanup alone cannot detect.
+
 A future history feature should use an append-only event model with explicit
 session ids and retention, separate from the live `AgentRecord[]` projection.
 Historical observability and current coordination are different products.
@@ -574,7 +596,8 @@ TTL bounds, and attention classification without Electron.
 ### Reducer consistency tests
 
 Prove surface binding, stale revision rejection, focus of workspace/pane/surface,
-acknowledgement, expiry, pane/workspace cleanup, and empty restoration.
+acknowledgement, expiry, terminal-exit cleanup, pane/workspace cleanup, and empty
+restoration.
 
 ### View tests
 

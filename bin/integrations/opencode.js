@@ -5,6 +5,7 @@ const { writeFileAtomic } = require('./common')
 const OPENCODE_MARKER = '// cmux-linux managed agent integration'
 const OPENCODE_PLUGIN = `${OPENCODE_MARKER}
 const SOURCE = 'opencode:plugin'
+let revision = Date.now()
 
 async function cmux(...args) {
   if (!process.env.CMUX_SOCKET_PATH || !process.env.CMUX_SURFACE_ID) return
@@ -30,7 +31,15 @@ function activity(tool) {
 }
 
 async function report(state, ...detail) {
-  await cmux('agent-report', '--provider', 'opencode', '--source', SOURCE, '--state', state, ...detail)
+  revision += 1
+  await cmux(
+    'agent-report',
+    '--provider', 'opencode',
+    '--source', SOURCE,
+    '--state', state,
+    '--revision', String(revision),
+    ...detail
+  )
 }
 
 export const CmuxAgentPlugin = async () => ({

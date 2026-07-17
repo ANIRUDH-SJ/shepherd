@@ -144,6 +144,7 @@ export type AppAction =
   | { type: 'reportUsage'; id: string; report: UsageReport }
   | { type: 'reportAgent'; report: AgentReport }
   | { type: 'clearAgent'; id: string; source?: string }
+  | { type: 'clearAgentsForSurface'; surfaceId: string }
   | { type: 'expireAgents'; now: number }
   | { type: 'focusAgent'; id: string }
   | { type: 'pane'; workspaceId: string; action: WorkspaceAction }
@@ -298,6 +299,13 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'clearAgent':
       return clearAgent(state, action.id, action.source)
+
+    case 'clearAgentsForSurface': {
+      const agents = state.agents.filter((agent) => agent.surfaceId !== action.surfaceId)
+      return agents.length === state.agents.length
+        ? state
+        : refreshAgentAttention({ ...state, agents })
+    }
 
     case 'expireAgents': {
       const agents = state.agents.filter(

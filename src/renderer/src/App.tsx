@@ -67,7 +67,10 @@ export default function App(): React.JSX.Element {
           break
         case 'w': {
           const pane = findPane(ws.root, paneId)
-          if (pane) dispatch(paneAction(ws.id, { type: 'closeSurface', paneId, surfaceId: pane.activeSurfaceId }))
+          if (pane)
+            dispatch(
+              paneAction(ws.id, { type: 'closeSurface', paneId, surfaceId: pane.activeSurfaceId })
+            )
           break
         }
         case 'n':
@@ -110,8 +113,24 @@ export default function App(): React.JSX.Element {
   // Expiry is reducer-driven so records from integrations without a clean exit
   // cannot leave the sidebar stale forever.
   useEffect(() => {
-    const timer = window.setInterval(() => dispatch({ type: 'expireAgents', now: Date.now() }), 1000)
+    const timer = window.setInterval(
+      () => dispatch({ type: 'expireAgents', now: Date.now() }),
+      1000
+    )
     return () => window.clearInterval(timer)
+  }, [])
+
+  // A shell can exit while its surface remains open. Remove every agent bound to
+  // that terminal immediately instead of leaving a live-looking sidebar record.
+  useEffect(() => {
+    const onTerminalExit = (event: Event): void => {
+      const detail = (event as CustomEvent<{ surfaceId?: unknown }>).detail
+      if (typeof detail?.surfaceId === 'string' && detail.surfaceId) {
+        dispatch({ type: 'clearAgentsForSurface', surfaceId: detail.surfaceId })
+      }
+    }
+    window.addEventListener('cmux:terminal-exit', onTerminalExit)
+    return () => window.removeEventListener('cmux:terminal-exit', onTerminalExit)
   }, [])
 
   // Apply incoming socket commands: set-status / log / notify, plus workspace
@@ -173,7 +192,12 @@ export default function App(): React.JSX.Element {
             window.api.terminal.input({ id: surfaceId, data: String(params.text ?? '') })
           } else {
             // case-insensitive key names (Enter == enter)
-            const seq = KEY_SEQ[String(params.key ?? params.text ?? '').toLowerCase().trim()]
+            const seq =
+              KEY_SEQ[
+                String(params.key ?? params.text ?? '')
+                  .toLowerCase()
+                  .trim()
+              ]
             if (seq) window.api.terminal.input({ id: surfaceId, data: seq })
           }
         }
@@ -244,7 +268,12 @@ export default function App(): React.JSX.Element {
 
       <main className="workarea">
         {state.workspaces.map((w) => (
-          <WorkspaceView key={w.id} workspace={w} active={w.id === state.activeWorkspaceId} dispatch={dispatch} />
+          <WorkspaceView
+            key={w.id}
+            workspace={w}
+            active={w.id === state.activeWorkspaceId}
+            dispatch={dispatch}
+          />
         ))}
       </main>
     </div>
