@@ -3,6 +3,7 @@ import { existsSync, unlinkSync } from 'fs'
 import { Notification } from 'electron'
 import type { SocketApply, WorkspacesSync } from '../shared/ipc'
 import { normalizeAgentReport } from '../shared/agent'
+import { normalizeAgentQuery, queryAgents } from '../shared/agentQuery'
 import { normalizeWorkspaceName } from '../shared/workspace'
 import { normalizeUsageReport } from '../shared/usage'
 import { normalizeAgentWait, waitForAgent } from './agentWait'
@@ -93,6 +94,7 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
           'agent-report',
           'agent-clear',
           'list-agents',
+          'agent-snapshot',
           'focus-agent',
           'wait-agent',
           'report-usage',
@@ -118,8 +120,15 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
     case 'list-workspaces':
       send(conn, id, { workspaces: mirror.workspaces })
       return
-    case 'list-agents': {
+    case 'list-agents':
+    case 'agent-snapshot': {
+      const validation = normalizeAgentQuery(params)
+      if (!validation.ok) {
+        send(conn, id, null, validation.error)
+        return
+      }
       let agents = mirror.agents
+      let workspaces = mirror.workspaces
       if (typeof params.workspace === 'string' && params.workspace) {
         const workspaceId = await resolveWorkspaceRetry(params)
         if (!workspaceId) {
@@ -127,8 +136,20 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
           return
         }
         agents = agents.filter((agent) => agent.workspaceId === workspaceId)
+        workspaces = workspaces.filter((workspace) => workspace.id === workspaceId)
       }
-      send(conn, id, { agents })
+      const result = queryAgents(agents, validation.query)
+      if (method === 'list-agents') {
+        send(conn, id, result)
+      } else {
+        send(conn, id, {
+          version: 1,
+          generatedAt: Date.now(),
+          activeWorkspaceId: mirror.activeWorkspaceId || null,
+          workspaces,
+          ...result
+        })
+      }
       return
     }
     case 'focus-agent': {

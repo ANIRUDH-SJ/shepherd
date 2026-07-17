@@ -183,21 +183,38 @@ The reducer removes agents when:
 Lifecycle state is intentionally ephemeral. The saved session still contains
 layout and cwd, not claims about processes that may no longer exist.
 
-## 6. `src/main/socket.ts` and `src/main/agentWait.ts` — external control
+## 6. `agentQuery.ts`, `socket.ts`, and `agentWait.ts` — external control
 
-The socket advertises five lifecycle methods.
+The socket advertises six lifecycle methods.
 
-| Method         | Purpose                                                          |
-| -------------- | ---------------------------------------------------------------- |
-| `agent-report` | validate and apply one lifecycle observation                     |
-| `agent-clear`  | remove a record, optionally proving the reporter source          |
-| `list-agents`  | return all records or those in one workspace                     |
-| `focus-agent`  | ask the renderer to select an agent's exact terminal             |
-| `wait-agent`   | wait until an agent reaches one of the requested semantic states |
+| Method           | Purpose                                                          |
+| ---------------- | ---------------------------------------------------------------- |
+| `agent-report`   | validate and apply one lifecycle observation                     |
+| `agent-clear`    | remove a record, optionally proving the reporter source          |
+| `list-agents`    | filter, bound, and summarize current records                     |
+| `agent-snapshot` | return a versioned workspace/agent snapshot for reconnecting     |
+| `focus-agent`    | ask the renderer to select an agent's exact terminal             |
+| `wait-agent`     | wait until an agent reaches one of the requested semantic states |
 
 Main keeps a read-only mirror of renderer workspace names, the active workspace,
 and current agents. This mirror lets external commands resolve targets and answer
 queries without making the socket protocol depend on renderer callbacks.
+
+`normalizeAgentQuery()` validates comma-separated or array filters for provider,
+state, activity, and block reason. It also supports exact source, session, and
+surface filters, a strict `updatedAfter` ingestion-time cursor, and a result limit
+from 1 through 1,000. The default is 200, preventing an accidental unbounded
+reply. Different filter dimensions combine with AND; values inside one dimension
+combine with OR.
+
+`queryAgents()` sorts matches newest-first, applies the result limit, and returns
+`matched` plus `truncated` so callers can distinguish “one match” from “one of
+many returned.” Its summary counts all matches by semantic state and provider and
+counts actionable blocks, even when only the newest subset is returned.
+
+`agent-snapshot` uses the same query path and adds schema version, generation
+time, active workspace id, and workspace identities. It is a current reconnect
+snapshot, not persisted history.
 
 `normalizeAgentWait()` requires a stable agent id, one or more semantic states,
 and a timeout between 1 ms and 300 seconds. `waitForAgent()` polls the in-memory
@@ -218,7 +235,8 @@ The CLI adds:
 cmux agent-report --provider codex --state working \
   --activity web-search --message "researching docs"
 
-cmux list-agents
+cmux list-agents --provider codex,claude --state blocked,done --limit 50
+cmux agent-snapshot --updated-after 1784271000000
 cmux focus-agent codex:hooks:term-1
 cmux wait-agent codex:hooks:term-1 --state blocked,done --timeout-ms 30000
 cmux agent-clear codex:hooks:term-1 --source codex:hooks
@@ -365,14 +383,16 @@ The feature adds coverage at every meaningful boundary:
 
 - `src/shared/agent.test.ts`: normalization, defaults, sanitization, invalid
   combinations, stale/TTL ordering, sequencing inputs, and attention semantics.
+- `src/shared/agentQuery.test.ts`: enum/exact filters, cursor and limit bounds,
+  newest-first selection, truncation metadata, and summaries.
 - `src/renderer/src/state/appReducer.test.ts`: binding, stale-event rejection,
   unread/attention, exact focus, stale-to-unknown transition, expiry,
   terminal-exit cleanup, pane cleanup, workspace cleanup, and restore behavior.
 - `src/renderer/src/agentView.test.ts`: labels, urgency ordering, elapsed-time
   buckets, workspace rollups, and accessibility text.
 - `src/main/agentWait.test.ts`: wait validation, state transitions, and timeout.
-- `src/main/socket.test.ts`: report validation, routing, list, focus, wait, source
-  protection, and clear.
+- `src/main/socket.test.ts`: report validation, routing, filtered list, reconnect
+  snapshot, focus, wait, source protection, and clear.
 - `bin/agent-events.test.js`: provider-event/tool mappings, safe fallback,
   producer revision handling, and Codex expiry policy.
 - `bin/integrations.test.js`: config preservation, all installed events,
@@ -408,3 +428,4 @@ an isolated install smoke test for all three provider integrations.
 6. Why is lifecycle state omitted from the saved session?
 7. What happens between clicking an agent row and xterm receiving keyboard focus?
 8. Why do global provider hooks silently do nothing outside a cmux-linux pane?
+9. Why does a limited query summarize all matches instead of only returned rows?

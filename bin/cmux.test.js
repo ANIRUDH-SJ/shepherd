@@ -112,6 +112,29 @@ async function main() {
   assert(wait?.params.agentId === 'codex:term-test', 'targets the requested agent wait')
   assert(wait?.params.state === 'done', 'preserves the requested wait state')
 
+  await runCli([
+    'list-agents',
+    '--provider',
+    'codex,claude',
+    '--state',
+    'blocked,done',
+    '--updated-after',
+    '100',
+    '--limit',
+    '25'
+  ])
+  const list = requests[4]
+  assert(list?.method === 'list-agents', 'sends the filtered agent-list method')
+  assert(list?.params.provider === 'codex,claude', 'preserves provider query values')
+  assert(list?.params.state === 'blocked,done', 'preserves semantic-state query values')
+  assert(list?.params.updatedAfter === '100', 'maps the update cursor')
+  assert(list?.params.limit === '25', 'maps the query result limit')
+
+  await runCli(['agent-snapshot', '--session-id', 'session-1'])
+  const snapshot = requests[5]
+  assert(snapshot?.method === 'agent-snapshot', 'sends the agent snapshot method')
+  assert(snapshot?.params.sessionId === 'session-1', 'maps the provider session filter')
+
   await runCli(
     ['agent-hook', 'codex'],
     JSON.stringify({
@@ -120,7 +143,7 @@ async function main() {
       tool_name: 'Bash'
     })
   )
-  const hook = requests[4]
+  const hook = requests[6]
   assert(hook?.method === 'agent-report', 'hook event becomes an agent report')
   assert(hook?.params.provider === 'codex', 'hook preserves provider identity')
   assert(hook?.params.state === 'blocked', 'permission hook reports blocked')

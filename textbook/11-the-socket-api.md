@@ -742,6 +742,20 @@ Manual `cmux notify …` and `cmux set-status …` commands still use the origin
 explicit notification/status path. `cmux hooks setup` remains a compatibility
 alias for Claude Code lifecycle setup.
 
+Current agent queries use the same request/reply framing:
+
+| Method           | Important params                                       | Returns                                                    |
+| ---------------- | ------------------------------------------------------ | ---------------------------------------------------------- |
+| `list-agents`    | workspace plus provider/state/detail/exact filters     | bounded records, match count, truncation flag, and summary |
+| `agent-snapshot` | the same filters, `updatedAfter`, and `limit`           | versioned workspace and current-agent bootstrap            |
+| `focus-agent`    | `agentId`                                              | `{ok: true}` after routing exact terminal focus            |
+| `wait-agent`     | `agentId`, semantic state list, and bounded timeout     | matching current record or timeout error                   |
+
+Query limits default to 200 and cannot exceed 1,000. `matched` counts the full
+filtered set while `agents` is the newest bounded subset, so clients can detect
+truncation without receiving an unbounded response. See Chapter 19 for the full
+query model and lifecycle semantics.
+
 There is still **no polling and no shared state file** in the reporting path. A
 provider event is pushed through the socket and then reduced into UI state. Read
 Chapter 19 for the semantic state model, identity, ordering, focus/wait controls,
