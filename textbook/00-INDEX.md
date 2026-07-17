@@ -183,3 +183,9 @@ milestone, we'll deepen the relevant chapter with real snippets from _our_ code,
 so the book and the codebase stay in sync. Nothing here is throwaway.
 
 **Now go read `01-the-big-picture.md`.** 🚀
+
+## Runtime extensions
+
+- `19-semantic-agent-runtime.md` — provider-neutral lifecycle state and ownership
+- `20-worktree-workspaces.md` — safe Git worktree orchestration
+- `21-live-state-subscriptions.md` — snapshot-plus-delta streams, ordering, and backpressure

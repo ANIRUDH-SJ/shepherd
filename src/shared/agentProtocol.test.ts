@@ -35,6 +35,11 @@ const inspectionByteSchema = AGENT_PROTOCOL_SCHEMA.methods['inspect-agent'].para
   .maxBytes as { oneOf: unknown[] }
 assert(inspectionByteSchema.oneOf.length === 2, 'publishes bounded inspection inputs')
 assert(AGENT_PROTOCOL_METHODS.includes('agent-capabilities'), 'advertises capability discovery')
+assert(AGENT_PROTOCOL_METHODS.includes('subscribe-agents'), 'advertises agent subscriptions')
+assert(
+  AGENT_PROTOCOL_SCHEMA.methods['subscribe-agents'].kind === 'subscription',
+  'classifies agent subscriptions'
+)
 
 const all = agentProtocolCapabilities()
 assert(all.ok, 'returns all protocol capabilities')
@@ -43,6 +48,7 @@ if (all.ok) {
   const features = all.capabilities.features as Record<string, unknown>
   assert(adapters.length === 4, 'describes every supported reporter family')
   assert(features.reconnectSnapshot === true, 'describes reconnect snapshot support')
+  assert(features.eventSubscriptions === true, 'describes live agent subscriptions')
 }
 
 const codex = agentProtocolCapabilities('codex')

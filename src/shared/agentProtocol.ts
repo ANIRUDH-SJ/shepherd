@@ -25,6 +25,7 @@ export const AGENT_PROTOCOL_METHODS = [
   'agent-clear',
   'list-agents',
   'agent-snapshot',
+  'subscribe-agents',
   'focus-agent',
   'inspect-agent',
   'wait-agent',
@@ -105,7 +106,11 @@ export const AGENT_PROTOCOL_SCHEMA = {
   transport: {
     kind: 'unix-domain-socket',
     framing: 'newline-delimited-json',
-    envelope: { request: '{id, method, params}', response: '{id, result} | {id, error}' }
+    envelope: {
+      request: '{id, method, params}',
+      response: '{id, result} | {id, error}',
+      event: '{event, subscriptionId, data}'
+    }
   },
   methods: {
     'agent-report': {
@@ -173,6 +178,43 @@ export const AGENT_PROTOCOL_SCHEMA = {
             }
           }
         ]
+      }
+    },
+    'subscribe-agents': {
+      kind: 'subscription',
+      params: { type: 'object', properties: queryProperties },
+      result: {
+        type: 'object',
+        required: ['subscriptionId', 'version', 'sequence', 'snapshot'],
+        properties: {
+          subscriptionId: { type: 'integer', minimum: 1 },
+          version: { const: AGENT_PROTOCOL_VERSION },
+          sequence: { const: 0 },
+          snapshot: { type: 'object' }
+        }
+      },
+      event: {
+        type: 'object',
+        required: [
+          'version',
+          'sequence',
+          'generatedAt',
+          'upsert',
+          'removed',
+          'matched',
+          'truncated',
+          'summary'
+        ],
+        properties: {
+          version: { const: AGENT_PROTOCOL_VERSION },
+          sequence: { type: 'integer', minimum: 1 },
+          generatedAt: { type: 'integer', minimum: 0 },
+          upsert: { type: 'array', items: { $ref: '#/$defs/agentRecord' } },
+          removed: { type: 'array', items: { type: 'string' } },
+          matched: { type: 'integer', minimum: 0 },
+          truncated: { type: 'boolean' },
+          summary: { $ref: '#/$defs/agentSummary' }
+        }
       }
     },
     'focus-agent': {
@@ -403,7 +445,8 @@ export function agentProtocolCapabilities(provider?: unknown): AgentCapabilities
         boundedTerminalInspection: true,
         semanticWait: true,
         boundedQueries: true,
-        reconnectSnapshot: true
+        reconnectSnapshot: true,
+        eventSubscriptions: true
       },
       limits: {
         maxLifecycleMs: MAX_AGENT_LIFECYCLE_MS,
