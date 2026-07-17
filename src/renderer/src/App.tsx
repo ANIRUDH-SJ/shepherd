@@ -12,6 +12,7 @@ import { findPane } from './layout/tree'
 import { bumpFontSize, resetFontSize } from './settings'
 import type { AgentReport } from '../../shared/agent'
 import type { UsageReport } from '../../shared/usage'
+import { isWorkspaceMetadata } from '../../shared/workspaceMetadata'
 import Sidebar from './components/Sidebar'
 import WorkspaceView from './components/WorkspaceView'
 
@@ -104,7 +105,11 @@ export default function App(): React.JSX.Element {
   // Mirror the workspace list to main so the socket server can resolve ids/names.
   useEffect(() => {
     window.api.socket.syncWorkspaces({
-      workspaces: state.workspaces.map((w) => ({ id: w.id, name: w.name })),
+      workspaces: state.workspaces.map((w) => ({
+        id: w.id,
+        name: w.name,
+        activeSurfaceId: findPane(w.root, w.activePaneId)?.activeSurfaceId
+      })),
       activeWorkspaceId: state.activeWorkspaceId,
       agents: state.agents
     })
@@ -150,7 +155,11 @@ export default function App(): React.JSX.Element {
         return
       }
       if (!workspaceId) return
-      if (method === 'set-status' || method === 'log') {
+      if (method === 'workspace-metadata') {
+        if (isWorkspaceMetadata(params.metadata)) {
+          dispatch({ type: 'setWorkspaceMetadata', id: workspaceId, metadata: params.metadata })
+        }
+      } else if (method === 'set-status' || method === 'log') {
         const status = String(params.status ?? params.text ?? '')
         dispatch({ type: 'setStatus', id: workspaceId, status: status || null })
       } else if (method === 'notify') {

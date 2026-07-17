@@ -42,6 +42,7 @@ export default function WorkspaceView({ workspace, active, dispatch }: Props): R
           active={pane.id === workspace.activePaneId}
           workspaceActive={active}
           workspaceId={workspace.id}
+          workspaceCwd={workspace.cwd}
           surfaceNumbers={surfaceNumbers}
           dispatch={paneDispatch}
         />

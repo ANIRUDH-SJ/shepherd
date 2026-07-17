@@ -64,6 +64,7 @@ const context = (
   workspaceId: 'ws-1',
   shellPid: 5,
   processes,
+  cwd: '/projects/example',
   lastActivityAt
 })
 

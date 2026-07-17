@@ -17,6 +17,7 @@ import { getFontSize } from '../settings'
 interface Props {
   surfaceId: string
   workspaceId: string
+  cwd: string
   active: boolean
   focused: boolean
 }
@@ -24,6 +25,7 @@ interface Props {
 export default function TerminalHost({
   surfaceId,
   workspaceId,
+  cwd,
   active,
   focused
 }: Props): React.JSX.Element {
@@ -63,7 +65,13 @@ export default function TerminalHost({
         new CustomEvent('cmux:terminal-exit', { detail: { surfaceId, exitCode: code } })
       )
     })
-    window.api.terminal.create({ id: surfaceId, workspaceId, cols: term.cols, rows: term.rows })
+    window.api.terminal.create({
+      id: surfaceId,
+      workspaceId,
+      cwd,
+      cols: term.cols,
+      rows: term.rows
+    })
     const onData = term.onData((data) => window.api.terminal.input({ id: surfaceId, data }))
 
     // Refit on resize — but skip while hidden (0×0) so we don't resize the shell to 1×1.

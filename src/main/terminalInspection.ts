@@ -51,6 +51,7 @@ export interface TerminalProcessContext {
   workspaceId?: string
   shellPid: number
   processes: ForegroundProcess[]
+  cwd: string
   lastActivityAt: number
 }
 
@@ -282,11 +283,20 @@ export function listTerminalProcessContexts(
   return [...captures.values()].map((capture) => {
     const context = processContext(capture.pid)
     const processes = context.processes ?? (context.foreground ? [context.foreground] : [])
+    let cwd = context.cwd ?? capture.initialCwd
+    try {
+      // Workspace metadata follows the interactive shell. A foreground tool may
+      // temporarily run from another cwd, but it must not rewrite the workspace.
+      cwd = readlinkSync(`/proc/${capture.pid}/cwd`)
+    } catch {
+      // Tests and a just-exited shell fall back to the inspected/initial cwd.
+    }
     return {
       surfaceId: capture.surfaceId,
       ...(capture.workspaceId ? { workspaceId: capture.workspaceId } : {}),
       shellPid: capture.pid,
       processes,
+      cwd,
       lastActivityAt: Math.max(capture.lastInputAt, capture.lastOutputAt)
     }
   })

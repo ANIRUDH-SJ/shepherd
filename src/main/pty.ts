@@ -74,7 +74,7 @@ function createTerminal(sender: WebContents, opts: TermCreateOptions): void {
 
   const cols = opts.cols || 80
   const rows = opts.rows || 24
-  const cwd = opts.cwd || homedir()
+  const cwd = !opts.cwd || opts.cwd === '~' ? homedir() : opts.cwd
   const proc = pty.spawn(defaultShell(), [], {
     name: 'xterm-color',
     cols,

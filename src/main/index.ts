@@ -3,10 +3,12 @@ import { join } from 'path'
 import { registerPtyIpc, killAllTerminals } from './pty'
 import { startSocketServer, stopSocketServer, updateWorkspaceMirror } from './socket'
 import { startAutomaticAgentDiscovery, type AutomaticAgentDiscoveryRuntime } from './agentDiscovery'
+import { startWorkspaceMetadataDiscovery, type WorkspaceMetadataRuntime } from './workspaceMetadata'
 import { loadSession, saveSession } from './session'
 import { IPC, type SocketApply, type WorkspacesSync } from '../shared/ipc'
 
 let automaticAgentDiscovery: AutomaticAgentDiscoveryRuntime | null = null
+let workspaceMetadataDiscovery: WorkspaceMetadataRuntime | null = null
 
 function sendSocketCommand(cmd: SocketApply): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -65,10 +67,12 @@ app.whenReady().then(() => {
   // Socket server: route incoming commands to the renderer to update app state.
   startSocketServer(sendSocketCommand)
   automaticAgentDiscovery = startAutomaticAgentDiscovery(sendSocketCommand)
+  workspaceMetadataDiscovery = startWorkspaceMetadataDiscovery(sendSocketCommand)
   // Renderer mirrors its workspace list here so the socket can resolve ids/names.
   ipcMain.on(IPC.WORKSPACES_SYNC, (_e, sync: WorkspacesSync) => {
     updateWorkspaceMirror(sync)
     automaticAgentDiscovery?.updateAgents(sync.agents)
+    workspaceMetadataDiscovery?.updateWorkspaces(sync.workspaces)
   })
 
   // Session persistence: load synchronously at startup, save (debounced) on change.
@@ -97,6 +101,8 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   automaticAgentDiscovery?.stop()
   automaticAgentDiscovery = null
+  workspaceMetadataDiscovery?.stop()
+  workspaceMetadataDiscovery = null
   killAllTerminals()
   stopSocketServer()
 })

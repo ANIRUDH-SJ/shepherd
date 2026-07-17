@@ -71,7 +71,7 @@ export interface SocketApply {
 
 /** The renderer's workspace list, mirrored to main so the socket can resolve ids/names. */
 export interface WorkspacesSync {
-  workspaces: { id: string; name: string }[]
+  workspaces: { id: string; name: string; activeSurfaceId?: string }[]
   activeWorkspaceId: string
   agents: AgentRecord[]
 }
