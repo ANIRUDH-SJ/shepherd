@@ -308,12 +308,30 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     }
 
     case 'expireAgents': {
-      const agents = state.agents.filter(
-        (agent) => agent.expiresAt === undefined || agent.expiresAt > action.now
-      )
-      return agents.length === state.agents.length
-        ? state
-        : refreshAgentAttention({ ...state, agents })
+      let changed = false
+      const agents = state.agents.flatMap((agent) => {
+        if (agent.expiresAt !== undefined && agent.expiresAt <= action.now) {
+          changed = true
+          return []
+        }
+        if (
+          agent.staleAt !== undefined &&
+          agent.staleAt <= action.now &&
+          agent.state !== 'unknown'
+        ) {
+          changed = true
+          const staleAgent: AgentRecord = {
+            ...agent,
+            state: 'unknown',
+            message: 'State report became stale'
+          }
+          delete staleAgent.activity
+          delete staleAgent.blockReason
+          return [staleAgent]
+        }
+        return [agent]
+      })
+      return changed ? refreshAgentAttention({ ...state, agents }) : state
     }
 
     case 'focusAgent': {

@@ -62,6 +62,7 @@ Agent report flags:
   --source ID            reporter authority (defaults to cli:<provider>)
   --agent-id ID          stable identity (defaults from source + terminal)
   --revision N           optional monotonic sequence number
+  --stale-after-ms N     optional transition to unknown before expiry
   --ttl-ms N             optional state expiry from 1 ms to 24 hours
 
 Global: --workspace <id|name>   target a specific workspace (default: this pane's)

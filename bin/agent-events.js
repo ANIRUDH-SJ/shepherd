@@ -8,6 +8,11 @@ const CODEX_TTL_MS = {
   idle: 7_200_000,
   unknown: 1_800_000
 }
+const CODEX_STALE_MS = {
+  working: 1_800_000,
+  blocked: 43_200_000,
+  idle: 1_800_000
+}
 
 function activityForTool(toolName, toolInput) {
   const tool = String(toolName || '').toLowerCase()
@@ -34,6 +39,7 @@ function eventRevision(event) {
 function report(provider, event, state, detail = {}) {
   const revision = eventRevision(event)
   const ttlMs = provider === 'codex' ? CODEX_TTL_MS[state] : undefined
+  const staleAfterMs = provider === 'codex' ? CODEX_STALE_MS[state] : undefined
   return {
     method: 'agent-report',
     params: {
@@ -42,6 +48,7 @@ function report(provider, event, state, detail = {}) {
       source: `${provider}:hooks`,
       ...(typeof event.session_id === 'string' ? { sessionId: event.session_id } : {}),
       ...(revision === undefined ? {} : { revision }),
+      ...(staleAfterMs === undefined ? {} : { staleAfterMs }),
       ...(ttlMs === undefined ? {} : { ttlMs }),
       ...detail
     }
@@ -126,4 +133,4 @@ function mapAgentEvent(provider, event, env = process.env) {
   }
 }
 
-module.exports = { CODEX_TTL_MS, activityForTool, eventRevision, mapAgentEvent }
+module.exports = { CODEX_STALE_MS, CODEX_TTL_MS, activityForTool, eventRevision, mapAgentEvent }

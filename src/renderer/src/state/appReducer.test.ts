@@ -200,6 +200,29 @@ assert(agentsState.agents.length === 1, 'agent remains before expiry')
 agentsState = appReducer(agentsState, { type: 'expireAgents', now: 50 })
 assert(agentsState.agents.length === 0, 'agent is removed at expiry')
 
+agentsState = appReducer(agentsState, {
+  type: 'reportAgent',
+  report: {
+    ...blockedReport,
+    revision: 4,
+    updatedAt: 50,
+    staleAt: 60,
+    expiresAt: 100
+  }
+})
+agentsState = appReducer(agentsState, { type: 'expireAgents', now: 59 })
+assert(agentsState.agents[0].state === 'blocked', 'agent remains authoritative before stale time')
+agentsState = appReducer(agentsState, { type: 'expireAgents', now: 60 })
+assert(agentsState.agents[0].state === 'unknown', 'stale agent transitions to unknown')
+assert(agentsState.agents[0].revision === 4, 'stale transition preserves producer sequence')
+assert(agentsState.agents[0].blockReason === undefined, 'stale state drops obsolete block reason')
+assert(
+  !agentsState.workspaces.find((w) => w.id === agentWorkspace.id)!.agentAttention,
+  'stale blocked state no longer requests attention'
+)
+agentsState = appReducer(agentsState, { type: 'expireAgents', now: 100 })
+assert(agentsState.agents.length === 0, 'stale agent is removed at expiry')
+
 agentsState = appReducer(
   agentsState,
   paneAction(agentWorkspace.id, splitAction(focusedAgentWorkspace.activePaneId, 'row'))
