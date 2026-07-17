@@ -23,10 +23,10 @@ assert(
   AGENT_PROTOCOL_SCHEMA.methods['agent-report'].params.required.includes('surfaceId'),
   'publishes report ownership requirements'
 )
-assert(
-  AGENT_PROTOCOL_SCHEMA.methods['agent-report'].params.properties.revision.oneOf.length === 2,
-  'describes numeric and CLI-string inputs'
-)
+const revisionSchema = AGENT_PROTOCOL_SCHEMA.methods['agent-report'].params.properties.revision as {
+  oneOf: unknown[]
+}
+assert(revisionSchema.oneOf.length === 2, 'describes numeric and CLI-string inputs')
 assert(
   AGENT_PROTOCOL_SCHEMA.methods['list-agents'].kind === 'query',
   'classifies list-agents as a query'
