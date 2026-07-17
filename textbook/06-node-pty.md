@@ -260,6 +260,18 @@ Three things to internalize about this stream:
 > the stream at all instead of piping the PTY straight to the window — it's the
 > hook for `12-notifications-and-osc.md`.
 
+There is now a third bounded consumer in `src/main/terminalInspection.ts`. It
+copies each chunk into a per-terminal 256 KiB byte ring for explicit
+`inspect-agent` queries. This does **not** replace or modify the stream sent to
+xterm.js. On spawn, resize, exit, and dispose, the PTY manager registers, updates,
+or removes the matching capture so inspection cannot outlive the terminal.
+
+The ring re-encodes node-pty's raw stream chunks as UTF-8 bytes; escape sequences
+can still cross `onData` boundaries. Plain-text cleanup and the caller's line/byte
+tail limits are applied only when a query arrives. This keeps normal terminal
+rendering fast and ensures every socket reply is bounded even though the terminal
+may run for days.
+
 ---
 
 ## 6.5 Writing input: `write`

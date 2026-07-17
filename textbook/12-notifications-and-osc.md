@@ -97,27 +97,19 @@ depends on: **how a real agent presses the front-door button.** You saw this in
 Chapter 11 §11.7, but it's the reason automatic detection even matters, so it earns
 a recap.
 
-AI agents like Claude Code support **hooks** — shell commands the agent runs at
-lifecycle moments (finished a task, hit an error, waiting for input). Running
-`cmux hooks setup` writes one into the agent's config:
+AI agents expose lifecycle extension points. `cmux integrations setup` installs
+guarded command hooks for Codex and Claude Code and a managed event plugin for
+OpenCode. Those adapters convert tool, permission, completion, failure, and
+session events into the semantic `agent-report` protocol described in Chapter 19.
+The pane environment from §11.9 already identifies the owning workspace and
+terminal.
 
-```jsonc
-// ~/.claude/settings.json (installed by `cmux hooks setup`)
-{
-  "hooks": {
-    "Notification": [
-      { "hooks": [{ "type": "command",
-        "command": "cmux notify --title Claude --body \"$CLAUDE_NOTIFICATION\"" }] }
-    ]
-  }
-}
-```
-
-When Claude wants you, it shells out to `cmux notify …`, which (via the env
-injection from §11.9) already knows *which* workspace it's in, connects to
-`/tmp/cmux-linux.sock`, and calls `notification.create`. That handler pushes a
-notification and calls `markWorkspaceAttention`. **Done — no terminal codes
-involved.** It's a clean, first-class API call.
+The older explicit path remains useful: an agent or script can run
+`cmux notify …` itself, and `cmux hooks setup` remains a compatibility alias for
+Claude Code integration setup. Structured lifecycle reports and explicit
+notifications both cross the Unix socket, but they remain separate state models:
+the first maintains current agent state; the second creates a notification/status
+signal.
 
 So why do we *also* need to sniff escape codes? Because **not every program is an
 agent that knows about cmux.** A long `webpack` build, a test runner, a

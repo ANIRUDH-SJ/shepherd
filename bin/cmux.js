@@ -4,10 +4,14 @@
 // cmux-linux terminal pane (where CMUX_SOCKET_PATH + CMUX_WORKSPACE_ID are set) to
 // drive the sidebar. See textbook/11 and FEATURES.md Part 2.
 const net = require('net')
+const fs = require('fs')
+const { mapAgentEvent } = require('./agent-events')
+const { setupIntegration } = require('./integrations')
 
 const socketPath = process.env.CMUX_SOCKET_PATH || '/tmp/cmux-linux.sock'
 const argv = process.argv.slice(2)
-const method = argv[0]
+let method = argv[0]
+let hookRequest = null
 
 if (!method || method === '-h' || method === '--help') {
   console.log(`cmux — drive cmux-linux from a terminal
@@ -18,6 +22,8 @@ Usage:
   cmux log <text>                     append a status line
   cmux list-workspaces                list open workspaces
   cmux new-workspace [--name N]       create a workspace
+  cmux new-worktree --repo R --path P (--branch B | --new-branch B)
+                                      create a Git worktree workspace
   cmux rename-workspace --workspace W --name N
                                       rename a workspace (empty N resets its name)
   cmux select-workspace --workspace W switch to a workspace
@@ -30,14 +36,20 @@ Usage:
   cmux agent-report --provider P --state S [--activity A | --reason R]
                                       report this terminal agent's semantic state
   cmux agent-clear <agent-id>         remove an agent record
-  cmux list-agents                    list agents (current workspace inside a pane)
+  cmux list-agents [query flags]      list and summarize matching agents
+  cmux agent-snapshot [query flags]   snapshot workspaces and matching agents
+  cmux watch-agents [query flags]     stream a snapshot followed by agent updates
+  cmux agent-schema                   print the machine-readable agent contract
+  cmux agent-capabilities [provider]  discover protocol and adapter support
   cmux focus-agent <agent-id>         focus an agent's exact terminal
+  cmux inspect-agent <agent-id>       read bounded terminal/process context
   cmux wait-agent <agent-id> --state S [--timeout-ms N]
                                       wait for semantic state blocked/done/etc.
   cmux ping                           check the app is reachable
   cmux capabilities                   list supported socket methods
   cmux identify                       show this pane's + the active workspace
-  cmux hooks setup                    install a Claude Code notify hook
+  cmux integrations setup [provider]  install lifecycle reporting for all providers
+  cmux hooks setup                    legacy alias for Claude Code integration setup
 
 Usage flags:
   --input-tokens N       required non-negative integer
@@ -57,7 +69,31 @@ Agent report flags:
   --source ID            reporter authority (defaults to cli:<provider>)
   --agent-id ID          stable identity (defaults from source + terminal)
   --revision N           optional monotonic sequence number
+  --stale-after-ms N     optional transition to unknown before expiry
   --ttl-ms N             optional state expiry from 1 ms to 24 hours
+
+Agent query flags:
+  --provider P[,P]       filter by one or more providers
+  --state S[,S]          filter by one or more semantic states
+  --activity A[,A]       filter by working activity
+  --reason R[,R]         filter by blocked reason
+  --source ID            exact reporter-source filter
+  --session-id ID        exact provider-session filter
+  --surface-id ID        exact terminal-surface filter
+  --updated-after MS     only reports newer than this ingestion timestamp
+  --limit N              newest results to return (default 200, maximum 1000)
+
+Agent inspection flags:
+  --lines N              recent plain-text lines (default 50, maximum 500)
+  --max-bytes N          output bytes (default 16384, maximum 65536)
+
+Worktree flags:
+  --repo PATH            required absolute Git repository path
+  --path PATH            required absolute path for the new worktree
+  --branch REF           attach an existing branch
+  --new-branch REF       create and attach a new branch
+  --start-point REF      optional start for --new-branch (default HEAD)
+  --name TEXT            optional workspace display name (default branch)
 
 Global: --workspace <id|name>   target a specific workspace (default: this pane's)
 
@@ -65,65 +101,67 @@ Inside a cmux-linux pane, CMUX_WORKSPACE_ID and CMUX_SOCKET_PATH are set for you
   process.exit(method ? 0 : 1)
 }
 
-// `cmux hooks setup` is a LOCAL command (it edits ~/.claude/settings.json); it does
-// not talk to the socket, so handle it before connecting.
-if (method === 'hooks') {
-  if (argv[1] !== 'setup') {
-    console.error('usage: cmux hooks setup')
-    process.exit(1)
-  }
-  const os = require('os')
-  const fs = require('fs')
-  const path = require('path')
-  const settingsPath =
-    process.env.CLAUDE_SETTINGS_PATH || path.join(os.homedir(), '.claude', 'settings.json')
-
-  let settings = {}
+// Hook commands receive one provider event as JSON on stdin. Global hooks should
+// silently do nothing when the agent is not running inside a cmux-linux terminal.
+if (method === 'agent-hook') {
+  if (!process.env.CMUX_SOCKET_PATH || !process.env.CMUX_SURFACE_ID) process.exit(0)
+  const provider = argv[1]
+  let event
   try {
-    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'))
+    event = JSON.parse(fs.readFileSync(0, 'utf8'))
   } catch {
-    /* no settings file yet — start fresh */
-  }
-  settings.hooks = settings.hooks || {}
-  const list = Array.isArray(settings.hooks.Notification) ? settings.hooks.Notification : []
-
-  // Idempotent: don't add a second cmux hook if one is already present.
-  const already = list.some(
-    (g) =>
-      g &&
-      Array.isArray(g.hooks) &&
-      g.hooks.some((h) => h && typeof h.command === 'string' && h.command.includes('cmux notify'))
-  )
-  if (already) {
-    console.log(`cmux: Claude Code notify hook already installed at ${settingsPath}`)
     process.exit(0)
   }
-
-  list.push({
-    hooks: [{ type: 'command', command: 'cmux notify --title Claude --body "needs your attention"' }]
-  })
-  settings.hooks.Notification = list
-  fs.mkdirSync(path.dirname(settingsPath), { recursive: true })
-  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n')
-  console.log(`cmux: installed Claude Code notify hook -> ${settingsPath}`)
-  console.log('      Claude Code will now flash its cmux-linux workspace when it needs you.')
-  process.exit(0)
+  hookRequest = mapAgentEvent(provider, event)
+  if (!hookRequest) process.exit(0)
+  method = hookRequest.method
 }
 
+// Integration setup edits provider configuration locally and never opens the app socket.
+if (method === 'hooks' || method === 'integrations') {
+  const legacy = method === 'hooks'
+  if (argv[1] !== 'setup') {
+    console.error(legacy ? 'usage: cmux hooks setup' : 'usage: cmux integrations setup [provider]')
+    process.exit(1)
+  }
+  const requested = legacy ? 'claude' : argv[2] || 'all'
+  const targets = requested === 'all' ? ['codex', 'claude', 'opencode'] : [requested]
+  let failed = false
+  for (const target of targets) {
+    const result = setupIntegration(target)
+    if (!result.ok) {
+      console.error(`cmux: ${result.error}`)
+      failed = true
+    } else {
+      console.log(
+        `cmux: ${result.changed ? 'installed' : 'already installed'} ${target} integration -> ${result.file}`
+      )
+    }
+  }
+  if (!failed && targets.includes('codex')) {
+    console.log('cmux: open /hooks in Codex and trust the new lifecycle hooks before use.')
+  }
+  process.exit(failed ? 1 : 0)
+}
+
+const watchAgents = method === 'watch-agents'
+if (watchAgents) method = 'subscribe-agents'
+
 // Parse --flags and trailing positional text.
-const params = {}
+const params = hookRequest ? { ...hookRequest.params } : {}
 const positional = []
-for (let i = 1; i < argv.length; i++) {
+for (let i = hookRequest ? argv.length : 1; i < argv.length; i++) {
   const a = argv[i]
   if (a.startsWith('--')) {
     // CLI flags are kebab-case; the JSON protocol uses JavaScript-style camelCase.
     const key = a.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
     params[key] = argv[++i]
-  }
-  else positional.push(a)
+  } else positional.push(a)
 }
-if (method === 'focus-agent' || method === 'agent-clear') {
+if (method === 'focus-agent' || method === 'agent-clear' || method === 'inspect-agent') {
   if (positional[0] && !params.agentId) params.agentId = positional[0]
+} else if (method === 'agent-capabilities') {
+  if (positional[0] && !params.provider) params.provider = positional[0]
 } else if (method === 'wait-agent') {
   if (positional[0] && !params.agentId) params.agentId = positional[0]
   if (positional[1] && !params.state) params.state = positional[1]
@@ -154,28 +192,45 @@ const conn = net.createConnection(socketPath, () => {
 let buf = ''
 conn.on('data', (d) => {
   buf += d.toString()
-  const nl = buf.indexOf('\n')
-  if (nl < 0) return
-  try {
-    const res = JSON.parse(buf.slice(0, nl))
+  let nl
+  while ((nl = buf.indexOf('\n')) >= 0) {
+    const line = buf.slice(0, nl)
+    buf = buf.slice(nl + 1)
+    if (!line.trim()) continue
+    let res
+    try {
+      res = JSON.parse(line)
+    } catch {
+      if (!watchAgents) {
+        conn.end()
+        process.exit(0)
+      }
+      continue
+    }
     if (res.error) {
+      if (hookRequest) process.exit(0)
       console.error('cmux: error:', res.error)
       conn.end()
       process.exit(1)
+    }
+    if (watchAgents) {
+      console.log(JSON.stringify(res))
+      continue
     }
     // Print any query result (list-workspaces / capabilities / identify);
     // action replies are just {ok:true}, which we don't echo.
     if (res.result && typeof res.result === 'object' && !res.result.ok) {
       console.log(JSON.stringify(res.result, null, 2))
     }
-  } catch {
-    /* ignore malformed reply */
+    conn.end()
+    process.exit(0)
   }
-  conn.end()
-  process.exit(0)
 })
 
 conn.on('error', (e) => {
-  console.error(`cmux: cannot reach cmux-linux at ${socketPath} (is the app running?) — ${e.message}`)
+  if (hookRequest) process.exit(0)
+  console.error(
+    `cmux: cannot reach cmux-linux at ${socketPath} (is the app running?) — ${e.message}`
+  )
   process.exit(1)
 })

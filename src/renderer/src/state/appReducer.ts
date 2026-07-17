@@ -49,12 +49,12 @@ export interface AppState {
 
 /** Mint a new workspace with one terminal. The display NAME is positional
  *  ("workspace N", by sidebar position) unless a custom `name` is given. */
-export function makeWorkspace(name?: string): Workspace {
+export function makeWorkspace(name?: string, cwd = '~'): Workspace {
   const pane = makePane({ id: uid('term') })
   return {
     id: `ws-${crypto.randomUUID()}`,
     name: normalizeWorkspaceName(name ?? ''),
-    cwd: '~',
+    cwd,
     root: { type: 'pane', pane },
     activePaneId: pane.id,
     status: null,
@@ -144,13 +144,14 @@ export type AppAction =
   | { type: 'reportUsage'; id: string; report: UsageReport }
   | { type: 'reportAgent'; report: AgentReport }
   | { type: 'clearAgent'; id: string; source?: string }
+  | { type: 'clearAgentsForSurface'; surfaceId: string }
   | { type: 'expireAgents'; now: number }
   | { type: 'focusAgent'; id: string }
   | { type: 'pane'; workspaceId: string; action: WorkspaceAction }
 
 // ── Action creators ──────────────────────────────────────────────────────────
-export function createWorkspaceAction(name?: string): AppAction {
-  return { type: 'createWorkspace', workspace: makeWorkspace(name) }
+export function createWorkspaceAction(name?: string, cwd?: string): AppAction {
+  return { type: 'createWorkspace', workspace: makeWorkspace(name, cwd) }
 }
 /** Wrap a pane-level (M2) action so it targets a specific workspace's tree. */
 export function paneAction(workspaceId: string, action: WorkspaceAction): AppAction {
@@ -299,13 +300,38 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'clearAgent':
       return clearAgent(state, action.id, action.source)
 
-    case 'expireAgents': {
-      const agents = state.agents.filter(
-        (agent) => agent.expiresAt === undefined || agent.expiresAt > action.now
-      )
+    case 'clearAgentsForSurface': {
+      const agents = state.agents.filter((agent) => agent.surfaceId !== action.surfaceId)
       return agents.length === state.agents.length
         ? state
         : refreshAgentAttention({ ...state, agents })
+    }
+
+    case 'expireAgents': {
+      let changed = false
+      const agents = state.agents.flatMap((agent) => {
+        if (agent.expiresAt !== undefined && agent.expiresAt <= action.now) {
+          changed = true
+          return []
+        }
+        if (
+          agent.staleAt !== undefined &&
+          agent.staleAt <= action.now &&
+          agent.state !== 'unknown'
+        ) {
+          changed = true
+          const staleAgent: AgentRecord = {
+            ...agent,
+            state: 'unknown',
+            message: 'State report became stale'
+          }
+          delete staleAgent.activity
+          delete staleAgent.blockReason
+          return [staleAgent]
+        }
+        return [agent]
+      })
+      return changed ? refreshAgentAttention({ ...state, agents }) : state
     }
 
     case 'focusAgent': {

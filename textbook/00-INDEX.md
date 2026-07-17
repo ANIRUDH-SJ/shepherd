@@ -85,6 +85,10 @@ Think of the book in five "acts":
 - `15-packaging-and-distribution.md` — turning it into an AppImage/.deb others install.
 - `18-usage-telemetry.md` — trustworthy token/cost measurements: provenance,
   validation, aggregation, adapters, UI tradeoffs, and testing.
+- `19-semantic-agent-runtime.md` — provider-neutral lifecycle state, identity,
+  ordering, socket automation, sidebar focus, integrations, and trust boundaries.
+- `20-worktree-workspaces.md` — safe Git worktree creation, process boundaries,
+  workspace cwd propagation, failure semantics, and testing.
 
 **Reference**
 
@@ -118,6 +122,8 @@ Think of the book in five "acts":
 | `16-glossary.md`                        | Every term defined                                                                                    | —           |
 | `17-how-it-all-connects.md`             | End-to-end trace of a keystroke + a notification                                                      | all         |
 | `18-usage-telemetry.md`                 | Token accounting, accuracy, provider-neutral events, validation, aggregation, adapters, and UI design | 09, 11, 13  |
+| `19-semantic-agent-runtime.md`          | Semantic state machines, lifecycle reports, identity, ordering, adapters, agent UI, and automation     | 09, 11, 12  |
+| `20-worktree-workspaces.md`             | Git worktree isolation, validated process execution, workspace cwd flow, and failure boundaries        | 06, 09, 11  |
 
 ---
 
@@ -177,3 +183,9 @@ milestone, we'll deepen the relevant chapter with real snippets from _our_ code,
 so the book and the codebase stay in sync. Nothing here is throwaway.
 
 **Now go read `01-the-big-picture.md`.** 🚀
+
+## Runtime extensions
+
+- `19-semantic-agent-runtime.md` — provider-neutral lifecycle state and ownership
+- `20-worktree-workspaces.md` — safe Git worktree orchestration
+- `21-live-state-subscriptions.md` — snapshot-plus-delta streams, ordering, and backpressure

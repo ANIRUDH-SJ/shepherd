@@ -13,6 +13,18 @@
 
 - **ABI (Application Binary Interface)** — The binary contract between compiled code and its host (Node's C++ internals, the OS). A native module like node-pty is compiled against one specific ABI, so it must be rebuilt or ship a prebuilt binary matching the exact Node/Electron version — a mismatch throws the classic "compiled against a different Node.js version" error. (see 06-node-pty.md)
 - **addon (xterm.js)** — An optional plug-in that extends the base xterm.js terminal: FitAddon (sizing), WebGL addon (GPU drawing), SearchAddon (find). You load only the ones you need. (see 07-xtermjs.md)
+- **agent activity** — Optional detail that refines a `working` semantic state,
+  such as reading, editing, testing, or web search. Activity improves display but
+  is not a stable automation state. (see 19-semantic-agent-runtime.md)
+- **agent block reason** — Optional detail that explains a `blocked` state, such
+  as approval, user input, authentication, tool error, or an external dependency.
+  It determines whether the workspace needs attention. (see 19-semantic-agent-runtime.md)
+- **agent record** — The renderer's current normalized description of one live
+  agent: identity, provider, source, semantic state, timestamps, and its verified
+  workspace/pane/surface ownership. (see 19-semantic-agent-runtime.md)
+- **agent semantic state** — The small provider-neutral lifecycle vocabulary
+  `working`, `blocked`, `done`, `idle`, and `unknown`. Scripts depend on this
+  layer; the UI may refine it with activity or block reason. (see 19-semantic-agent-runtime.md)
 - **ANSI escape code** — A short byte sequence starting with the ESC character (`0x1B`) that a program embeds in its output to *control* the terminal — move the cursor, set colors, clear the screen — instead of printing literal text. Named after the ANSI X3.64 standard. (see 02-how-terminals-work.md)
 - **AppImage** — A single self-contained executable that bundles the app and its dependencies and runs on most Linux distros with no install step. Our primary distribution format. (see 15-packaging-and-distribution.md)
 - **attention state** — see *unread / attention state*.
@@ -59,7 +71,10 @@
 ## H
 
 - **HMR (Hot Module Replacement)** — A dev-server feature (Vite's) that swaps an edited module into the running app without a full reload, preserving state — so UI changes appear near-instantly while you code. (see 14-build-tooling-and-vite.md)
-- **hook (Claude Code / agent hook)** — A user-configured command an agent runs at a lifecycle event (e.g. Claude Code's "Notification" event). `cmux hooks setup` installs one that calls the cmux CLI, so a real agent lights up the sidebar. (see 12-notifications-and-osc.md)
+- **hook (agent lifecycle hook)** — A configured command an agent runs at a
+  lifecycle event such as a tool call, permission request, turn completion, or
+  session end. `cmux integrations setup` installs hooks that translate these
+  events into semantic reports. (see 19-semantic-agent-runtime.md)
 
 ## I
 
@@ -107,6 +122,10 @@
 - **raw mode** — see *canonical vs raw mode*.
 - **ref (useRef)** — A React hook that holds a mutable value across renders without triggering a re-render. We use it to hold the imperative xterm.js `Terminal` instance and the DOM node it mounts into. (see 08-react-in-this-app.md)
 - **renderer process** — An Electron process running a Chromium window — our React UI. It has no direct OS access; it asks main to do OS things over IPC. Think "the frontend." (see 03-electron-architecture.md)
+- **revision (agent report)** — An optional monotonic producer sequence number.
+  The reducer rejects a sequenced report that is not newer than the stored
+  revision, preventing stale lifecycle state from overwriting newer state.
+  (see 19-semantic-agent-runtime.md)
 
 ## S
 
@@ -127,6 +146,9 @@
 - **Tauri** — An alternative to Electron that pairs a Rust backend with the OS's *native* webview (no bundled Chromium), yielding smaller apps. We chose Electron for its mature Node ecosystem (node-pty) and one consistent Chromium everywhere. (see 03-electron-architecture.md)
 - **teletype (TTY)** — The original electromechanical terminal (a printing keyboard); its abbreviation survives as "TTY," the kernel's word for a terminal device. A pty is a software stand-in for one. (see 02-how-terminals-work.md)
 - **tiling** — Automatically arranging panes to fill the available space without overlapping (as opposed to floating windows). Splitting a pane subdivides its rectangle; our layout tree drives the arrangement. (see 10-tiling-and-layout.md)
+- **TTL (time to live)** — A bounded lifetime attached to an agent report. Main
+  converts it to a local expiry time so a missing provider cleanup event cannot
+  leave the sidebar stale forever. (see 19-semantic-agent-runtime.md)
 - **TTY** — see *teletype*.
 - **TypeScript** — JavaScript plus a static type system checked at build time. We use it to model the Window→Workspace→Pane→Surface→Panel data and catch shape errors before they run. (see 09-typescript-and-the-data-model.md)
 

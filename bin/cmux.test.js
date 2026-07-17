@@ -36,7 +36,7 @@ async function main() {
     server.listen(socketPath, resolve)
   })
 
-  async function runCli(args) {
+  async function runCli(args, input) {
     const child = spawn(cliPath, args, {
       env: {
         ...process.env,
@@ -51,6 +51,7 @@ async function main() {
     child.stderr.on('data', (chunk) => {
       stderr += chunk.toString()
     })
+    if (input !== undefined) child.stdin.end(input)
     const exitCode = await new Promise((resolve) => child.once('exit', resolve))
     assert(exitCode === 0, `CLI exits successfully${stderr ? `: ${stderr}` : ''}`)
   }
@@ -110,6 +111,84 @@ async function main() {
   assert(wait?.method === 'wait-agent', 'sends the wait-agent method')
   assert(wait?.params.agentId === 'codex:term-test', 'targets the requested agent wait')
   assert(wait?.params.state === 'done', 'preserves the requested wait state')
+
+  await runCli([
+    'list-agents',
+    '--provider',
+    'codex,claude',
+    '--state',
+    'blocked,done',
+    '--updated-after',
+    '100',
+    '--limit',
+    '25'
+  ])
+  const list = requests[4]
+  assert(list?.method === 'list-agents', 'sends the filtered agent-list method')
+  assert(list?.params.provider === 'codex,claude', 'preserves provider query values')
+  assert(list?.params.state === 'blocked,done', 'preserves semantic-state query values')
+  assert(list?.params.updatedAfter === '100', 'maps the update cursor')
+  assert(list?.params.limit === '25', 'maps the query result limit')
+
+  await runCli(['agent-snapshot', '--session-id', 'session-1'])
+  const snapshot = requests[5]
+  assert(snapshot?.method === 'agent-snapshot', 'sends the agent snapshot method')
+  assert(snapshot?.params.sessionId === 'session-1', 'maps the provider session filter')
+
+  await runCli(['agent-schema'])
+  const schema = requests[6]
+  assert(schema?.method === 'agent-schema', 'requests the machine-readable agent schema')
+
+  await runCli(['agent-capabilities', 'codex'])
+  const capabilities = requests[7]
+  assert(capabilities?.method === 'agent-capabilities', 'requests agent capabilities')
+  assert(capabilities?.params.provider === 'codex', 'maps the positional capability provider')
+
+  await runCli(['inspect-agent', 'codex:term-test', '--lines', '25', '--max-bytes', '4096'])
+  const inspection = requests[8]
+  assert(inspection?.method === 'inspect-agent', 'requests bounded agent inspection')
+  assert(inspection?.params.agentId === 'codex:term-test', 'maps the inspected agent id')
+  assert(inspection?.params.lines === '25', 'maps the inspection line limit')
+  assert(inspection?.params.maxBytes === '4096', 'maps the inspection byte limit')
+
+  await runCli([
+    'new-worktree',
+    '--repo',
+    '/tmp/project',
+    '--path',
+    '/tmp/project-feature',
+    '--new-branch',
+    'feature/test',
+    '--start-point',
+    'main',
+    '--name',
+    'feature workspace'
+  ])
+  const worktree = requests[9]
+  assert(worktree?.method === 'new-worktree', 'requests a Git worktree workspace')
+  assert(worktree?.params.newBranch === 'feature/test', 'maps the new worktree branch')
+  assert(worktree?.params.startPoint === 'main', 'maps the worktree start point')
+  assert(worktree?.params.name === 'feature workspace', 'maps the workspace display name')
+
+  await runCli(
+    ['agent-hook', 'codex'],
+    JSON.stringify({
+      hook_event_name: 'PermissionRequest',
+      session_id: 'session-1',
+      tool_name: 'Bash'
+    })
+  )
+  const hook = requests[10]
+  assert(hook?.method === 'agent-report', 'hook event becomes an agent report')
+  assert(hook?.params.provider === 'codex', 'hook preserves provider identity')
+  assert(hook?.params.state === 'blocked', 'permission hook reports blocked')
+  assert(hook?.params.blockReason === 'approval', 'permission hook reports approval reason')
+  assert(hook?.params.sessionId === 'session-1', 'hook preserves native session id')
+
+  await runCli(['watch-agents', '--state', 'blocked'])
+  const watch = requests[11]
+  assert(watch?.method === 'subscribe-agents', 'maps watch-agents to a live subscription')
+  assert(watch?.params.state === 'blocked', 'preserves subscription query filters')
 
   await new Promise((resolve) => server.close(resolve))
 
