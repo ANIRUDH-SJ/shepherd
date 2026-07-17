@@ -93,6 +93,8 @@ Think of the book in five "acts":
   ordering, reconnect behavior, backpressure, and cleanup.
 - `22-automatic-process-discovery.md` — zero-setup terminal-agent detection,
   Linux process ancestry, safe identity, activity inference, and authority.
+- `23-live-workspace-metadata.md` — active-terminal cwd, Git/worktree discovery,
+  cached branch observation, state ownership, persistence, and sidebar design.
 
 **Reference**
 
@@ -130,6 +132,7 @@ Think of the book in five "acts":
 | `20-worktree-workspaces.md`             | Git worktree isolation, validated process execution, workspace cwd flow, and failure boundaries        | 06, 09, 11  |
 | `21-live-state-subscriptions.md`        | Snapshot-plus-delta streams, filters, ordering, reconnect behavior, and slow-consumer bounds            | 11, 19      |
 | `22-automatic-process-discovery.md`     | Linux PTY process ancestry, safe command identity, classification, activity, precedence, and cleanup    | 06, 19      |
+| `23-live-workspace-metadata.md`         | Shell cwd, Git roots, cached HEAD observation, async ownership, persistence, and project/branch UI       | 06, 09, 20  |
 
 ---
 
@@ -196,3 +199,4 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `20-worktree-workspaces.md` — safe Git worktree orchestration
 - `21-live-state-subscriptions.md` — snapshot-plus-delta streams, ordering, and backpressure
 - `22-automatic-process-discovery.md` — zero-setup agent presence and safe process ancestry
+- `23-live-workspace-metadata.md` — live project/branch context from the active terminal

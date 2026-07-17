@@ -53,10 +53,12 @@ const processContexts = listTerminalProcessContexts(() => ({
   processes: [
     { pid: 50, name: 'node', command: 'codex' },
     { pid: 42, name: 'zsh', command: 'zsh' }
-  ]
+  ],
+  cwd: '/project/src'
 }))
 assert(processContexts[0]?.lastActivityAt === 30, 'tracks recent PTY activity for discovery')
 assert(processContexts[0]?.processes[0]?.command === 'codex', 'returns a safe process ancestry')
+assert(processContexts[0]?.cwd === '/project/src', 'returns live cwd for workspace metadata')
 
 const byteLimited = inspectTerminal('term-1', { lines: 10, maxBytes: 5 }, () => ({
   foreground: null

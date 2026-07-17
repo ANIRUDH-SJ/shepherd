@@ -16,6 +16,7 @@ interface Props {
   active: boolean
   workspaceActive: boolean
   workspaceId: string
+  workspaceCwd: string
   surfaceNumbers: Map<string, number>
   dispatch: Dispatch<WorkspaceAction>
 }
@@ -26,6 +27,7 @@ export default function PaneView({
   active,
   workspaceActive,
   workspaceId,
+  workspaceCwd,
   surfaceNumbers,
   dispatch
 }: Props): React.JSX.Element {
@@ -58,6 +60,7 @@ export default function PaneView({
             key={s.id}
             surfaceId={s.id}
             workspaceId={workspaceId}
+            cwd={workspaceCwd}
             active={s.id === pane.activeSurfaceId}
             focused={workspaceActive && active && s.id === pane.activeSurfaceId}
           />

@@ -104,7 +104,7 @@ export default function Sidebar({
               }}
               role="button"
               tabIndex={0}
-              aria-label={`${displayName}${w.id === activeWorkspaceId ? ', active workspace' : ''}${agentSummary ? `, ${agentSummary}` : ''}`}
+              aria-label={`${displayName}, project ${w.projectName}, ${w.gitBranch ? `branch ${w.gitBranch}` : 'not a Git repository'}${w.id === activeWorkspaceId ? ', active workspace' : ''}${agentSummary ? `, ${agentSummary}` : ''}`}
               className={
                 'ws-row' +
                 (w.id === activeWorkspaceId ? ' active' : '') +
@@ -207,7 +207,12 @@ export default function Sidebar({
                 )}
               </div>
               <div className="ws-meta">
-                <span className="ws-status">{w.status ?? w.cwd}</span>
+                <span
+                  className="ws-project"
+                  title={`Project: ${w.projectName}\nDirectory: ${w.cwd}`}
+                >
+                  {w.projectName}
+                </span>
                 {summary && (
                   <span
                     className="ws-usage"
@@ -218,6 +223,13 @@ export default function Sidebar({
                   </span>
                 )}
               </div>
+              <div
+                className={'ws-branch' + (w.gitBranch ? '' : ' no-git')}
+                title={w.gitBranch ? `Git branch: ${w.gitBranch}` : 'Not a Git repository'}
+              >
+                git: {w.gitBranch ?? 'no git'}
+              </div>
+              {w.status && <div className="ws-status">{w.status}</div>}
               {agentSummary && (
                 <div className="ws-agent-rollup" title={`Agents: ${agentSummary}`}>
                   {agentSummary}

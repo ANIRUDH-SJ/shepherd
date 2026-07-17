@@ -62,6 +62,53 @@ assert(
   cwdCreate.type === 'createWorkspace' && cwdCreate.workspace.cwd === '/tmp/project-worktree',
   'workspace creation preserves an explicit worktree cwd'
 )
+assert(
+  cwdCreate.type === 'createWorkspace' && cwdCreate.workspace.projectName === 'project-worktree',
+  'workspace creation derives an initial project label'
+)
+
+let metadataState = initialApp()
+const metadataWorkspace = active(metadataState)
+const metadataPane = findPane(metadataWorkspace.root, metadataWorkspace.activePaneId)!
+metadataState = appReducer(metadataState, {
+  type: 'setWorkspaceMetadata',
+  id: metadataWorkspace.id,
+  metadata: {
+    surfaceId: metadataPane.activeSurfaceId,
+    cwd: '/projects/cmux-linux/src',
+    projectName: 'cmux-linux',
+    gitRoot: '/projects/cmux-linux',
+    gitBranch: 'main'
+  }
+})
+assert(active(metadataState).projectName === 'cmux-linux', 'applies live project metadata')
+assert(active(metadataState).gitBranch === 'main', 'applies a live Git branch')
+assert(
+  active(metadataState).cwd === '/projects/cmux-linux/src',
+  'updates the workspace cwd after cd'
+)
+const metadataBeforeStale = active(metadataState)
+metadataState = appReducer(metadataState, {
+  type: 'setWorkspaceMetadata',
+  id: metadataWorkspace.id,
+  metadata: {
+    surfaceId: 'term-stale',
+    cwd: '/tmp/stale',
+    projectName: 'stale',
+    gitRoot: null,
+    gitBranch: null
+  }
+})
+assert(active(metadataState) === metadataBeforeStale, 'ignores metadata from a non-active terminal')
+metadataState = appReducer(
+  metadataState,
+  paneAction(metadataWorkspace.id, splitAction(metadataWorkspace.activePaneId, 'row'))
+)
+assert(
+  active(metadataState).metadataSurfaceId === null,
+  'clears metadata ownership on surface change'
+)
+assert(active(metadataState).gitBranch === null, 'clears stale branch data on surface change')
 
 const exactUsage: UsageReport = {
   inputTokens: 1000,

@@ -4,12 +4,14 @@ import {
   uid,
   firstPaneId,
   isValidLayoutNode,
+  findPane,
   findPaneBySurfaceId,
   listSurfaceIds
 } from '../layout/tree'
 import { workspaceReducer, type WorkspaceState, type WorkspaceAction } from './workspaceReducer'
 import { agentNeedsAttention, type AgentRecord, type AgentReport } from '../../../shared/agent'
 import { normalizeWorkspaceName } from '../../../shared/workspace'
+import { workspaceProjectName, type WorkspaceMetadata } from '../../../shared/workspaceMetadata'
 import {
   addWorkspaceUsage,
   emptyWorkspaceUsage,
@@ -29,6 +31,10 @@ export interface Workspace {
   id: string
   name: string
   cwd: string
+  projectName: string
+  gitRoot: string | null
+  gitBranch: string | null
+  metadataSurfaceId: string | null
   // the M2 layout state:
   root: LayoutNode
   activePaneId: string
@@ -55,6 +61,10 @@ export function makeWorkspace(name?: string, cwd = '~'): Workspace {
     id: `ws-${crypto.randomUUID()}`,
     name: normalizeWorkspaceName(name ?? ''),
     cwd,
+    projectName: workspaceProjectName(cwd),
+    gitRoot: null,
+    gitBranch: null,
+    metadataSurfaceId: null,
     root: { type: 'pane', pane },
     activePaneId: pane.id,
     status: null,
@@ -93,6 +103,10 @@ export function sanitizeRestored(raw: unknown): AppState | null {
       id: entry.id,
       name: typeof entry.name === 'string' ? entry.name : '',
       cwd: typeof entry.cwd === 'string' ? entry.cwd : '~',
+      projectName: workspaceProjectName(typeof entry.cwd === 'string' ? entry.cwd : '~'),
+      gitRoot: null,
+      gitBranch: null,
+      metadataSurfaceId: null,
       root,
       activePaneId: typeof entry.activePaneId === 'string' ? entry.activePaneId : firstPaneId(root),
       status: null,
@@ -139,6 +153,7 @@ export type AppAction =
   | { type: 'selectWorkspace'; id: string }
   | { type: 'closeWorkspace'; id: string }
   | { type: 'renameWorkspace'; id: string; name: string }
+  | { type: 'setWorkspaceMetadata'; id: string; metadata: WorkspaceMetadata }
   | { type: 'setStatus'; id: string; status: string | null }
   | { type: 'setAttention'; id: string; unread?: boolean; attention?: boolean }
   | { type: 'reportUsage'; id: string; report: UsageReport }
@@ -278,6 +293,29 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         name: normalizeWorkspaceName(action.name)
       }))
 
+    case 'setWorkspaceMetadata':
+      return mapWorkspace(state, action.id, (w) => {
+        const activeSurfaceId = findPane(w.root, w.activePaneId)?.activeSurfaceId
+        if (activeSurfaceId !== action.metadata.surfaceId) return w
+        if (
+          w.metadataSurfaceId === action.metadata.surfaceId &&
+          w.cwd === action.metadata.cwd &&
+          w.projectName === action.metadata.projectName &&
+          w.gitRoot === action.metadata.gitRoot &&
+          w.gitBranch === action.metadata.gitBranch
+        ) {
+          return w
+        }
+        return {
+          ...w,
+          cwd: action.metadata.cwd,
+          projectName: action.metadata.projectName,
+          gitRoot: action.metadata.gitRoot,
+          gitBranch: action.metadata.gitBranch,
+          metadataSurfaceId: action.metadata.surfaceId
+        }
+      })
+
     case 'setStatus':
       return mapWorkspace(state, action.id, (w) => ({ ...w, status: action.status }))
 
@@ -339,6 +377,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       if (!agent) return state
       const workspace = state.workspaces.find((candidate) => candidate.id === agent.workspaceId)
       if (!workspace || !findPaneBySurfaceId(workspace.root, agent.surfaceId)) return state
+      const previousSurfaceId = findPane(workspace.root, workspace.activePaneId)?.activeSurfaceId
       let focused: WorkspaceState = { root: workspace.root, activePaneId: workspace.activePaneId }
       focused = workspaceReducer(focused, { type: 'setActivePane', paneId: agent.paneId })
       focused = workspaceReducer(focused, {
@@ -354,6 +393,14 @@ export function appReducer(state: AppState, action: AppAction): AppState {
             ? {
                 ...candidate,
                 ...focused,
+                ...(previousSurfaceId !== agent.surfaceId
+                  ? {
+                      projectName: workspaceProjectName(candidate.cwd),
+                      gitRoot: null,
+                      gitBranch: null,
+                      metadataSurfaceId: null
+                    }
+                  : {}),
                 unread: false,
                 attention: false,
                 agentUnread: false,
@@ -366,9 +413,23 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'pane': {
       const next = mapWorkspace(state, action.workspaceId, (w) => {
+        const previousSurfaceId = findPane(w.root, w.activePaneId)?.activeSurfaceId
         const sub: WorkspaceState = { root: w.root, activePaneId: w.activePaneId }
         const workspace = workspaceReducer(sub, action.action)
-        return { ...w, root: workspace.root, activePaneId: workspace.activePaneId }
+        const nextSurfaceId = findPane(workspace.root, workspace.activePaneId)?.activeSurfaceId
+        return {
+          ...w,
+          root: workspace.root,
+          activePaneId: workspace.activePaneId,
+          ...(previousSurfaceId !== nextSurfaceId
+            ? {
+                projectName: workspaceProjectName(w.cwd),
+                gitRoot: null,
+                gitBranch: null,
+                metadataSurfaceId: null
+              }
+            : {})
+        }
       })
       const workspace = next.workspaces.find((candidate) => candidate.id === action.workspaceId)
       if (!workspace) return next
