@@ -38,6 +38,7 @@ body.resizing * {
   overflow: hidden;
 }
 .sidebar-inner {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -234,6 +235,18 @@ body.resizing * {
 .ws-row.active .ws-usage {
   color: #dbe6ff;
 }
+.ws-agent-rollup {
+  color: #777f91;
+  font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 9.5px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ws-row.active .ws-agent-rollup {
+  color: #cdddff;
+}
 
 /* Semantic agent list */
 .agent-section {
@@ -308,12 +321,19 @@ body.resizing * {
   white-space: nowrap;
 }
 .agent-state {
-  max-width: 52%;
+  max-width: 42%;
   flex: 0 1 auto;
   color: #858c9c;
   font-size: 9.5px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.agent-elapsed {
+  flex: 0 0 auto;
+  color: #646b7c;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .agent-context {
@@ -374,6 +394,11 @@ body.resizing * {
   .agent-row.state-working .agent-state-dot,
   .ws-row.attention {
     animation: none;
+  }
+}
+@container (max-width: 210px) {
+  .agent-elapsed {
+    display: none;
   }
 }
 
