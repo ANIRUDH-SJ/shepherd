@@ -61,6 +61,12 @@ assert(setupIntegration('claude', env).changed === false, 'Claude Code setup is 
 const opencode = setupIntegration('opencode', env)
 assert(opencode.ok && opencode.changed, 'installs the OpenCode plugin')
 assert(fs.readFileSync(opencodePath, 'utf8').startsWith(OPENCODE_MARKER), 'marks managed plugin')
+const opencodePlugin = fs.readFileSync(opencodePath, 'utf8')
+assert(
+  opencodePlugin.includes('let revision = Date.now()'),
+  'OpenCode sequences safely across reloads'
+)
+assert(opencodePlugin.includes("'--revision', String(revision)"), 'OpenCode reports each revision')
 assert(setupIntegration('opencode', env).changed === false, 'OpenCode setup is idempotent')
 
 const conflictPath = path.join(root, 'opencode', 'custom.js')
