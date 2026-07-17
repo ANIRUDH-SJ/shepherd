@@ -2,8 +2,17 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { registerPtyIpc, killAllTerminals } from './pty'
 import { startSocketServer, stopSocketServer, updateWorkspaceMirror } from './socket'
+import { startAutomaticAgentDiscovery, type AutomaticAgentDiscoveryRuntime } from './agentDiscovery'
 import { loadSession, saveSession } from './session'
-import { IPC, type WorkspacesSync } from '../shared/ipc'
+import { IPC, type SocketApply, type WorkspacesSync } from '../shared/ipc'
+
+let automaticAgentDiscovery: AutomaticAgentDiscoveryRuntime | null = null
+
+function sendSocketCommand(cmd: SocketApply): void {
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (!window.isDestroyed()) window.webContents.send(IPC.SOCKET_COMMAND, cmd)
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN PROCESS  (the "backend" — full Node.js + OS access)
@@ -54,13 +63,13 @@ app.whenReady().then(() => {
   registerPtyIpc() // wire up the terminal IPC handlers before any window loads
 
   // Socket server: route incoming commands to the renderer to update app state.
-  startSocketServer((cmd) => {
-    for (const w of BrowserWindow.getAllWindows()) {
-      if (!w.isDestroyed()) w.webContents.send(IPC.SOCKET_COMMAND, cmd)
-    }
-  })
+  startSocketServer(sendSocketCommand)
+  automaticAgentDiscovery = startAutomaticAgentDiscovery(sendSocketCommand)
   // Renderer mirrors its workspace list here so the socket can resolve ids/names.
-  ipcMain.on(IPC.WORKSPACES_SYNC, (_e, sync: WorkspacesSync) => updateWorkspaceMirror(sync))
+  ipcMain.on(IPC.WORKSPACES_SYNC, (_e, sync: WorkspacesSync) => {
+    updateWorkspaceMirror(sync)
+    automaticAgentDiscovery?.updateAgents(sync.agents)
+  })
 
   // Session persistence: load synchronously at startup, save (debounced) on change.
   ipcMain.on(IPC.SESSION_LOAD_SYNC, (e) => {
@@ -86,6 +95,8 @@ app.on('window-all-closed', () => {
 
 // Extra safety: kill shells + close the socket if the app quits some other way too.
 app.on('before-quit', () => {
+  automaticAgentDiscovery?.stop()
+  automaticAgentDiscovery = null
   killAllTerminals()
   stopSocketServer()
 })

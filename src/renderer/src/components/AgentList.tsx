@@ -33,7 +33,7 @@ export default function AgentList({ agents, workspaces, dispatch }: Props): Reac
         <span>{agents.length === 0 ? 'none' : `${agents.length} grouped`}</span>
       </div>
       {ordered.length === 0 ? (
-        <div className="agent-empty">no agents reported</div>
+        <div className="agent-empty">no agents detected</div>
       ) : (
         <div className="agent-list" role="list">
           {ordered.map((agent) => {

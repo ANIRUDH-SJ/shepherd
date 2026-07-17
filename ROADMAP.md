@@ -30,6 +30,8 @@ frontend", IPC = "the API calls between them".
 - [ ] **M6** — Polish, theming & packaging/distribution
 - [x] **M7** — Semantic agent runtime, sidebar, control API, and provider integrations ✓
 - [x] **M8** — Git worktree workspace creation and cwd propagation ✓
+- [x] **M9** — Filtered live agent subscriptions ✓
+- [x] **M10** — Automatic terminal-agent discovery with no provider setup ✓
 
 ---
 
@@ -210,6 +212,22 @@ workspace without shell interpolation or hidden cleanup.*
 - [x] Publish the subscription envelope in schema/capability discovery
 - [x] Add socket, protocol, CLI, learning, and architecture coverage
 
+## M10 — Automatic terminal-agent discovery
+*Goal: list agents started in cmux-linux terminals without requiring hooks,
+configuration edits, or manual lifecycle reports.*
+
+- [x] Anchor discovery to registered PTYs for exact workspace/surface ownership
+- [x] Read bounded Linux foreground-to-shell process ancestry
+- [x] Retain only safe executable/script basenames, never prompts or arguments
+- [x] Recognize common agent CLIs plus safely named future/custom agents
+- [x] Derive zero-setup `working`/`idle` state from recent PTY activity
+- [x] Prefer rich provider lifecycle reports without duplicate sidebar rows
+- [x] Clear automatic records when the process, terminal, or application exits
+- [x] Publish automatic-discovery capability in the agent protocol
+- [x] Cover classification, precedence, deduplication, rediscovery, and cleanup
+- [x] Prove detection and cleanup against a live isolated Electron app
+- [x] Add the implementation walkthrough and architecture textbook chapter
+
 ---
 
 ## Stretch / later (post-v1)
@@ -233,6 +251,6 @@ workspace without shell interpolation or hidden cleanup.*
 - Chose **Electron over libghostty embed**: libghostty is the renderer cmux
   itself uses, but its embedding C API is still unstable and it's Zig — wrong
   effort-to-payoff for now. Revisit at Level 3.
-- The **Unix socket + renderer reducer** is the backbone for live agent state.
-  Provider hooks/plugins publish structured lifecycle reports; a watched state
-  directory is not required for the implemented runtime.
+- The **renderer reducer** is the backbone for live agent state. Bounded PTY
+  process discovery provides zero-setup presence, while the Unix socket accepts
+  richer provider lifecycle reports. A watched state directory is not required.

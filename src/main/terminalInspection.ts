@@ -1,4 +1,5 @@
 import { readFileSync, readlinkSync } from 'fs'
+import { basename, dirname } from 'path'
 import {
   DEFAULT_AGENT_INSPECT_BYTES,
   DEFAULT_AGENT_INSPECT_LINES,
@@ -17,6 +18,8 @@ interface TerminalCapture {
   createdAt: number
   output: Buffer
   droppedBytes: number
+  lastInputAt: number
+  lastOutputAt: number
 }
 
 export interface TerminalRegistration {
@@ -40,6 +43,15 @@ export type TerminalInspectionValidation =
 export interface ForegroundProcess {
   pid: number
   name: string
+  command?: string
+}
+
+export interface TerminalProcessContext {
+  surfaceId: string
+  workspaceId?: string
+  shellPid: number
+  processes: ForegroundProcess[]
+  lastActivityAt: number
 }
 
 export interface TerminalInspection {
@@ -61,6 +73,7 @@ export interface TerminalInspection {
 
 interface ProcessContext {
   foreground: ForegroundProcess | null
+  processes?: ForegroundProcess[]
   cwd?: string
 }
 
@@ -101,18 +114,26 @@ export function normalizeTerminalInspection(
 }
 
 export function registerTerminalInspection(registration: TerminalRegistration): void {
+  const createdAt = registration.createdAt ?? Date.now()
   captures.set(registration.surfaceId, {
     ...registration,
-    createdAt: registration.createdAt ?? Date.now(),
+    createdAt,
     initialCwd: registration.cwd,
     output: Buffer.alloc(0),
-    droppedBytes: 0
+    droppedBytes: 0,
+    lastInputAt: createdAt,
+    lastOutputAt: createdAt
   })
 }
 
-export function appendTerminalInspectionOutput(surfaceId: string, data: string): void {
+export function appendTerminalInspectionOutput(
+  surfaceId: string,
+  data: string,
+  timestamp = Date.now()
+): void {
   const capture = captures.get(surfaceId)
   if (!capture) return
+  capture.lastOutputAt = timestamp
   const appended = Buffer.concat([capture.output, Buffer.from(data)])
   if (appended.length <= MAX_TERMINAL_CAPTURE_BYTES) {
     capture.output = appended
@@ -121,6 +142,11 @@ export function appendTerminalInspectionOutput(surfaceId: string, data: string):
   const dropped = appended.length - MAX_TERMINAL_CAPTURE_BYTES
   capture.output = appended.subarray(dropped)
   capture.droppedBytes += dropped
+}
+
+export function recordTerminalInspectionInput(surfaceId: string, timestamp = Date.now()): void {
+  const capture = captures.get(surfaceId)
+  if (capture) capture.lastInputAt = timestamp
 }
 
 export function resizeTerminalInspection(surfaceId: string, cols: number, rows: number): void {
@@ -138,14 +164,86 @@ export function clearTerminalInspections(): void {
   captures.clear()
 }
 
-function parseStat(stat: string): { processGroup: number; foregroundGroup: number } | null {
+function parseStat(
+  stat: string
+): { parentPid: number; processGroup: number; foregroundGroup: number } | null {
   const close = stat.lastIndexOf(')')
   if (close < 0) return null
   const fields = stat.slice(close + 2).split(' ')
+  const parentPid = Number(fields[1])
   const processGroup = Number(fields[2])
   const foregroundGroup = Number(fields[5])
-  if (!Number.isInteger(processGroup) || !Number.isInteger(foregroundGroup)) return null
-  return { processGroup, foregroundGroup }
+  if (
+    !Number.isInteger(parentPid) ||
+    !Number.isInteger(processGroup) ||
+    !Number.isInteger(foregroundGroup)
+  ) {
+    return null
+  }
+  return { parentPid, processGroup, foregroundGroup }
+}
+
+const COMMAND_RUNNERS = new Set([
+  'node',
+  'nodejs',
+  'python',
+  'python3',
+  'bun',
+  'bunx',
+  'deno',
+  'npm',
+  'npx',
+  'pnpm',
+  'yarn',
+  'uv'
+])
+const RUNNER_WORDS = new Set(['run', 'exec', 'x', '-m'])
+
+function safeCommandToken(value: string): string | undefined {
+  const token = basename(value).replace(/\.(?:c?js|mjs|py)$/i, '')
+  return token && token.length <= 80 && /^[A-Za-z0-9@+_.-]+$/.test(token) ? token : undefined
+}
+
+function meaningfulCommandToken(value: string): string | undefined {
+  const token = safeCommandToken(value)
+  if (!token || !['cli', 'index', 'main', '__main__'].includes(token.toLowerCase())) return token
+  return safeCommandToken(dirname(value)) ?? token
+}
+
+function processCommand(pid: number, name: string): string | undefined {
+  let executable: string | undefined
+  try {
+    executable = safeCommandToken(readlinkSync(`/proc/${pid}/exe`))
+  } catch {
+    // The process may have exited between /proc reads.
+  }
+
+  let argv: string[] = []
+  try {
+    argv = readFileSync(`/proc/${pid}/cmdline`).toString('utf8').split('\0').filter(Boolean)
+  } catch {
+    // Fall back to comm/exe below.
+  }
+
+  const first = meaningfulCommandToken(argv[0] ?? '') ?? executable ?? safeCommandToken(name)
+  if (!first || !COMMAND_RUNNERS.has(first.toLowerCase())) return first
+  for (const value of argv.slice(1, 6)) {
+    const raw = value.trim()
+    if (!raw || (raw.startsWith('-') && raw !== '-m')) continue
+    const token = meaningfulCommandToken(raw)
+    if (token && !RUNNER_WORDS.has(token.toLowerCase())) return token
+  }
+  return first
+}
+
+function readProcessIdentity(pid: number): ForegroundProcess | null {
+  try {
+    const name = readFileSync(`/proc/${pid}/comm`, 'utf8').trim()
+    const command = processCommand(pid, name)
+    return { pid, name, ...(command ? { command } : {}) }
+  } catch {
+    return null
+  }
 }
 
 function linuxProcessContext(shellPid: number): ProcessContext {
@@ -154,17 +252,44 @@ function linuxProcessContext(shellPid: number): ProcessContext {
     const shellStat = parseStat(readFileSync(`/proc/${shellPid}/stat`, 'utf8'))
     const foregroundPid = shellStat?.foregroundGroup ?? shellPid
     const usablePid = foregroundPid > 0 ? foregroundPid : shellPid
-    const name = readFileSync(`/proc/${usablePid}/comm`, 'utf8').trim()
+    const processes: ForegroundProcess[] = []
+    const visited = new Set<number>()
+    let currentPid = usablePid
+    for (let depth = 0; depth < 16 && currentPid > 1 && !visited.has(currentPid); depth++) {
+      visited.add(currentPid)
+      const identity = readProcessIdentity(currentPid)
+      if (identity) processes.push(identity)
+      if (currentPid === shellPid) break
+      const stat = parseStat(readFileSync(`/proc/${currentPid}/stat`, 'utf8'))
+      if (!stat || stat.parentPid <= 1) break
+      currentPid = stat.parentPid
+    }
     let cwd: string | undefined
     try {
       cwd = readlinkSync(`/proc/${usablePid}/cwd`)
     } catch {
       cwd = readlinkSync(`/proc/${shellPid}/cwd`)
     }
-    return { foreground: { pid: usablePid, name }, cwd }
+    return { foreground: processes[0] ?? null, processes, cwd }
   } catch {
     return { foreground: null }
   }
+}
+
+export function listTerminalProcessContexts(
+  processContext: (pid: number) => ProcessContext = linuxProcessContext
+): TerminalProcessContext[] {
+  return [...captures.values()].map((capture) => {
+    const context = processContext(capture.pid)
+    const processes = context.processes ?? (context.foreground ? [context.foreground] : [])
+    return {
+      surfaceId: capture.surfaceId,
+      ...(capture.workspaceId ? { workspaceId: capture.workspaceId } : {}),
+      shellPid: capture.pid,
+      processes,
+      lastActivityAt: Math.max(capture.lastInputAt, capture.lastOutputAt)
+    }
+  })
 }
 
 function plainTerminalText(raw: string): string {

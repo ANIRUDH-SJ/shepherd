@@ -345,7 +345,8 @@ export const AGENT_PROTOCOL_SCHEMA = {
               required: ['pid', 'name'],
               properties: {
                 pid: { type: 'integer', minimum: 1 },
-                name: { type: 'string' }
+                name: { type: 'string' },
+                command: { type: 'string' }
               }
             }
           ]
@@ -446,7 +447,8 @@ export function agentProtocolCapabilities(provider?: unknown): AgentCapabilities
         semanticWait: true,
         boundedQueries: true,
         reconnectSnapshot: true,
-        eventSubscriptions: true
+        eventSubscriptions: true,
+        automaticProcessDiscovery: true
       },
       limits: {
         maxLifecycleMs: MAX_AGENT_LIFECYCLE_MS,
