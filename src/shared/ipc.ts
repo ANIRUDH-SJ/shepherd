@@ -1,4 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
+
+import type { AgentRecord } from './agent'
 // SHARED IPC CONTRACT
 // Imported by ALL THREE sides (main, preload, renderer) so they agree on channel
 // names and message shapes. Types here are compile-time only — they vanish at
@@ -71,6 +73,7 @@ export interface SocketApply {
 export interface WorkspacesSync {
   workspaces: { id: string; name: string }[]
   activeWorkspaceId: string
+  agents: AgentRecord[]
 }
 
 // ── The bridge surface exposed as `window.api` (implemented in preload) ───────

@@ -2,7 +2,9 @@ import net from 'net'
 import { existsSync, unlinkSync } from 'fs'
 import { Notification } from 'electron'
 import type { SocketApply, WorkspacesSync } from '../shared/ipc'
+import { normalizeAgentReport } from '../shared/agent'
 import { normalizeUsageReport } from '../shared/usage'
+import { normalizeAgentWait, waitForAgent } from './agentWait'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SOCKET SERVER  (main process — the programmable control channel)
@@ -18,7 +20,7 @@ let server: net.Server | null = null
 
 // A read-only mirror of the renderer's workspaces so we can resolve --workspace
 // (by id or name) and default to the active one, without a round-trip.
-let mirror: WorkspacesSync = { workspaces: [], activeWorkspaceId: '' }
+let mirror: WorkspacesSync = { workspaces: [], activeWorkspaceId: '', agents: [] }
 
 export function socketPath(): string {
   return process.env.CMUX_SOCKET_PATH || '/tmp/cmux-linux.sock'
@@ -86,6 +88,11 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
           'send-text',
           'send-key',
           'set-status',
+          'agent-report',
+          'agent-clear',
+          'list-agents',
+          'focus-agent',
+          'wait-agent',
           'report-usage',
           'log',
           'notify'
@@ -108,6 +115,45 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
     case 'list-workspaces':
       send(conn, id, { workspaces: mirror.workspaces })
       return
+    case 'list-agents': {
+      let agents = mirror.agents
+      if (typeof params.workspace === 'string' && params.workspace) {
+        const workspaceId = await resolveWorkspaceRetry(params)
+        if (!workspaceId) {
+          send(conn, id, null, `no matching workspace: ${String(params.workspace)}`)
+          return
+        }
+        agents = agents.filter((agent) => agent.workspaceId === workspaceId)
+      }
+      send(conn, id, { agents })
+      return
+    }
+    case 'focus-agent': {
+      const agentId = typeof params.agentId === 'string' ? params.agentId.trim() : ''
+      if (!agentId) {
+        send(conn, id, null, 'focus-agent requires an agent id')
+        return
+      }
+      const agent = mirror.agents.find((candidate) => candidate.agentId === agentId)
+      if (!agent) {
+        send(conn, id, null, `no matching agent: ${agentId}`)
+        return
+      }
+      apply({ method, workspaceId: agent.workspaceId, params: { agentId } })
+      send(conn, id, { ok: true })
+      return
+    }
+    case 'wait-agent': {
+      const validation = normalizeAgentWait(params)
+      if (!validation.ok) {
+        send(conn, id, null, validation.error)
+        return
+      }
+      const result = await waitForAgent(() => mirror.agents, validation.options)
+      if (!result.ok) send(conn, id, null, result.error)
+      else send(conn, id, { agent: result.agent })
+      return
+    }
     case 'new-workspace':
       apply({ method, workspaceId: null, params })
       send(conn, id, { ok: true })
@@ -171,6 +217,45 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
         return
       }
       apply({ method, workspaceId, params: { report: validation.report } })
+      send(conn, id, { ok: true })
+      return
+    }
+    case 'agent-report': {
+      const workspaceId = await resolveWorkspaceRetry(params)
+      if (!workspaceId) {
+        send(conn, id, null, `no matching workspace: ${String(params.workspace ?? '(active)')}`)
+        return
+      }
+      const validation = normalizeAgentReport({ ...params, workspaceId })
+      if (!validation.ok) {
+        send(conn, id, null, validation.error)
+        return
+      }
+      apply({ method, workspaceId, params: { report: validation.report } })
+      send(conn, id, { ok: true })
+      return
+    }
+    case 'agent-clear': {
+      const agentId = typeof params.agentId === 'string' ? params.agentId.trim() : ''
+      if (!agentId) {
+        send(conn, id, null, 'agent-clear requires an agent id')
+        return
+      }
+      const agent = mirror.agents.find((candidate) => candidate.agentId === agentId)
+      if (!agent) {
+        send(conn, id, null, `no matching agent: ${agentId}`)
+        return
+      }
+      const source = typeof params.source === 'string' ? params.source.trim() : undefined
+      if (source && source !== agent.source) {
+        send(conn, id, null, `agent source mismatch: ${source}`)
+        return
+      }
+      apply({
+        method,
+        workspaceId: agent.workspaceId,
+        params: { agentId, ...(source ? { source } : {}) }
+      })
       send(conn, id, { ok: true })
       return
     }
