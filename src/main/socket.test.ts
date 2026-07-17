@@ -177,6 +177,68 @@ async function main(): Promise<void> {
     'snapshot includes workspace identity'
   )
 
+  const agentsBeforeSubscription = mirror.agents
+  const subscriptionFrames: Array<Record<string, unknown>> = []
+  const subscriptionWaiters: Array<(frame: Record<string, unknown>) => void> = []
+  let subscriptionBuffer = ''
+  const subscription = net.createConnection(path, () => {
+    subscription.write(
+      `${JSON.stringify({
+        id: 'subscription',
+        method: 'subscribe-agents',
+        params: { workspace: 'project', provider: 'codex' }
+      })}\n`
+    )
+  })
+  subscription.on('data', (chunk) => {
+    subscriptionBuffer += chunk.toString()
+    let newline: number
+    while ((newline = subscriptionBuffer.indexOf('\n')) >= 0) {
+      const frame = JSON.parse(subscriptionBuffer.slice(0, newline)) as Record<string, unknown>
+      subscriptionBuffer = subscriptionBuffer.slice(newline + 1)
+      const waiter = subscriptionWaiters.shift()
+      if (waiter) waiter(frame)
+      else subscriptionFrames.push(frame)
+    }
+  })
+  const nextSubscriptionFrame = (): Promise<Record<string, unknown>> => {
+    const frame = subscriptionFrames.shift()
+    return frame
+      ? Promise.resolve(frame)
+      : new Promise((resolve) => subscriptionWaiters.push(resolve))
+  }
+
+  const subscribed = await nextSubscriptionFrame()
+  const subscriptionResult = subscribed.result as Record<string, unknown>
+  const subscriptionSnapshot = subscriptionResult.snapshot as Record<string, unknown>
+  assert(subscriptionResult.sequence === 0, 'starts a subscription with sequence zero')
+  assert(
+    (subscriptionSnapshot.agents as unknown[]).length === 1,
+    'applies query filters to the subscription snapshot'
+  )
+
+  mirror.agents = mirror.agents.map((agent) =>
+    agent.agentId === 'codex:hooks:term-1'
+      ? { ...agent, state: 'done', blockReason: undefined, revision: 3, updatedAt: 40 }
+      : agent
+  )
+  updateWorkspaceMirror(mirror)
+  const updateFrame = await nextSubscriptionFrame()
+  const update = updateFrame.data as Record<string, unknown>
+  const upsert = update.upsert as Array<Record<string, unknown>>
+  assert(updateFrame.event === 'agent-update', 'streams a typed agent update event')
+  assert(update.sequence === 1, 'increments the subscription sequence')
+  assert(upsert[0]?.state === 'done', 'streams changed matching agent records')
+
+  mirror.agents = mirror.agents.filter((agent) => agent.agentId !== 'codex:hooks:term-1')
+  updateWorkspaceMirror(mirror)
+  const removalFrame = await nextSubscriptionFrame()
+  const removal = removalFrame.data as Record<string, unknown>
+  assert((removal.removed as string[])[0] === 'codex:hooks:term-1', 'streams removal tombstones')
+  subscription.destroy()
+  mirror.agents = agentsBeforeSubscription
+  updateWorkspaceMirror(mirror)
+
   registerTerminalInspection({
     surfaceId: 'term-1',
     workspaceId: 'ws-1',

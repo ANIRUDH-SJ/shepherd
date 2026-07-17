@@ -185,6 +185,11 @@ async function main() {
   assert(hook?.params.blockReason === 'approval', 'permission hook reports approval reason')
   assert(hook?.params.sessionId === 'session-1', 'hook preserves native session id')
 
+  await runCli(['watch-agents', '--state', 'blocked'])
+  const watch = requests[11]
+  assert(watch?.method === 'subscribe-agents', 'maps watch-agents to a live subscription')
+  assert(watch?.params.state === 'blocked', 'preserves subscription query filters')
+
   await new Promise((resolve) => server.close(resolve))
 
   if (failures > 0) throw new Error(`${failures} CLI test(s) failed`)

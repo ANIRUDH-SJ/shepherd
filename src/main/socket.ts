@@ -9,6 +9,8 @@ import {
   agentProtocolCapabilities
 } from '../shared/agentProtocol'
 import { normalizeAgentQuery, queryAgents } from '../shared/agentQuery'
+import type { AgentQuery, AgentQueryResult } from '../shared/agentQuery'
+import type { AgentRecord } from '../shared/agent'
 import { normalizeWorkspaceName } from '../shared/workspace'
 import { normalizeUsageReport } from '../shared/usage'
 import { normalizeAgentWait, waitForAgent } from './agentWait'
@@ -27,6 +29,21 @@ type ApplyFn = (cmd: SocketApply) => void
 
 let server: net.Server | null = null
 
+const MAX_AGENT_SUBSCRIPTIONS = 64
+const MAX_SUBSCRIBER_BUFFER_BYTES = 1024 * 1024
+
+interface AgentSubscriber {
+  subscriptionId: number
+  conn: net.Socket
+  query: AgentQuery
+  workspaceId?: string
+  sequence: number
+  previous: AgentQueryResult
+}
+
+const agentSubscribers = new Set<AgentSubscriber>()
+let nextSubscriptionId = 1
+
 // A read-only mirror of the renderer's workspaces so we can resolve --workspace
 // (by id or name) and default to the active one, without a round-trip.
 let mirror: WorkspacesSync = { workspaces: [], activeWorkspaceId: '', agents: [] }
@@ -37,6 +54,55 @@ export function socketPath(): string {
 
 export function updateWorkspaceMirror(sync: WorkspacesSync): void {
   mirror = sync
+  publishAgentUpdates()
+}
+
+function querySubscription(subscriber: AgentSubscriber): AgentQueryResult {
+  const agents = subscriber.workspaceId
+    ? mirror.agents.filter((agent) => agent.workspaceId === subscriber.workspaceId)
+    : mirror.agents
+  return queryAgents(agents, subscriber.query)
+}
+
+function resultAgents(result: AgentQueryResult): Map<string, AgentRecord> {
+  return new Map(result.agents.map((agent) => [agent.agentId, agent]))
+}
+
+function publishAgentUpdates(): void {
+  for (const subscriber of agentSubscribers) {
+    if (subscriber.conn.destroyed || subscriber.conn.writableLength > MAX_SUBSCRIBER_BUFFER_BYTES) {
+      agentSubscribers.delete(subscriber)
+      subscriber.conn.destroy()
+      continue
+    }
+    const current = querySubscription(subscriber)
+    if (JSON.stringify(current) === JSON.stringify(subscriber.previous)) continue
+
+    const before = resultAgents(subscriber.previous)
+    const after = resultAgents(current)
+    const upsert = current.agents.filter(
+      (agent) => JSON.stringify(before.get(agent.agentId)) !== JSON.stringify(agent)
+    )
+    const removed = [...before.keys()].filter((agentId) => !after.has(agentId))
+    subscriber.sequence++
+    subscriber.previous = current
+    subscriber.conn.write(
+      JSON.stringify({
+        event: 'agent-update',
+        subscriptionId: subscriber.subscriptionId,
+        data: {
+          version: 1,
+          sequence: subscriber.sequence,
+          generatedAt: Date.now(),
+          upsert,
+          removed,
+          matched: current.matched,
+          truncated: current.truncated,
+          summary: current.summary
+        }
+      }) + '\n'
+    )
+  }
 }
 
 function resolveWorkspace(params: Record<string, unknown>): string | null {
@@ -162,6 +228,54 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
           ...result
         })
       }
+      return
+    }
+    case 'subscribe-agents': {
+      if (agentSubscribers.size >= MAX_AGENT_SUBSCRIPTIONS) {
+        send(conn, id, null, `agent subscription limit reached: ${MAX_AGENT_SUBSCRIPTIONS}`)
+        return
+      }
+      const validation = normalizeAgentQuery(params)
+      if (!validation.ok) {
+        send(conn, id, null, validation.error)
+        return
+      }
+      let workspaceId: string | undefined
+      if (typeof params.workspace === 'string' && params.workspace) {
+        workspaceId = (await resolveWorkspaceRetry(params)) ?? undefined
+        if (!workspaceId) {
+          send(conn, id, null, `no matching workspace: ${String(params.workspace)}`)
+          return
+        }
+      }
+      const subscriber: AgentSubscriber = {
+        subscriptionId: nextSubscriptionId++,
+        conn,
+        query: validation.query,
+        ...(workspaceId ? { workspaceId } : {}),
+        sequence: 0,
+        previous: queryAgents(
+          workspaceId
+            ? mirror.agents.filter((agent) => agent.workspaceId === workspaceId)
+            : mirror.agents,
+          validation.query
+        )
+      }
+      agentSubscribers.add(subscriber)
+      send(conn, id, {
+        subscriptionId: subscriber.subscriptionId,
+        version: 1,
+        sequence: 0,
+        snapshot: {
+          version: 1,
+          generatedAt: Date.now(),
+          activeWorkspaceId: mirror.activeWorkspaceId || null,
+          workspaces: workspaceId
+            ? mirror.workspaces.filter((workspace) => workspace.id === workspaceId)
+            : mirror.workspaces,
+          ...subscriber.previous
+        }
+      })
       return
     }
     case 'focus-agent': {
@@ -393,6 +507,11 @@ export function startSocketServer(apply: ApplyFn): void {
     conn.on('error', () => {
       /* ignore per-connection errors */
     })
+    conn.on('close', () => {
+      for (const subscriber of agentSubscribers) {
+        if (subscriber.conn === conn) agentSubscribers.delete(subscriber)
+      }
+    })
   })
 
   server.on('error', (err) => console.error('[socket] server error:', err))
@@ -400,6 +519,8 @@ export function startSocketServer(apply: ApplyFn): void {
 }
 
 export function stopSocketServer(): void {
+  for (const subscriber of agentSubscribers) subscriber.conn.destroy()
+  agentSubscribers.clear()
   server?.close()
   server = null
   const path = socketPath()

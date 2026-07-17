@@ -38,6 +38,7 @@ Usage:
   cmux agent-clear <agent-id>         remove an agent record
   cmux list-agents [query flags]      list and summarize matching agents
   cmux agent-snapshot [query flags]   snapshot workspaces and matching agents
+  cmux watch-agents [query flags]     stream a snapshot followed by agent updates
   cmux agent-schema                   print the machine-readable agent contract
   cmux agent-capabilities [provider]  discover protocol and adapter support
   cmux focus-agent <agent-id>         focus an agent's exact terminal
@@ -143,6 +144,9 @@ if (method === 'hooks' || method === 'integrations') {
   process.exit(failed ? 1 : 0)
 }
 
+const watchAgents = method === 'watch-agents'
+if (watchAgents) method = 'subscribe-agents'
+
 // Parse --flags and trailing positional text.
 const params = hookRequest ? { ...hookRequest.params } : {}
 const positional = []
@@ -188,26 +192,39 @@ const conn = net.createConnection(socketPath, () => {
 let buf = ''
 conn.on('data', (d) => {
   buf += d.toString()
-  const nl = buf.indexOf('\n')
-  if (nl < 0) return
-  try {
-    const res = JSON.parse(buf.slice(0, nl))
+  let nl
+  while ((nl = buf.indexOf('\n')) >= 0) {
+    const line = buf.slice(0, nl)
+    buf = buf.slice(nl + 1)
+    if (!line.trim()) continue
+    let res
+    try {
+      res = JSON.parse(line)
+    } catch {
+      if (!watchAgents) {
+        conn.end()
+        process.exit(0)
+      }
+      continue
+    }
     if (res.error) {
       if (hookRequest) process.exit(0)
       console.error('cmux: error:', res.error)
       conn.end()
       process.exit(1)
     }
+    if (watchAgents) {
+      console.log(JSON.stringify(res))
+      continue
+    }
     // Print any query result (list-workspaces / capabilities / identify);
     // action replies are just {ok:true}, which we don't echo.
     if (res.result && typeof res.result === 'object' && !res.result.ok) {
       console.log(JSON.stringify(res.result, null, 2))
     }
-  } catch {
-    /* ignore malformed reply */
+    conn.end()
+    process.exit(0)
   }
-  conn.end()
-  process.exit(0)
 })
 
 conn.on('error', (e) => {
