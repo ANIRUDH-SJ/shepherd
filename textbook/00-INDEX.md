@@ -89,6 +89,10 @@ Think of the book in five "acts":
   ordering, socket automation, sidebar focus, integrations, and trust boundaries.
 - `20-worktree-workspaces.md` — safe Git worktree creation, process boundaries,
   workspace cwd propagation, failure semantics, and testing.
+- `21-live-state-subscriptions.md` — filtered snapshot-plus-delta streams,
+  ordering, reconnect behavior, backpressure, and cleanup.
+- `22-automatic-process-discovery.md` — zero-setup terminal-agent detection,
+  Linux process ancestry, safe identity, activity inference, and authority.
 
 **Reference**
 
@@ -124,6 +128,8 @@ Think of the book in five "acts":
 | `18-usage-telemetry.md`                 | Token accounting, accuracy, provider-neutral events, validation, aggregation, adapters, and UI design | 09, 11, 13  |
 | `19-semantic-agent-runtime.md`          | Semantic state machines, lifecycle reports, identity, ordering, adapters, agent UI, and automation     | 09, 11, 12  |
 | `20-worktree-workspaces.md`             | Git worktree isolation, validated process execution, workspace cwd flow, and failure boundaries        | 06, 09, 11  |
+| `21-live-state-subscriptions.md`        | Snapshot-plus-delta streams, filters, ordering, reconnect behavior, and slow-consumer bounds            | 11, 19      |
+| `22-automatic-process-discovery.md`     | Linux PTY process ancestry, safe command identity, classification, activity, precedence, and cleanup    | 06, 19      |
 
 ---
 
@@ -189,3 +195,4 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `19-semantic-agent-runtime.md` — provider-neutral lifecycle state and ownership
 - `20-worktree-workspaces.md` — safe Git worktree orchestration
 - `21-live-state-subscriptions.md` — snapshot-plus-delta streams, ordering, and backpressure
+- `22-automatic-process-discovery.md` — zero-setup agent presence and safe process ancestry

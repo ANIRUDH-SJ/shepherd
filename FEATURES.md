@@ -5,11 +5,10 @@ GitHub), then mapped feature-by-feature onto **our** Electron + xterm.js + node-
 + React stack. This is the reference for *what cmux does* and *how we'll build each
 piece*. Pairs with `ROADMAP.md` (the build order).
 
-> **The single most important finding:** cmux's sidebar isn't populated by magic
-> passive detection — it's driven by a **socket API**. Agents (via a `cmux` CLI)
-> push status/log/notification data over a unix socket, and the app renders it.
-> That means the **socket server is the backbone of the sidebar**, not just a
-> "nice automation extra." We build it early, not last.
+> **The single most important finding:** rich sidebar status is driven by a
+> **socket API**. Agents push status/log/notification data over a Unix socket, and
+> the app renders it. Our runtime keeps that structured path and adds bounded
+> process discovery so basic agent presence no longer depends on a report.
 
 ---
 
@@ -133,7 +132,7 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | 7 | **Socket API + `cmux` CLI** | `net` server in main + tiny Node CLI client (Part 2) | 🟢 |
 | 8 | **Sidebar status API** (`set-status`, `set-progress`, `log`) | socket methods → workspace metadata → React status pills / progress bar | 🟢 (status/notify) · 🟡 (pills+progress polish) |
 | 9 | **OSC 9/99/777 detection** (auto notifications from terminal output) | scan pty output stream in main for these escape codes → fire notification | 🟢 |
-| 10 | **Semantic agent runtime + integrations** | validated lifecycle state, protocol discovery, bounded queries/snapshots/inspection, workspace rollups, freshness policy, focus/wait controls, and integrations | 🟢 |
+| 10 | **Automatic + semantic agent runtime** | zero-setup PTY process discovery for presence/activity, enriched by validated lifecycle reports, bounded queries/snapshots/inspection, workspace rollups, focus/wait controls, and integrations | 🟢 |
 | 11 | **Session restoration** (layout, cwd, workspaces) | serialize the Window store to JSON on change; restore + re-spawn shells on launch | 🟢 (layout+cwd) · 🟡 (scrollback) |
 | 12 | **Git branch in sidebar** | main runs `git branch --show-current` in each workspace cwd (read-only) | 🟢 |
 | 13 | **Keyboard shortcuts** (new/close/split/focus/nav) | a React keymap; mirror cmux's bindings (⌘→Ctrl/Super on Linux) | 🟢 |
@@ -159,8 +158,8 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 
 ## Part 4 — Notification & status mechanics (deep dive)
 
-This is cmux's signature, so worth getting exactly right. cmux has **two input
-channels** that both end in the same visual state:
+This is cmux's signature, so worth getting exactly right. The app has **four input
+channels** that converge on visible workspace and agent state:
 
 1. **Automatic** — cmux watches terminal output for **OSC 9 / 99 / 777** escape
    sequences (the standard "desktop notification" terminal codes). Any program
@@ -170,6 +169,9 @@ channels** that both end in the same visual state:
 3. **Structured lifecycle** — provider hooks/plugins call `agent-report` with a
    semantic state plus optional activity or blocked reason. This feeds the Agents
    section and exact terminal navigation without parsing terminal prose.
+4. **Automatic process discovery** — Electron main follows each owned PTY's Linux
+   process ancestry and publishes a safe `working`/`idle` baseline for recognized
+   agents. A structured lifecycle source replaces that baseline when available.
 
 **Visual result (what we replicate):**
 - The pane gets a **ring**; the workspace row in the sidebar **lights up / flashes**;
@@ -198,6 +200,16 @@ provider hook/plugin
   → renderer binds the real pane/surface
   → agent list + derived unread/attention
   → click or focus-agent selects the exact terminal
+```
+
+Without a provider integration, the automatic path still lists the agent:
+
+```text
+owned PTY + workspace/surface binding
+  → bounded Linux foreground/parent inspection
+  → safe provider/custom-agent classification
+  → process:auto working/idle report
+  → agent list + exact terminal focus
 ```
 
 Automation can observe the same validated state without polling:
@@ -248,7 +260,8 @@ which is 90% of why the screenshot looks the way it does.
 - [x] Notification ring/flash + unread badge, from BOTH OSC parse and `cmux notify`
 - [x] Real terminals (node-pty + xterm.js/WebGL), split into panes, tabs (surfaces) per pane
 - [x] Socket API + `cmux` CLI driving workspaces/status/notifications
-- [x] Semantic Agents section driven by Codex, Claude Code, OpenCode, or custom reporters
+- [x] Agents section automatically detects Codex, Claude Code, OpenCode, Kimi,
+      other known CLIs, and safely named custom agents; lifecycle reporters add richer state
 - [x] Layout + cwd restored on relaunch
 - [ ] Git branch shown per workspace; dark theme matching cmux
 

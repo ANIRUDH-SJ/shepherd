@@ -30,6 +30,7 @@ code as we write it.
 | **M7**    | `M7-semantic-agent-runtime.md` | Semantic lifecycle state: contract, socket controls, reducer ownership, sidebar, focus, and adapters |
 | **M8**    | `M8-worktree-workspaces.md`    | Safe Git worktree creation: validated Git execution, socket orchestration, workspace cwd, and tests |
 | **M9**    | `M9-agent-event-subscriptions.md` | Filtered agent snapshots and ordered live upsert/removal events over the Unix socket               |
+| **M10**   | `M10-automatic-agent-discovery.md` | Zero-setup Linux process discovery, activity state, source precedence, cleanup, and live proof    |
 
 ## How to read a milestone file
 
