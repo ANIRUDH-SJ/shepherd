@@ -18,6 +18,12 @@ Close the app with three workspaces open — `api-refactor` on branch `feat/auth
 
 That's session persistence. It's the difference between an app that feels like a *tool you live in* and one that feels like a *demo you re-set-up every morning*. cmux does it; `ROADMAP.md` puts it in **M4** ("the workspace survives a restart") and `FEATURES.md` lists it as 🟢 Core (layout + cwd) with scrollback as a 🟡 polish follow-up.
 
+> **Current cmux-linux policy:** this chapter develops the general full-session
+> design space. The shipped application now treats launch as a one-workspace
+> boundary: it resumes only the previously active workspace's layout and cwd.
+> Runtime multi-workspace use is unchanged. Chapter 24 explains the implementation,
+> compatibility behavior, alternatives, and tradeoffs.
+
 Here's the mental model before any code. Persistence is two mirror-image operations:
 
 ```
@@ -497,6 +503,12 @@ You've got the snapshot; now decide how to *offer* it. Three postures:
 2. **Prompt every launch.** A `dialog.showMessageBox` asking "Restore previous session?" Faithful to some editors, but a papercut you pay on *every* single launch. Reserve it for *after a crash*, not for the normal path.
 3. **A setting.** "On startup: restore last session / start with an empty workspace." The grown-up answer once you have a settings pane (`FEATURES.md` #21), but overkill for v1.
 
+cmux-linux currently uses a fourth, deterministic posture: **resume the active
+workspace only**. It preserves the last selected layout and cwd while guaranteeing
+one workspace at launch. Inactive runtime workspaces are not replayed. The snapshot
+keeps its array shape for backward compatibility, and Chapter 24 covers why save
+and restore apply the same projection.
+
 Ship posture #1 with two escape hatches, and you've matched cmux while staying safe:
 
 ```ts
@@ -546,6 +558,9 @@ Answer these before moving on (everything is in this chapter):
 
 Session persistence is a **serialization** problem, not a save-the-processes problem. You walk the Window→Workspace→Pane→Surface→Panel tree (Chapter 09) and write the *serializable* parts — structure, names, layout sizes, active IDs, and for each terminal its **cwd** (read live from `/proc/<pid>/cwd`) and optional **scrollback** (from `@xterm/addon-serialize`). You **cannot** serialize live pty processes, so on restore you *re-spawn* fresh shells in the saved directories — you restore the recipe, not the process. Scrollback lives in the renderer, so main caches it via a throttled push and writes it synchronously. You store the snapshot in `app.getPath('userData')` (`~/.config/cmux-linux/`), **versioned** and written **atomically** (temp-then-rename) with a `.bak` fallback and `0600` permissions, and you **never** persist the environment (secrets). You save **debounced on change** and again **synchronously on `before-quit`**. Restore is a **handshake**: main reads and migrates the file, waits for `session:ready`, sends the tree, and only spawns each shell when its pane says `pty:attach` — replaying scrollback *before* attaching live output. Every failure mode — corrupt file, old schema, missing directory, unclean shutdown — degrades gracefully to a clean start instead of a crash.
 
+The current product projects this general recipe to the active workspace so
+startup cardinality is exactly one; see Chapter 24.
+
 ## Where this shows up next
 - The object model you serialized, in full → `09-typescript-and-the-data-model.md`
 - The split-tree `sizes` you saved, and how they rebuild the layout → `10-tiling-and-layout.md`
@@ -554,6 +569,7 @@ Session persistence is a **serialization** problem, not a save-the-processes pro
 - Why main is the source of truth you serialize from → `11-the-socket-api.md`
 - Where `~/.config/cmux-linux/` and the read-only AppImage caveat come from → `15-packaging-and-distribution.md`
 - The end-to-end trace that ties save/restore into the whole app → `17-how-it-all-connects.md`
+- The active-only startup policy and backward-compatible projection → `24-single-workspace-startup.md`
 
 ## Further reading
 - Electron `app.getPath` (the `userData` directory) — https://www.electronjs.org/docs/latest/api/app#appgetpathname

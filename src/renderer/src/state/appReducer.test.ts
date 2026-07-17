@@ -5,6 +5,7 @@ import {
   createWorkspaceAction,
   paneAction,
   sanitizeRestored,
+  toLayoutSnapshot,
   type AppState
 } from './appReducer'
 import { splitAction } from './workspaceReducer'
@@ -363,6 +364,41 @@ assert(restored!.workspaces[0].unread === false, 'transient flags are reset on r
 assert(restored!.workspaces[0].usage.totals.reportCount === 0, 'usage is reset on restore')
 assert(restored!.workspaces[0].usage.latest === null, 'latest usage is reset on restore')
 assert(restored!.agents.length === 0, 'agent lifecycle state is reset on restore')
+
+// Startup is a deliberate one-workspace boundary. Older snapshots may contain
+// several workspaces, but only the previously active workspace is resumed.
+let multiWorkspaceSession = initialApp()
+multiWorkspaceSession = appReducer(
+  multiWorkspaceSession,
+  createWorkspaceAction('resume-me', '/tmp/resume-me')
+)
+const legacyMultiWorkspaceSnapshot = {
+  workspaces: multiWorkspaceSession.workspaces.map((workspace) => ({
+    id: workspace.id,
+    name: workspace.name,
+    cwd: workspace.cwd,
+    root: workspace.root,
+    activePaneId: workspace.activePaneId
+  })),
+  activeWorkspaceId: multiWorkspaceSession.activeWorkspaceId
+}
+const singleWorkspaceRestore = sanitizeRestored(
+  JSON.parse(JSON.stringify(legacyMultiWorkspaceSnapshot))
+)
+assert(singleWorkspaceRestore !== null, 'accepts a legacy multi-workspace snapshot')
+assert(singleWorkspaceRestore!.workspaces.length === 1, 'restores one workspace at startup')
+assert(
+  singleWorkspaceRestore!.workspaces[0].id === multiWorkspaceSession.activeWorkspaceId,
+  'restores the previously active workspace'
+)
+assert(singleWorkspaceRestore!.workspaces[0].cwd === '/tmp/resume-me', 'preserves its cwd')
+
+const singleWorkspaceSnapshot = toLayoutSnapshot(multiWorkspaceSession)
+assert(singleWorkspaceSnapshot.workspaces.length === 1, 'persists one startup workspace')
+assert(
+  singleWorkspaceSnapshot.workspaces[0].id === multiWorkspaceSession.activeWorkspaceId,
+  'persists the active workspace'
+)
 assert(sanitizeRestored(null) === null, 'sanitizeRestored(null) → null')
 assert(sanitizeRestored({}) === null, 'sanitizeRestored({}) → null (no workspaces)')
 assert(sanitizeRestored({ workspaces: [] }) === null, 'empty workspaces → null')

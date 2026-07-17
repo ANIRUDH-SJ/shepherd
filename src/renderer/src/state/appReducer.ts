@@ -82,8 +82,9 @@ export function initialApp(): AppState {
 }
 
 /** Validate + normalise a restored session into an AppState (or null if unusable).
- *  We restore only the LAYOUT — transient flags and usage telemetry are reset,
- *  and terminals re-spawn fresh when their panes mount. See textbook/13. */
+ *  Startup restores only the previously active workspace so every launch begins
+ *  with one workspace. Its layout/cwd survive, transient state is reset, and its
+ *  terminals re-spawn fresh when their panes mount. See textbook/13. */
 export function sanitizeRestored(raw: unknown): AppState | null {
   if (!raw || typeof raw !== 'object') return null
   const r = raw as { workspaces?: unknown; activeWorkspaceId?: unknown }
@@ -121,11 +122,13 @@ export function sanitizeRestored(raw: unknown): AppState | null {
     typeof r.activeWorkspaceId === 'string' && workspaces.some((w) => w.id === r.activeWorkspaceId)
       ? r.activeWorkspaceId
       : workspaces[0].id
-  return { workspaces, activeWorkspaceId: active, agents: [] }
+  const startupWorkspace = workspaces.find((workspace) => workspace.id === active) ?? workspaces[0]
+  return { workspaces: [startupWorkspace], activeWorkspaceId: startupWorkspace.id, agents: [] }
 }
 
-/** The serialisable LAYOUT of the app (no transient status/unread/attention) — this
- *  is what we persist, so agent status churn doesn't cause needless saves. */
+/** Persist the active workspace layout only. Runtime workspaces remain independent,
+ *  but relaunch is intentionally a one-workspace boundary. Transient status,
+ *  unread, attention, agents, and usage are excluded. */
 export function toLayoutSnapshot(state: AppState): {
   workspaces: Array<{
     id: string
@@ -136,15 +139,20 @@ export function toLayoutSnapshot(state: AppState): {
   }>
   activeWorkspaceId: string
 } {
+  const workspace =
+    state.workspaces.find((candidate) => candidate.id === state.activeWorkspaceId) ??
+    state.workspaces[0]
   return {
-    workspaces: state.workspaces.map((w) => ({
-      id: w.id,
-      name: w.name,
-      cwd: w.cwd,
-      root: w.root,
-      activePaneId: w.activePaneId
-    })),
-    activeWorkspaceId: state.activeWorkspaceId
+    workspaces: [
+      {
+        id: workspace.id,
+        name: workspace.name,
+        cwd: workspace.cwd,
+        root: workspace.root,
+        activePaneId: workspace.activePaneId
+      }
+    ],
+    activeWorkspaceId: workspace.id
   }
 }
 

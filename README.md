@@ -8,7 +8,7 @@ Vertical named sidebar with live project/branch context and per-agent status,
 notification rings when an agent needs you, split terminal panes, and a socket
 API for automation.
 
-> **Status: early development.** Core runtime milestones **M0–M5** and **M7–M11**
+> **Status: early development.** Core runtime milestones **M0–M5** and **M7–M12**
 > are complete — real shells, split panes, live workspace/Git context, automatic
 > agent discovery, session restore, and the Unix-socket API. **M6** (polish &
 > packaging) is in progress. See
@@ -57,6 +57,10 @@ cmux-linux            # or launch it from your app menu
 You can also right-click a workspace and choose **Rename workspace**, double-click
 its name, or use its pencil action. Submitting an empty name returns to positional
 labels such as `workspace 2`.
+
+Each launch begins with one workspace. If the previous session had several,
+cmux-linux resumes only the workspace that was active at shutdown, including its
+latest cwd, tabs, panes, and split layout.
 
 Every pane gets a `cmux` command on its `PATH`, which drives the app over its
 unix socket — this is how an agent reports status back to the sidebar:

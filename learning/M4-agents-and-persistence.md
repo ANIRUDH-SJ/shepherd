@@ -82,10 +82,11 @@ So a real Claude Code session in a pane flashes its workspace when it needs you.
   so a corrupt/old file falls back to a fresh app instead of crashing.
 
 ### Scope
-Restores the **layout** (workspaces / panes / tabs / splits / sizes / names + active
-workspace). Terminals **re-spawn fresh** when their panes mount. Per-terminal **cwd
-and scrollback restore are a deliberate follow-up** (they'd need reading each pty's
-cwd in main, touching `pty.ts` — kept separate to avoid conflicting with the OSC PR).
+The original M4 implementation restored the **layout** (workspaces / panes / tabs /
+splits / sizes / names + active workspace). Terminals **re-spawn fresh** when their
+panes mount. M11 later added live cwd persistence, and M12 changed the launch policy
+to resume only the previously active workspace so every startup contains exactly
+one. See `M12-single-workspace-startup.md` for the current code path.
 
 ### Hardening from code review (Copilot, on PR #4)
 Two fixes worth calling out — see `../bug-fixes/`-style reasoning:
@@ -116,8 +117,8 @@ npm run dev
 - **OSC:** `printf '\033]9;build done\007'` in a pane → workspace flashes + toast.
 - **Hooks:** run `cmux hooks setup`, then run Claude Code in a pane — it flashes on
   a Notification. (Check `~/.claude/settings.json`.)
-- **Restore:** open a couple of workspaces + splits, quit, relaunch → the layout
-  comes back.
+- **Restore:** create splits/tabs in the active workspace, quit, relaunch → that
+  active workspace comes back as the only startup workspace.
 - `npm test` runs the layout + app-reducer + **OSC** suites (incl. split-chunk and
   fail-closed cases).
 
