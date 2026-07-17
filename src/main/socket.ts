@@ -3,6 +3,7 @@ import { existsSync, unlinkSync } from 'fs'
 import { Notification } from 'electron'
 import type { SocketApply, WorkspacesSync } from '../shared/ipc'
 import { normalizeAgentReport } from '../shared/agent'
+import { normalizeWorkspaceName } from '../shared/workspace'
 import { normalizeUsageReport } from '../shared/usage'
 import { normalizeAgentWait, waitForAgent } from './agentWait'
 
@@ -82,6 +83,7 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
           'identify',
           'list-workspaces',
           'new-workspace',
+          'rename-workspace',
           'select-workspace',
           'close-workspace',
           'new-split',
@@ -102,7 +104,8 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
     case 'identify': {
       // Fall back to the requested id/name if the mirror can't resolve it yet
       // (e.g. early startup), so identify doesn't report null for a valid caller.
-      const requested = typeof params.workspace === 'string' && params.workspace ? params.workspace : null
+      const requested =
+        typeof params.workspace === 'string' && params.workspace ? params.workspace : null
       const wid = resolveWorkspace(params) ?? requested
       const ws = mirror.workspaces.find((w) => w.id === wid)
       send(conn, id, {
@@ -170,12 +173,35 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
       send(conn, id, { ok: true })
       return
     }
+    case 'rename-workspace': {
+      if (typeof params.name !== 'string') {
+        send(conn, id, null, 'rename-workspace requires --name')
+        return
+      }
+      const workspaceId = await resolveWorkspaceRetry(params)
+      if (!workspaceId) {
+        send(conn, id, null, `no matching workspace: ${String(params.workspace ?? '(active)')}`)
+        return
+      }
+      apply({
+        method,
+        workspaceId,
+        params: { ...params, name: normalizeWorkspaceName(params.name) }
+      })
+      send(conn, id, { ok: true })
+      return
+    }
     case 'send-text':
     case 'send-key': {
       // Validate the payload so an empty command isn't silently accepted.
       const arg = String((method === 'send-key' ? (params.key ?? params.text) : params.text) ?? '')
       if (!arg) {
-        send(conn, id, null, method === 'send-key' ? 'send-key requires a key' : 'send-text requires text')
+        send(
+          conn,
+          id,
+          null,
+          method === 'send-key' ? 'send-key requires a key' : 'send-text requires text'
+        )
         return
       }
       const workspaceId = await resolveWorkspaceRetry(params)
