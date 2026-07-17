@@ -133,7 +133,7 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | 7 | **Socket API + `cmux` CLI** | `net` server in main + tiny Node CLI client (Part 2) | 🟢 |
 | 8 | **Sidebar status API** (`set-status`, `set-progress`, `log`) | socket methods → workspace metadata → React status pills / progress bar | 🟢 (status/notify) · 🟡 (pills+progress polish) |
 | 9 | **OSC 9/99/777 detection** (auto notifications from terminal output) | scan pty output stream in main for these escape codes → fire notification | 🟢 |
-| 10 | **Semantic agent runtime + integrations** | validated provider-neutral lifecycle state, Agents sidebar, exact focus/wait controls, Codex/Claude Code hooks, and a managed OpenCode plugin | 🟢 |
+| 10 | **Semantic agent runtime + integrations** | validated provider-neutral lifecycle state, workspace rollups, elapsed/freshness policy, exact focus/wait controls, provider hooks, and a managed plugin | 🟢 |
 | 11 | **Session restoration** (layout, cwd, workspaces) | serialize the Window store to JSON on change; restore + re-spawn shells on launch | 🟢 (layout+cwd) · 🟡 (scrollback) |
 | 12 | **Git branch in sidebar** | main runs `git branch --show-current` in each workspace cwd (read-only) | 🟢 |
 | 13 | **Keyboard shortcuts** (new/close/split/focus/nav) | a React keymap; mirror cmux's bindings (⌘→Ctrl/Super on Linux) | 🟢 |

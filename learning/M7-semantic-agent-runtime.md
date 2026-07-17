@@ -99,7 +99,8 @@ An `AgentReport` carries:
 - `sessionId`: optional provider-native provenance.
 - `workspaceId` and `surfaceId`: the terminal ownership coordinates.
 - `revision`: an optional producer sequence number.
-- `updatedAt` and optional `expiresAt`: local lifecycle timing.
+- `updatedAt`, optional `staleAt`, and optional `expiresAt`: local lifecycle
+  timing with separate loss-of-confidence and removal boundaries.
 
 When the caller omits `agentId`, validation derives it from
 `source + surfaceId`. That keeps one hook reporter in one terminal stable across
@@ -124,7 +125,8 @@ It:
 - removes control characters and collapses display whitespace;
 - limits labels and messages to bounded lengths;
 - accepts only non-negative integer revisions;
-- limits TTL to one millisecond through 24 hours;
+- limits stale and expiry windows to one millisecond through 24 hours;
+- requires `staleAfterMs` to be earlier than `ttlMs` when both are supplied;
 - replaces producer time with the local ingestion time.
 
 The local timestamp gives reports one clock inside the application. A remote or
@@ -161,6 +163,13 @@ or layout changes. It therefore cannot remain stuck after the record responsible
 for it disappears.
 
 ### Cleanup
+
+Freshness and retention are intentionally different. When `staleAt` passes, the
+record remains discoverable but changes to `unknown`; activity and block reason
+are cleared, and workspace attention is derived again. `updatedAt` stays at the
+last real observation so the UI shows how old the source report is. The producer
+revision is also preserved so a subsequent sequenced report can resume at its
+next number. When `expiresAt` passes, the record is removed.
 
 The reducer removes agents when:
 
@@ -249,9 +258,11 @@ core state model never depends on provider tool names.
 
 Codex does not document a monotonic numeric hook sequence, so its adapter does
 not invent one. It preserves a numeric `revision`/`sequence` if a producer
-supplies it and adds state-sensitive TTL: long-lived approval blocks can remain
-for 24 hours, active/idle records for two hours, and done/unknown records for 30
-minutes. This bounds stale state for a provider without a session-end hook.
+supplies it and adds state-sensitive freshness and TTL policy. Working and idle
+reports become `unknown` after 30 minutes and expire after two hours. Approval
+blocks become `unknown` after 12 hours and expire after 24 hours. Done and unknown
+records expire after 30 minutes without an intermediate transition. This avoids
+presenting silence as current truth while preserving a bounded diagnostic record.
 
 ## 9. Provider setup and configuration safety
 
@@ -314,11 +325,21 @@ Presentation logic stays outside the reducer:
   within a state, the newest record appears first.
 - `agentAriaLabel()` combines name, state, detail, workspace, and message for
   assistive technology.
+- `formatAgentElapsed()` turns local ingestion time into stable `now`, seconds,
+  minutes, hours, or days labels.
+- `agentRollupLabel()` counts each workspace by urgency and shows the two most
+  important state groups, folding additional agents into a compact `+N`.
 
 `AgentList` renders real buttons, not clickable divs. Each row contains a state
-dot, provider display name, semantic/detail label, workspace name, and optional
-message. CSS gives each state a distinct color; working pulses unless the user
-prefers reduced motion.
+dot, provider display name, semantic/detail label, elapsed time, workspace name,
+and optional message. A ten-second display timer refreshes only the age labels;
+it does not infer lifecycle state. CSS gives each state a distinct color; working
+pulses unless the user prefers reduced motion. A sidebar container query hides
+the visual age at narrow widths while the title and accessible label retain it.
+
+Every workspace row also renders a compact summary such as
+`2 blocked · 3 working`. This lets the workspace list remain useful when the
+dedicated Agents section is below the fold.
 
 When the sidebar is collapsed, its accessible label still reports the agent
 count and blocked count.
@@ -343,11 +364,12 @@ and automation share one navigation rule.
 The feature adds coverage at every meaningful boundary:
 
 - `src/shared/agent.test.ts`: normalization, defaults, sanitization, invalid
-  combinations, TTL, sequencing inputs, and attention semantics.
+  combinations, stale/TTL ordering, sequencing inputs, and attention semantics.
 - `src/renderer/src/state/appReducer.test.ts`: binding, stale-event rejection,
-  unread/attention, exact focus, expiry, terminal-exit cleanup, pane cleanup,
-  workspace cleanup, and restore behavior.
-- `src/renderer/src/agentView.test.ts`: labels, ordering, and accessibility text.
+  unread/attention, exact focus, stale-to-unknown transition, expiry,
+  terminal-exit cleanup, pane cleanup, workspace cleanup, and restore behavior.
+- `src/renderer/src/agentView.test.ts`: labels, urgency ordering, elapsed-time
+  buckets, workspace rollups, and accessibility text.
 - `src/main/agentWait.test.ts`: wait validation, state transitions, and timeout.
 - `src/main/socket.test.ts`: report validation, routing, list, focus, wait, source
   protection, and clear.
@@ -368,7 +390,8 @@ an isolated install smoke test for all three provider integrations.
 - Authenticated multi-user access to the local Unix socket.
 - Event-driven wait subscriptions instead of bounded 50 ms polling.
 - Durable agent history across application launches.
-- Automatic stale defaults when a provider supplies neither cleanup nor TTL.
+- Automatic freshness defaults when a provider supplies neither cleanup nor
+  stale/TTL policy.
 - Multiple simultaneous sessions from the same reporter in one surface unless
   the integration supplies distinct `agentId` values.
 - Editable color/order preferences for the Agents section.
@@ -381,6 +404,7 @@ an isolated install smoke test for all three provider integrations.
 2. Why does main validate a report before forwarding it to React?
 3. How does the reducer stop one agent identity from moving to another terminal?
 4. What does `revision` protect against, and how do unsequenced hooks still work?
-5. Why is lifecycle state omitted from the saved session?
-6. What happens between clicking an agent row and xterm receiving keyboard focus?
-7. Why do global provider hooks silently do nothing outside a cmux-linux pane?
+5. Why does a stale transition preserve both `updatedAt` and `revision`?
+6. Why is lifecycle state omitted from the saved session?
+7. What happens between clicking an agent row and xterm receiving keyboard focus?
+8. Why do global provider hooks silently do nothing outside a cmux-linux pane?

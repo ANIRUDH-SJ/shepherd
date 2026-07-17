@@ -246,6 +246,7 @@ cmux agent-report \
   --activity web-search \
   --message "checking API behavior" \
   --source codex:hooks \
+  --stale-after-ms 30000 \
   --ttl-ms 60000
 ```
 
@@ -261,6 +262,7 @@ Inside a pane, the CLI adds its injected workspace and surface ids. It sends:
     "activity": "web-search",
     "message": "checking API behavior",
     "source": "codex:hooks",
+    "staleAfterMs": "30000",
     "ttlMs": "60000",
     "workspace": "ws-1",
     "surfaceId": "term-1"
@@ -276,7 +278,7 @@ Main first resolves the workspace name/id using its renderer mirror. Then
 - a restricted source alphabet;
 - state/detail compatibility;
 - non-negative integer sequence numbers;
-- TTL from 1 ms to 24 hours;
+- stale and TTL windows from 1 ms to 24 hours, with stale strictly before expiry;
 - bounded display strings with control characters removed;
 - local ingestion time.
 
@@ -287,7 +289,7 @@ display names, parses numeric CLI strings, and creates stable defaults.
 After validation, main sends a structured `SocketApply` through the restricted
 preload bridge. The renderer never parses provider input directly.
 
-## 19.8 Ordering, revisions, and expiry
+## 19.8 Ordering, revisions, staleness, and expiry
 
 Lifecycle events can arrive late. A slow tool callback might report working after
 a newer completion report. Optional monotonic `revision` values let a producer
@@ -312,18 +314,36 @@ it. OpenCode's plugin is long-lived, so it can emit a real monotonic counter. Th
 counter starts at `Date.now()` to remain above the previous run after a plugin
 reload.
 
-TTL addresses a different failure: missing cleanup. Main converts `ttlMs` into an
-absolute `expiresAt` based on ingestion time. `App.tsx` dispatches an expiry action
-once per second. The pure reducer removes elapsed records and recalculates
-workspace attention.
+Freshness and retention address a different failure: missing cleanup. Main
+converts `staleAfterMs` and `ttlMs` into absolute `staleAt` and `expiresAt` values
+based on ingestion time. `App.tsx` dispatches a lifecycle-time action once per
+second.
 
-TTL is optional because provider hooks can have explicit stop/session-end events.
-A custom integration that cannot guarantee cleanup should use it.
+At `staleAt`, the pure reducer keeps the identity and last-observed timestamp but
+changes semantic state to `unknown`, removes obsolete activity/block detail, and
+recalculates workspace attention. It preserves the producer revision: this is a
+local confidence transition, not a producer event, so consuming a sequence number
+would cause the producer's next legitimate event to be rejected. At `expiresAt`,
+the reducer removes the record.
+
+This two-stage policy distinguishes three useful facts:
+
+```text
+fresh       the source still considers this observation current
+unknown     the last observation is too old to claim, but identity is useful
+expired     the record is too old to retain in the live coordination view
+```
+
+Both windows are optional because provider hooks can have explicit
+stop/session-end events. A custom integration that cannot guarantee cleanup
+should supply a TTL; one that can go silent while an identity remains useful can
+also supply an earlier stale window.
 
 Codex currently lacks a session-end hook, so its adapter supplies state-sensitive
-TTL values: blocked approval can remain for 24 hours, working/idle for two hours,
-and done/unknown for 30 minutes. Claude Code and OpenCode expose explicit cleanup
-events and do not receive this fallback expiry policy.
+freshness and TTL values. Working/idle becomes unknown after 30 minutes and
+expires after two hours. A blocked approval becomes unknown after 12 hours and
+expires after 24 hours. Done/unknown expires after 30 minutes. Claude Code and
+OpenCode expose explicit cleanup events and do not receive this fallback policy.
 
 ## 19.9 Unread versus attention
 
@@ -364,8 +384,21 @@ authentication   → authentication needed
 ```
 
 Each row is a native button with a focus-visible outline. Its accessible label
-contains provider name, semantic state, detail, workspace, and optional message.
-Working dots pulse, but a reduced-motion media query disables animation.
+contains provider name, semantic state, detail, workspace, optional message, and
+the age of the last observation. Visible age uses coarse buckets (`now`, five
+second steps, minutes, hours, days) and refreshes every ten seconds. That timer is
+presentation-only; lifecycle confidence changes only through protocol policy and
+the reducer's once-per-second stale/expiry pass.
+
+Workspace rows aggregate their records using the same urgency order. The two
+highest-priority non-empty groups remain visible, for example
+`2 blocked · 3 working`; additional groups collapse to `+N`. This limits row
+height while still exposing load and urgency before the user scans individual
+agents.
+
+Working dots pulse, but a reduced-motion media query disables animation. A CSS
+container query hides the visible elapsed label when the sidebar is narrow; the
+button title and accessible label retain the timing information.
 
 When the sidebar is collapsed, the expand button's accessible label includes the
 total and blocked-agent counts. Important state does not become completely hidden.
@@ -591,18 +624,19 @@ The test design follows the boundaries in the architecture.
 ### Pure contract tests
 
 Exercise valid/invalid enums, string normalization, derived ids, revision parsing,
-TTL bounds, and attention classification without Electron.
+stale/TTL bounds and ordering, and attention classification without Electron.
 
 ### Reducer consistency tests
 
 Prove surface binding, stale revision rejection, focus of workspace/pane/surface,
-acknowledgement, expiry, terminal-exit cleanup, pane/workspace cleanup, and empty
-restoration.
+acknowledgement, stale-to-unknown behavior, expiry, terminal-exit cleanup,
+pane/workspace cleanup, and empty restoration.
 
 ### View tests
 
-Verify labels, urgency ordering, and accessible text as pure functions. CSS is
-then checked in a real disposable Electron window.
+Verify labels, urgency ordering, elapsed buckets, workspace rollups, and
+accessible text as pure functions. CSS is then checked in a real disposable
+Electron window.
 
 ### Socket and wait tests
 
@@ -637,6 +671,7 @@ the pure modules.
 | Free-form status strings        | easy to add labels            | unreliable automation and inconsistent urgency semantics                   |
 | Provider-specific React records | preserves all provider detail | spreads schema churn through core state and UI                             |
 | Persist live records            | survives restart              | displays stale claims about dead processes                                 |
+| Remove as soon as state is stale | smallest live projection       | loses the useful identity and last-observed context before retention ends  |
 | Event-driven waiter registry    | efficient at scale            | more race, cancellation, and cleanup complexity for little current gain    |
 | Overwrite integration files     | simplest installer            | destroys user configuration and breaks trust                               |
 | Fail hook calls loudly          | easier adapter diagnosis      | provider work could fail because the observer/app is unavailable           |
@@ -656,8 +691,8 @@ The architecture leaves clear places for future work:
 - Add event ids for deduplication across retrying producers.
 - Add a `startedAt` or bounded transition history for duration metrics.
 - Issue per-pane capability tokens if the local security model strengthens.
-- Group multiple agents by workspace/provider in the view without changing
-  record ownership.
+- Add provider-group drill-down beneath the current workspace state rollups
+  without changing record ownership.
 - Add provider-version fixtures to detect lifecycle schema drift.
 - Build a history/analytics store as a separate projection, leaving live state
   ephemeral.
@@ -722,3 +757,4 @@ The architecture leaves clear places for future work:
 8. When would event-driven waits become preferable to 50 ms polling?
 9. Why are live records excluded from persistence?
 10. Where would you add a new provider without leaking its schema into React?
+11. Why is stale state converted to `unknown` before the record is removed?
