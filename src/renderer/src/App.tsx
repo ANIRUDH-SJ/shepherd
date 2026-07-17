@@ -141,7 +141,12 @@ export default function App(): React.JSX.Element {
       const { method, workspaceId, params } = cmd
       // new-workspace has no target id — handle it before the guard.
       if (method === 'new-workspace') {
-        dispatch(createWorkspaceAction(typeof params.name === 'string' ? params.name : undefined))
+        dispatch(
+          createWorkspaceAction(
+            typeof params.name === 'string' ? params.name : undefined,
+            typeof params.cwd === 'string' ? params.cwd : undefined
+          )
+        )
         return
       }
       if (!workspaceId) return

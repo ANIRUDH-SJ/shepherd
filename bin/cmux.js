@@ -22,6 +22,8 @@ Usage:
   cmux log <text>                     append a status line
   cmux list-workspaces                list open workspaces
   cmux new-workspace [--name N]       create a workspace
+  cmux new-worktree --repo R --path P (--branch B | --new-branch B)
+                                      create a Git worktree workspace
   cmux rename-workspace --workspace W --name N
                                       rename a workspace (empty N resets its name)
   cmux select-workspace --workspace W switch to a workspace
@@ -83,6 +85,14 @@ Agent query flags:
 Agent inspection flags:
   --lines N              recent plain-text lines (default 50, maximum 500)
   --max-bytes N          output bytes (default 16384, maximum 65536)
+
+Worktree flags:
+  --repo PATH            required absolute Git repository path
+  --path PATH            required absolute path for the new worktree
+  --branch REF           attach an existing branch
+  --new-branch REF       create and attach a new branch
+  --start-point REF      optional start for --new-branch (default HEAD)
+  --name TEXT            optional workspace display name (default branch)
 
 Global: --workspace <id|name>   target a specific workspace (default: this pane's)
 

@@ -151,6 +151,25 @@ async function main() {
   assert(inspection?.params.lines === '25', 'maps the inspection line limit')
   assert(inspection?.params.maxBytes === '4096', 'maps the inspection byte limit')
 
+  await runCli([
+    'new-worktree',
+    '--repo',
+    '/tmp/project',
+    '--path',
+    '/tmp/project-feature',
+    '--new-branch',
+    'feature/test',
+    '--start-point',
+    'main',
+    '--name',
+    'feature workspace'
+  ])
+  const worktree = requests[9]
+  assert(worktree?.method === 'new-worktree', 'requests a Git worktree workspace')
+  assert(worktree?.params.newBranch === 'feature/test', 'maps the new worktree branch')
+  assert(worktree?.params.startPoint === 'main', 'maps the worktree start point')
+  assert(worktree?.params.name === 'feature workspace', 'maps the workspace display name')
+
   await runCli(
     ['agent-hook', 'codex'],
     JSON.stringify({
@@ -159,7 +178,7 @@ async function main() {
       tool_name: 'Bash'
     })
   )
-  const hook = requests[9]
+  const hook = requests[10]
   assert(hook?.method === 'agent-report', 'hook event becomes an agent report')
   assert(hook?.params.provider === 'codex', 'hook preserves provider identity')
   assert(hook?.params.state === 'blocked', 'permission hook reports blocked')

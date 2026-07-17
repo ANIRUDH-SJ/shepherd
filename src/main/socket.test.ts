@@ -83,6 +83,15 @@ async function main(): Promise<void> {
     'rejects an unknown capability provider'
   )
 
+  const invalidWorktree = await request('new-worktree', {
+    repo: '/tmp/repo',
+    path: '/tmp/worktree'
+  })
+  assert(
+    invalidWorktree.error?.includes('exactly one') === true,
+    'validates worktree branch mode before mutation'
+  )
+
   const reported = await request('agent-report', {
     workspace: 'project',
     surfaceId: 'term-1',
