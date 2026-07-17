@@ -28,6 +28,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M4** — Agent integration & session persistence ✓
 - [x] **M5** — Socket API & automation (a real cmux feature) ✓
 - [ ] **M6** — Polish, theming & packaging/distribution
+- [x] **M7** — Semantic agent runtime, sidebar, control API, and provider integrations ✓
 
 ---
 
@@ -152,6 +153,27 @@ mirroring cmux's method surface. Easier in Node than cmux's Swift version.*
 - [ ] (Optional) GitHub Actions CI: lint + build on push
 - [ ] Tag a `v0.1.0` release
 
+## M7 — Semantic agent runtime
+*Goal: show provider-neutral live agent state, make it actionable, and connect
+documented provider lifecycle events without scraping terminal prose.*
+
+- [x] Define semantic states (`working`, `blocked`, `done`, `idle`, `unknown`)
+      separately from working activity and blocked reason
+- [x] Validate identity, ownership, source, sequencing, display text, and TTL at
+      the Unix-socket boundary
+- [x] Bind every report to an existing workspace, pane, and terminal surface
+- [x] Derive workspace unread/attention state and clean records on expiry, pane
+      close, workspace close, explicit clear, and session restore
+- [x] Add `agent-report`, `agent-clear`, `list-agents`, `focus-agent`, and
+      `wait-agent` socket/CLI methods
+- [x] Add a keyboard-accessible Agents section with urgent-first ordering,
+      reduced-motion support, and exact terminal focus
+- [x] Add idempotent lifecycle setup for Codex and Claude Code plus a managed
+      OpenCode plugin, preserving existing user configuration
+- [x] Cover the contract, reducer, view, wait logic, socket, CLI, event mapping,
+      and installers with regression tests
+- [x] Add the implementation walkthrough and full architecture chapter
+
 ---
 
 ## Stretch / later (post-v1)
@@ -175,5 +197,6 @@ mirroring cmux's method surface. Easier in Node than cmux's Swift version.*
 - Chose **Electron over libghostty embed**: libghostty is the renderer cmux
   itself uses, but its embedding C API is still unstable and it's Zig — wrong
   effort-to-payoff for now. Revisit at Level 3.
-- The **state-dir + file-watch** pattern (M3/M4) is the backbone that makes
-  agent statuses appear in the sidebar — design it early, everything hangs off it.
+- The **Unix socket + renderer reducer** is the backbone for live agent state.
+  Provider hooks/plugins publish structured lifecycle reports; a watched state
+  directory is not required for the implemented runtime.
