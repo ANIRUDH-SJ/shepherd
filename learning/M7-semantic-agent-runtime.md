@@ -166,6 +166,7 @@ The reducer removes agents when:
 
 - an authorized `agent-clear` arrives;
 - their `expiresAt` time passes;
+- their terminal process exits, even if the surface remains open;
 - their workspace closes;
 - their terminal surface disappears after a pane/tab change;
 - a restored session is loaded.
@@ -236,13 +237,21 @@ It maps lifecycle events as follows:
 | `PermissionRequest`                 | `blocked / approval`                           |
 | `Notification`                      | `blocked / approval` or `blocked / user-input` |
 | `PostToolUse`                       | `working / thinking`                           |
+| compact/subagent lifecycle          | `working / thinking` plus safe detail          |
 | `PostToolUseFailure`, `StopFailure` | `blocked / tool-error`                         |
 | `Stop`                              | `done`                                         |
 | `SessionEnd`                        | clear the surface-owned record                 |
+| unsupported lifecycle event         | `unknown` plus the event name only             |
 
 Tool-name mapping recognizes web/search, read/find, edit/write, command, and test
 activity. It is intentionally a small heuristic at the adapter boundary. The
 core state model never depends on provider tool names.
+
+Codex does not document a monotonic numeric hook sequence, so its adapter does
+not invent one. It preserves a numeric `revision`/`sequence` if a producer
+supplies it and adds state-sensitive TTL: long-lived approval blocks can remain
+for 24 hours, active/idle records for two hours, and done/unknown records for 30
+minutes. This bounds stale state for a provider without a session-end hook.
 
 ## 9. Provider setup and configuration safety
 
@@ -293,7 +302,8 @@ shape. `bin/integrations/opencode.js` writes a small managed plugin that reports
 
 It launches `cmux` with `Bun.spawn`, ignores stdout/stderr, and catches failures.
 Like the command hooks, it first checks for pane identity so it does nothing
-outside cmux-linux.
+outside cmux-linux. The long-lived plugin emits monotonic revisions seeded from
+`Date.now()`, so a plugin reload starts above revisions from its previous run.
 
 ## 11. `AgentList.tsx`, `agentView.ts`, and CSS — presentation
 
@@ -335,15 +345,17 @@ The feature adds coverage at every meaningful boundary:
 - `src/shared/agent.test.ts`: normalization, defaults, sanitization, invalid
   combinations, TTL, sequencing inputs, and attention semantics.
 - `src/renderer/src/state/appReducer.test.ts`: binding, stale-event rejection,
-  unread/attention, exact focus, expiry, pane cleanup, workspace cleanup, and
-  restore behavior.
+  unread/attention, exact focus, expiry, terminal-exit cleanup, pane cleanup,
+  workspace cleanup, and restore behavior.
 - `src/renderer/src/agentView.test.ts`: labels, ordering, and accessibility text.
 - `src/main/agentWait.test.ts`: wait validation, state transitions, and timeout.
 - `src/main/socket.test.ts`: report validation, routing, list, focus, wait, source
   protection, and clear.
-- `bin/agent-events.test.js`: provider-event and tool-activity mappings.
+- `bin/agent-events.test.js`: provider-event/tool mappings, safe fallback,
+  producer revision handling, and Codex expiry policy.
 - `bin/integrations.test.js`: config preservation, all installed events,
-  idempotence, managed-plugin ownership, and unknown-provider rejection.
+  idempotence, OpenCode sequencing, managed-plugin ownership, and
+  unknown-provider rejection.
 - `bin/cmux.test.js`: real CLI requests, flag mapping, pane targeting, and a
   Codex permission event becoming `blocked / approval`.
 

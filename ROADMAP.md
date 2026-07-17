@@ -164,13 +164,15 @@ documented provider lifecycle events without scraping terminal prose.*
       the Unix-socket boundary
 - [x] Bind every report to an existing workspace, pane, and terminal surface
 - [x] Derive workspace unread/attention state and clean records on expiry, pane
-      close, workspace close, explicit clear, and session restore
+      close, workspace close, terminal exit, explicit clear, and session restore
 - [x] Add `agent-report`, `agent-clear`, `list-agents`, `focus-agent`, and
       `wait-agent` socket/CLI methods
 - [x] Add a keyboard-accessible Agents section with urgent-first ordering,
       reduced-motion support, and exact terminal focus
 - [x] Add idempotent lifecycle setup for Codex and Claude Code plus a managed
       OpenCode plugin, preserving existing user configuration
+- [x] Bound Codex stale state with lifecycle-aware expiry, sequence OpenCode
+      reports, and degrade unsupported events without retaining their payloads
 - [x] Cover the contract, reducer, view, wait logic, socket, CLI, event mapping,
       and installers with regression tests
 - [x] Add the implementation walkthrough and full architecture chapter
