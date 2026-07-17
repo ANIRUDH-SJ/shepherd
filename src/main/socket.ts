@@ -3,6 +3,11 @@ import { existsSync, unlinkSync } from 'fs'
 import { Notification } from 'electron'
 import type { SocketApply, WorkspacesSync } from '../shared/ipc'
 import { normalizeAgentReport } from '../shared/agent'
+import {
+  AGENT_PROTOCOL_METHODS,
+  AGENT_PROTOCOL_SCHEMA,
+  agentProtocolCapabilities
+} from '../shared/agentProtocol'
 import { normalizeAgentQuery, queryAgents } from '../shared/agentQuery'
 import { normalizeWorkspaceName } from '../shared/workspace'
 import { normalizeUsageReport } from '../shared/usage'
@@ -91,18 +96,22 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
           'send-text',
           'send-key',
           'set-status',
-          'agent-report',
-          'agent-clear',
-          'list-agents',
-          'agent-snapshot',
-          'focus-agent',
-          'wait-agent',
+          ...AGENT_PROTOCOL_METHODS,
           'report-usage',
           'log',
           'notify'
         ]
       })
       return
+    case 'agent-schema':
+      send(conn, id, AGENT_PROTOCOL_SCHEMA)
+      return
+    case 'agent-capabilities': {
+      const result = agentProtocolCapabilities(params.provider)
+      if (!result.ok) send(conn, id, null, result.error)
+      else send(conn, id, result.capabilities)
+      return
+    }
     case 'identify': {
       // Fall back to the requested id/name if the mirror can't resolve it yet
       // (e.g. early startup), so identify doesn't report null for a valid caller.

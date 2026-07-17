@@ -59,6 +59,27 @@ async function main(): Promise<void> {
     (capabilities.result?.methods as string[]).includes('agent-snapshot'),
     'advertises the agent snapshot query'
   )
+  assert(
+    (capabilities.result?.methods as string[]).includes('agent-schema'),
+    'advertises the agent protocol schema'
+  )
+
+  const schema = await request('agent-schema', {})
+  assert(schema.result?.version === 1, 'returns the versioned agent protocol schema')
+  assert(
+    typeof (schema.result?.methods as Record<string, unknown>)['agent-report'] === 'object',
+    'schema describes agent report parameters'
+  )
+
+  const providerCapabilities = await request('agent-capabilities', { provider: 'codex' })
+  const adapters = providerCapabilities.result?.adapters as Array<Record<string, unknown>>
+  assert(adapters.length === 1, 'filters adapter capabilities by provider')
+  assert(adapters[0]?.cleanup === 'stale-expiry', 'describes provider cleanup behavior')
+  const invalidCapabilities = await request('agent-capabilities', { provider: 'other' })
+  assert(
+    invalidCapabilities.error?.includes('provider must be') === true,
+    'rejects an unknown capability provider'
+  )
 
   const reported = await request('agent-report', {
     workspace: 'project',
