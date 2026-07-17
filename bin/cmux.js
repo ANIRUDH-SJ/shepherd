@@ -4,10 +4,14 @@
 // cmux-linux terminal pane (where CMUX_SOCKET_PATH + CMUX_WORKSPACE_ID are set) to
 // drive the sidebar. See textbook/11 and FEATURES.md Part 2.
 const net = require('net')
+const fs = require('fs')
+const { mapAgentEvent } = require('./agent-events')
+const { setupIntegration } = require('./integrations')
 
 const socketPath = process.env.CMUX_SOCKET_PATH || '/tmp/cmux-linux.sock'
 const argv = process.argv.slice(2)
-const method = argv[0]
+let method = argv[0]
+let hookRequest = null
 
 if (!method || method === '-h' || method === '--help') {
   console.log(`cmux — drive cmux-linux from a terminal
@@ -37,7 +41,8 @@ Usage:
   cmux ping                           check the app is reachable
   cmux capabilities                   list supported socket methods
   cmux identify                       show this pane's + the active workspace
-  cmux hooks setup                    install a Claude Code notify hook
+  cmux integrations setup [provider]  install lifecycle reporting for all providers
+  cmux hooks setup                    legacy alias for Claude Code integration setup
 
 Usage flags:
   --input-tokens N       required non-negative integer
@@ -65,62 +70,59 @@ Inside a cmux-linux pane, CMUX_WORKSPACE_ID and CMUX_SOCKET_PATH are set for you
   process.exit(method ? 0 : 1)
 }
 
-// `cmux hooks setup` is a LOCAL command (it edits ~/.claude/settings.json); it does
-// not talk to the socket, so handle it before connecting.
-if (method === 'hooks') {
-  if (argv[1] !== 'setup') {
-    console.error('usage: cmux hooks setup')
-    process.exit(1)
-  }
-  const os = require('os')
-  const fs = require('fs')
-  const path = require('path')
-  const settingsPath =
-    process.env.CLAUDE_SETTINGS_PATH || path.join(os.homedir(), '.claude', 'settings.json')
-
-  let settings = {}
+// Hook commands receive one provider event as JSON on stdin. Global hooks should
+// silently do nothing when the agent is not running inside a cmux-linux terminal.
+if (method === 'agent-hook') {
+  if (!process.env.CMUX_SOCKET_PATH || !process.env.CMUX_SURFACE_ID) process.exit(0)
+  const provider = argv[1]
+  let event
   try {
-    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'))
+    event = JSON.parse(fs.readFileSync(0, 'utf8'))
   } catch {
-    /* no settings file yet — start fresh */
-  }
-  settings.hooks = settings.hooks || {}
-  const list = Array.isArray(settings.hooks.Notification) ? settings.hooks.Notification : []
-
-  // Idempotent: don't add a second cmux hook if one is already present.
-  const already = list.some(
-    (g) =>
-      g &&
-      Array.isArray(g.hooks) &&
-      g.hooks.some((h) => h && typeof h.command === 'string' && h.command.includes('cmux notify'))
-  )
-  if (already) {
-    console.log(`cmux: Claude Code notify hook already installed at ${settingsPath}`)
     process.exit(0)
   }
+  hookRequest = mapAgentEvent(provider, event)
+  if (!hookRequest) process.exit(0)
+  method = hookRequest.method
+}
 
-  list.push({
-    hooks: [{ type: 'command', command: 'cmux notify --title Claude --body "needs your attention"' }]
-  })
-  settings.hooks.Notification = list
-  fs.mkdirSync(path.dirname(settingsPath), { recursive: true })
-  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n')
-  console.log(`cmux: installed Claude Code notify hook -> ${settingsPath}`)
-  console.log('      Claude Code will now flash its cmux-linux workspace when it needs you.')
-  process.exit(0)
+// Integration setup edits provider configuration locally and never opens the app socket.
+if (method === 'hooks' || method === 'integrations') {
+  const legacy = method === 'hooks'
+  if (argv[1] !== 'setup') {
+    console.error(legacy ? 'usage: cmux hooks setup' : 'usage: cmux integrations setup [provider]')
+    process.exit(1)
+  }
+  const requested = legacy ? 'claude' : argv[2] || 'all'
+  const targets = requested === 'all' ? ['codex', 'claude', 'opencode'] : [requested]
+  let failed = false
+  for (const target of targets) {
+    const result = setupIntegration(target)
+    if (!result.ok) {
+      console.error(`cmux: ${result.error}`)
+      failed = true
+    } else {
+      console.log(
+        `cmux: ${result.changed ? 'installed' : 'already installed'} ${target} integration -> ${result.file}`
+      )
+    }
+  }
+  if (!failed && targets.includes('codex')) {
+    console.log('cmux: open /hooks in Codex and trust the new lifecycle hooks before use.')
+  }
+  process.exit(failed ? 1 : 0)
 }
 
 // Parse --flags and trailing positional text.
-const params = {}
+const params = hookRequest ? { ...hookRequest.params } : {}
 const positional = []
-for (let i = 1; i < argv.length; i++) {
+for (let i = hookRequest ? argv.length : 1; i < argv.length; i++) {
   const a = argv[i]
   if (a.startsWith('--')) {
     // CLI flags are kebab-case; the JSON protocol uses JavaScript-style camelCase.
     const key = a.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
     params[key] = argv[++i]
-  }
-  else positional.push(a)
+  } else positional.push(a)
 }
 if (method === 'focus-agent' || method === 'agent-clear') {
   if (positional[0] && !params.agentId) params.agentId = positional[0]
@@ -159,6 +161,7 @@ conn.on('data', (d) => {
   try {
     const res = JSON.parse(buf.slice(0, nl))
     if (res.error) {
+      if (hookRequest) process.exit(0)
       console.error('cmux: error:', res.error)
       conn.end()
       process.exit(1)
@@ -176,6 +179,9 @@ conn.on('data', (d) => {
 })
 
 conn.on('error', (e) => {
-  console.error(`cmux: cannot reach cmux-linux at ${socketPath} (is the app running?) — ${e.message}`)
+  if (hookRequest) process.exit(0)
+  console.error(
+    `cmux: cannot reach cmux-linux at ${socketPath} (is the app running?) — ${e.message}`
+  )
   process.exit(1)
 })

@@ -36,7 +36,7 @@ async function main() {
     server.listen(socketPath, resolve)
   })
 
-  async function runCli(args) {
+  async function runCli(args, input) {
     const child = spawn(cliPath, args, {
       env: {
         ...process.env,
@@ -51,6 +51,7 @@ async function main() {
     child.stderr.on('data', (chunk) => {
       stderr += chunk.toString()
     })
+    if (input !== undefined) child.stdin.end(input)
     const exitCode = await new Promise((resolve) => child.once('exit', resolve))
     assert(exitCode === 0, `CLI exits successfully${stderr ? `: ${stderr}` : ''}`)
   }
@@ -110,6 +111,21 @@ async function main() {
   assert(wait?.method === 'wait-agent', 'sends the wait-agent method')
   assert(wait?.params.agentId === 'codex:term-test', 'targets the requested agent wait')
   assert(wait?.params.state === 'done', 'preserves the requested wait state')
+
+  await runCli(
+    ['agent-hook', 'codex'],
+    JSON.stringify({
+      hook_event_name: 'PermissionRequest',
+      session_id: 'session-1',
+      tool_name: 'Bash'
+    })
+  )
+  const hook = requests[4]
+  assert(hook?.method === 'agent-report', 'hook event becomes an agent report')
+  assert(hook?.params.provider === 'codex', 'hook preserves provider identity')
+  assert(hook?.params.state === 'blocked', 'permission hook reports blocked')
+  assert(hook?.params.blockReason === 'approval', 'permission hook reports approval reason')
+  assert(hook?.params.sessionId === 'session-1', 'hook preserves native session id')
 
   await new Promise((resolve) => server.close(resolve))
 
