@@ -1,5 +1,5 @@
 'use strict'
-const { activityForTool, mapAgentEvent } = require('./agent-events')
+const { CODEX_TTL_MS, activityForTool, eventRevision, mapAgentEvent } = require('./agent-events')
 
 let failures = 0
 function assert(condition, message) {
@@ -26,6 +26,15 @@ assert(
   'prompt thinks'
 )
 assert(promptEvent?.params.sessionId === 'session-1', 'preserves native session provenance')
+assert(promptEvent?.params.ttlMs === CODEX_TTL_MS.working, 'Codex working state expires safely')
+
+assert(eventRevision({ sequence: '7' }) === 7, 'accepts a producer sequence number')
+assert(eventRevision({ revision: -1 }) === undefined, 'rejects invalid producer revisions')
+const sequenced = mapAgentEvent('codex', {
+  hook_event_name: 'PostToolUse',
+  revision: 9
+})
+assert(sequenced?.params.revision === 9, 'preserves a producer revision when supplied')
 
 const search = mapAgentEvent('claude', {
   hook_event_name: 'PreToolUse',
@@ -39,9 +48,18 @@ const approval = mapAgentEvent('codex', {
 })
 assert(approval?.params.state === 'blocked', 'permission request blocks the agent')
 assert(approval?.params.blockReason === 'approval', 'permission request records approval reason')
+assert(approval?.params.ttlMs === CODEX_TTL_MS.blocked, 'Codex approval survives a long wait')
 
 const done = mapAgentEvent('claude', { hook_event_name: 'Stop' })
 assert(done?.params.state === 'done', 'stop marks the turn done')
+assert(
+  done?.params.ttlMs === undefined,
+  'does not add expiry when the provider reports session end'
+)
+
+const subagent = mapAgentEvent('codex', { hook_event_name: 'SubagentStart' })
+assert(subagent?.params.state === 'working', 'subagent lifecycle refreshes working state')
+assert(subagent?.params.message === 'Subagent started', 'subagent lifecycle keeps safe detail')
 
 const clear = mapAgentEvent(
   'claude',
@@ -55,10 +73,10 @@ assert(
   'does not clear without terminal identity'
 )
 assert(mapAgentEvent('unknown', { hook_event_name: 'Stop' }) === null, 'rejects unknown providers')
-assert(
-  mapAgentEvent('codex', { hook_event_name: 'FutureEvent' }) === null,
-  'ignores unknown events'
-)
+const future = mapAgentEvent('codex', { hook_event_name: 'FutureEvent', prompt: 'do not retain' })
+assert(future?.params.state === 'unknown', 'degrades unsupported events to unknown state')
+assert(future?.params.message === 'FutureEvent event', 'retains only the event name as safe detail')
+assert(future?.params.prompt === undefined, 'does not retain unsupported event payloads')
 
 if (failures > 0) throw new Error(`${failures} agent event test(s) failed`)
 console.log('\n✅ ALL AGENT EVENT TESTS PASS')
