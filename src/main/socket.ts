@@ -13,6 +13,7 @@ import { normalizeWorkspaceName } from '../shared/workspace'
 import { normalizeUsageReport } from '../shared/usage'
 import { normalizeAgentWait, waitForAgent } from './agentWait'
 import { inspectTerminal, normalizeTerminalInspection } from './terminalInspection'
+import { createGitWorktree, normalizeWorktreeRequest } from './worktree'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SOCKET SERVER  (main process — the programmable control channel)
@@ -90,6 +91,7 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
           'identify',
           'list-workspaces',
           'new-workspace',
+          'new-worktree',
           'rename-workspace',
           'select-workspace',
           'close-workspace',
@@ -210,6 +212,25 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
       const result = await waitForAgent(() => mirror.agents, validation.options)
       if (!result.ok) send(conn, id, null, result.error)
       else send(conn, id, { agent: result.agent })
+      return
+    }
+    case 'new-worktree': {
+      const validation = normalizeWorktreeRequest(params)
+      if (!validation.ok) {
+        send(conn, id, null, validation.error)
+        return
+      }
+      const result = await createGitWorktree(validation.request)
+      if (!result.ok) {
+        send(conn, id, null, result.error)
+        return
+      }
+      apply({
+        method: 'new-workspace',
+        workspaceId: null,
+        params: { name: validation.request.name, cwd: result.worktree.path }
+      })
+      send(conn, id, { worktree: result.worktree })
       return
     }
     case 'new-workspace':

@@ -87,6 +87,8 @@ Think of the book in five "acts":
   validation, aggregation, adapters, UI tradeoffs, and testing.
 - `19-semantic-agent-runtime.md` — provider-neutral lifecycle state, identity,
   ordering, socket automation, sidebar focus, integrations, and trust boundaries.
+- `20-worktree-workspaces.md` — safe Git worktree creation, process boundaries,
+  workspace cwd propagation, failure semantics, and testing.
 
 **Reference**
 
@@ -121,6 +123,7 @@ Think of the book in five "acts":
 | `17-how-it-all-connects.md`             | End-to-end trace of a keystroke + a notification                                                      | all         |
 | `18-usage-telemetry.md`                 | Token accounting, accuracy, provider-neutral events, validation, aggregation, adapters, and UI design | 09, 11, 13  |
 | `19-semantic-agent-runtime.md`          | Semantic state machines, lifecycle reports, identity, ordering, adapters, agent UI, and automation     | 09, 11, 12  |
+| `20-worktree-workspaces.md`             | Git worktree isolation, validated process execution, workspace cwd flow, and failure boundaries        | 06, 09, 11  |
 
 ---
 

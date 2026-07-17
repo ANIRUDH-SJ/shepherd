@@ -437,6 +437,7 @@ Read this as the "API reference" for the socket. Each row is one key in the
 | Method | Params | Returns | CLI |
 |---|---|---|---|
 | `workspace.create` | `{name, cwd?}` | `{id, name}` | `cmux new-workspace` |
+| `new-worktree` | absolute repo/path plus existing or new branch | worktree metadata; opens workspace | `cmux new-worktree ...` |
 | `workspace.list` | `{}` | `{workspaces: [...]}` | `cmux list-workspaces --json` |
 | `workspace.select` | `{workspaceId}` | `{ok}` | `cmux select-workspace --workspace <id>` |
 | `workspace.current` | `{}` | `{workspaceId, name}` | `cmux current-workspace` |

@@ -149,7 +149,7 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | 23 | **Remote SSH workspaces** (`cmux ssh`, remote tmux, localhost routing) | spawn `ssh`/attach `tmux` in a pane; network routing is hard — defer | 🔵 |
 | 24 | **Claude Code Teams mode** (`claude-teams` → teammates as splits) | orchestrate multiple agent panes via the socket API | 🔵 |
 | 25 | **Skills system** (reusable agent workflows) | ship prompt/workflow snippets invokable from the palette | 🔵 |
-| 26 | **Git worktree-per-workspace** (our own value-add; cmux only *shows* branch) | on new-workspace, optionally `git worktree add` a branch dir | 🔵 |
+| 26 | **Git worktree-per-workspace** | validated `new-worktree` socket/CLI flow creates or attaches a branch, then opens the canonical path as workspace cwd | 🟢 |
 | 27 | **GPU rendering** | xterm.js **WebGL addon** (our closest equivalent to libghostty) | 🟢-ish |
 | 28 | **iOS companion / realtime sync** | out of scope for a Linux desktop app | ⚪ |
 | 29 | **libghostty rendering** | we use xterm.js instead (see the decisions log) | ⚪ |

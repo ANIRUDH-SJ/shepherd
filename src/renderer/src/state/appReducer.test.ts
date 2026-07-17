@@ -57,6 +57,11 @@ assert(
     normalizedCreate.workspace.name === 'named workspace',
   'workspace creation uses the same normalization rule'
 )
+const cwdCreate = createWorkspaceAction('worktree', '/tmp/project-worktree')
+assert(
+  cwdCreate.type === 'createWorkspace' && cwdCreate.workspace.cwd === '/tmp/project-worktree',
+  'workspace creation preserves an explicit worktree cwd'
+)
 
 const exactUsage: UsageReport = {
   inputTokens: 1000,

@@ -49,12 +49,12 @@ export interface AppState {
 
 /** Mint a new workspace with one terminal. The display NAME is positional
  *  ("workspace N", by sidebar position) unless a custom `name` is given. */
-export function makeWorkspace(name?: string): Workspace {
+export function makeWorkspace(name?: string, cwd = '~'): Workspace {
   const pane = makePane({ id: uid('term') })
   return {
     id: `ws-${crypto.randomUUID()}`,
     name: normalizeWorkspaceName(name ?? ''),
-    cwd: '~',
+    cwd,
     root: { type: 'pane', pane },
     activePaneId: pane.id,
     status: null,
@@ -150,8 +150,8 @@ export type AppAction =
   | { type: 'pane'; workspaceId: string; action: WorkspaceAction }
 
 // ── Action creators ──────────────────────────────────────────────────────────
-export function createWorkspaceAction(name?: string): AppAction {
-  return { type: 'createWorkspace', workspace: makeWorkspace(name) }
+export function createWorkspaceAction(name?: string, cwd?: string): AppAction {
+  return { type: 'createWorkspace', workspace: makeWorkspace(name, cwd) }
 }
 /** Wrap a pane-level (M2) action so it targets a specific workspace's tree. */
 export function paneAction(workspaceId: string, action: WorkspaceAction): AppAction {
