@@ -133,7 +133,7 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | 8 | **Sidebar status API** (`set-status`, `set-progress`, `log`) | socket methods → workspace metadata → React status pills / progress bar | 🟢 (status/notify) · 🟡 (pills+progress polish) |
 | 9 | **OSC 9/99/777 detection** (auto notifications from terminal output) | scan pty output stream in main for these escape codes → fire notification | 🟢 |
 | 10 | **Automatic + semantic agent runtime** | zero-setup PTY process discovery for presence/activity, enriched by validated lifecycle reports, bounded queries/snapshots/inspection, workspace rollups, focus/wait controls, and integrations | 🟢 |
-| 11 | **Session restoration** (layout, cwd, workspaces) | serialize the Window store to JSON on change; restore + re-spawn shells on launch | 🟢 (layout+cwd) · 🟡 (scrollback) |
+| 11 | **Single-workspace session restoration** | serialize the active workspace layout/cwd; relaunch with exactly that workspace and re-spawn its shells | 🟢 (active layout+cwd) · 🟡 (scrollback/resume-all setting) |
 | 12 | **Live project + Git branch in sidebar** | active shell cwd comes from `/proc`; main resolves/caches the worktree root and reads Git `HEAD`, then React renders separate project/branch rows | 🟢 |
 | 13 | **Keyboard shortcuts** (new/close/split/focus/nav) | a React keymap; mirror cmux's bindings (⌘→Ctrl/Super on Linux) | 🟢 |
 | 14 | **Dark theme matching cmux** | CSS variables + xterm theme; optionally read Ghostty colors (#20) | 🟢 (our theme) |
@@ -262,7 +262,7 @@ which is 90% of why the screenshot looks the way it does.
 - [x] Socket API + `cmux` CLI driving workspaces/status/notifications
 - [x] Agents section automatically detects Codex, Claude Code, OpenCode, Kimi,
       other known CLIs, and safely named custom agents; lifecycle reporters add richer state
-- [x] Layout + cwd restored on relaunch
+- [x] Active workspace layout + cwd restored as the single workspace on relaunch
 - [x] Live project and Git branch shown for each workspace's active terminal
 - [ ] Final dark-theme matching pass
 

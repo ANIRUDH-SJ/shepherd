@@ -33,6 +33,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M9** — Filtered live agent subscriptions ✓
 - [x] **M10** — Automatic terminal-agent discovery with no provider setup ✓
 - [x] **M11** — Live workspace project and Git branch metadata ✓
+- [x] **M12** — Deterministic single-workspace startup ✓
 
 ---
 
@@ -245,6 +246,20 @@ tracks the active terminal after `cd`, `git switch`, or `git checkout`.*
 - [x] Cover helpers, Git parsing, cache behavior, reducer ownership, and cwd changes
 - [x] Verify real `cd` and `git switch` transitions in an isolated Electron window
 - [x] Add implementation learning notes and the full architecture chapter
+
+## M12 — Deterministic single-workspace startup
+*Goal: every launch begins with one workspace while retaining the most relevant
+durable context from the previous session.*
+
+- [x] Confirm fresh construction already creates exactly one workspace
+- [x] Identify multi-workspace session replay as the duplicate-looking startup source
+- [x] Restore only the previously active workspace from legacy snapshots
+- [x] Preserve its name, cwd, tabs, panes, split layout, and active pane
+- [x] Persist only the active workspace as the next startup recipe
+- [x] Keep runtime multi-workspace creation and switching unchanged
+- [x] Reset transient agents, usage, attention, and derived Git metadata on restore
+- [x] Cover legacy restore and serializer cardinality with reducer regressions
+- [x] Document the implementation, alternatives, security, and tradeoffs
 
 ---
 

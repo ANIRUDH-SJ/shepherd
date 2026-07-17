@@ -80,7 +80,7 @@ Think of the book in five "acts":
   automation (the backbone of the "cmux feel").
 - `12-notifications-and-osc.md` — notification rings, and the OSC escape codes
   that trigger them automatically.
-- `13-session-persistence.md` — saving and restoring your whole workspace.
+- `13-session-persistence.md` — session serialization and restore fundamentals.
 - `14-build-tooling-and-vite.md` — how the project is bundled and hot-reloaded.
 - `15-packaging-and-distribution.md` — turning it into an AppImage/.deb others install.
 - `18-usage-telemetry.md` — trustworthy token/cost measurements: provenance,
@@ -95,6 +95,8 @@ Think of the book in five "acts":
   Linux process ancestry, safe identity, activity inference, and authority.
 - `23-live-workspace-metadata.md` — active-terminal cwd, Git/worktree discovery,
   cached branch observation, state ownership, persistence, and sidebar design.
+- `24-single-workspace-startup.md` — startup cardinality, active-workspace
+  projection, backward compatibility, and persistence tradeoffs.
 
 **Reference**
 
@@ -133,6 +135,7 @@ Think of the book in five "acts":
 | `21-live-state-subscriptions.md`        | Snapshot-plus-delta streams, filters, ordering, reconnect behavior, and slow-consumer bounds            | 11, 19      |
 | `22-automatic-process-discovery.md`     | Linux PTY process ancestry, safe command identity, classification, activity, precedence, and cleanup    | 06, 19      |
 | `23-live-workspace-metadata.md`         | Shell cwd, Git roots, cached HEAD observation, async ownership, persistence, and project/branch UI       | 06, 09, 20  |
+| `24-single-workspace-startup.md`        | Startup cardinality, active-workspace projection, compatibility, security, and persistence tradeoffs     | 09, 13, 23  |
 
 ---
 
@@ -200,3 +203,4 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `21-live-state-subscriptions.md` — snapshot-plus-delta streams, ordering, and backpressure
 - `22-automatic-process-discovery.md` — zero-setup agent presence and safe process ancestry
 - `23-live-workspace-metadata.md` — live project/branch context from the active terminal
+- `24-single-workspace-startup.md` — deterministic one-workspace relaunch policy
