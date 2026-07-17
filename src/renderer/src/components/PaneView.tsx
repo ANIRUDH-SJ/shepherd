@@ -14,6 +14,7 @@ interface Props {
   pane: Pane
   rect: Rect
   active: boolean
+  workspaceActive: boolean
   workspaceId: string
   surfaceNumbers: Map<string, number>
   dispatch: Dispatch<WorkspaceAction>
@@ -23,6 +24,7 @@ export default function PaneView({
   pane,
   rect,
   active,
+  workspaceActive,
   workspaceId,
   surfaceNumbers,
   dispatch
@@ -57,6 +59,7 @@ export default function PaneView({
             surfaceId={s.id}
             workspaceId={workspaceId}
             active={s.id === pane.activeSurfaceId}
+            focused={workspaceActive && active && s.id === pane.activeSurfaceId}
           />
         ))}
       </div>

@@ -18,9 +18,15 @@ interface Props {
   surfaceId: string
   workspaceId: string
   active: boolean
+  focused: boolean
 }
 
-export default function TerminalHost({ surfaceId, workspaceId, active }: Props): React.JSX.Element {
+export default function TerminalHost({
+  surfaceId,
+  workspaceId,
+  active,
+  focused
+}: Props): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const refs = useRef<{ term: Terminal; fit: FitAddon } | null>(null)
 
@@ -71,11 +77,18 @@ export default function TerminalHost({ surfaceId, workspaceId, active }: Props):
       term.options.fontSize = (e as CustomEvent<number>).detail
       resize()
     }
+    const onFocusSurface = (e: Event): void => {
+      if ((e as CustomEvent<string>).detail !== surfaceId) return
+      resize()
+      term.focus()
+    }
     window.addEventListener('cmux:fontsize', onFontSize)
+    window.addEventListener('cmux:focus-surface', onFocusSurface)
 
     return () => {
       observer.disconnect()
       window.removeEventListener('cmux:fontsize', onFontSize)
+      window.removeEventListener('cmux:focus-surface', onFocusSurface)
       onData.dispose()
       offData()
       offExit()
@@ -85,14 +98,18 @@ export default function TerminalHost({ surfaceId, workspaceId, active }: Props):
     }
   }, [surfaceId])
 
-  // When this tab becomes active (was hidden → shown), refit and focus.
+  // Refit when this tab becomes visible, and focus when it is also the selected
+  // pane in the active workspace (including focus-agent sidebar navigation).
   useEffect(() => {
     if (!active || !refs.current) return
     const { term, fit } = refs.current
     fit.fit()
     window.api.terminal.resize({ id: surfaceId, cols: term.cols, rows: term.rows })
-    term.focus()
   }, [active, surfaceId])
+
+  useEffect(() => {
+    if (focused) refs.current?.term.focus()
+  }, [focused])
 
   return <div className="terminal" ref={containerRef} style={{ display: active ? 'block' : 'none' }} />
 }
