@@ -8,6 +8,7 @@ import {
   appendTerminalInspectionOutput,
   clearTerminalInspections,
   registerTerminalInspection,
+  recordTerminalInspectionInput,
   removeTerminalInspection,
   resizeTerminalInspection
 } from './terminalInspection'
@@ -137,6 +138,7 @@ export function registerPtyIpc(): void {
 
   // fire-and-forget: keystrokes in
   ipcMain.on(IPC.TERM_INPUT, (_event, msg: TermInput) => {
+    recordTerminalInspectionInput(msg.id)
     terminals.get(msg.id)?.proc.write(msg.data)
   })
 

@@ -2,7 +2,9 @@ import {
   appendTerminalInspectionOutput,
   clearTerminalInspections,
   inspectTerminal,
+  listTerminalProcessContexts,
   normalizeTerminalInspection,
+  recordTerminalInspectionInput,
   registerTerminalInspection,
   removeTerminalInspection,
   resizeTerminalInspection
@@ -32,7 +34,8 @@ registerTerminalInspection({
   cwd: '/project',
   createdAt: 10
 })
-appendTerminalInspectionOutput('term-1', '\x1b[31mfirst\x1b[0m\r\nsecond\nthird')
+appendTerminalInspectionOutput('term-1', '\x1b[31mfirst\x1b[0m\r\nsecond\nthird', 20)
+recordTerminalInspectionInput('term-1', 30)
 resizeTerminalInspection('term-1', 100, 30)
 
 const inspection = inspectTerminal('term-1', { lines: 2, maxBytes: 100 }, () => ({
@@ -44,6 +47,16 @@ assert(inspection?.output.truncated === true, 'marks line-limited output as trun
 assert(inspection?.foreground?.name === 'node', 'returns safe foreground process identity')
 assert(inspection?.cwd === '/project/src', 'returns live process cwd when available')
 assert(inspection?.cols === 100 && inspection.rows === 30, 'tracks terminal dimensions')
+
+const processContexts = listTerminalProcessContexts(() => ({
+  foreground: { pid: 50, name: 'node', command: 'codex' },
+  processes: [
+    { pid: 50, name: 'node', command: 'codex' },
+    { pid: 42, name: 'zsh', command: 'zsh' }
+  ]
+}))
+assert(processContexts[0]?.lastActivityAt === 30, 'tracks recent PTY activity for discovery')
+assert(processContexts[0]?.processes[0]?.command === 'codex', 'returns a safe process ancestry')
 
 const byteLimited = inspectTerminal('term-1', { lines: 10, maxBytes: 5 }, () => ({
   foreground: null

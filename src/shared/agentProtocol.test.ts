@@ -49,6 +49,7 @@ if (all.ok) {
   assert(adapters.length === 4, 'describes every supported reporter family')
   assert(features.reconnectSnapshot === true, 'describes reconnect snapshot support')
   assert(features.eventSubscriptions === true, 'describes live agent subscriptions')
+  assert(features.automaticProcessDiscovery === true, 'describes automatic process discovery')
 }
 
 const codex = agentProtocolCapabilities('codex')
