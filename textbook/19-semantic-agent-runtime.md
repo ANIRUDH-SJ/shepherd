@@ -496,6 +496,46 @@ An event subscription registry would reduce wakeups and latency variance, but it
 would require connection cancellation, waiter cleanup, and race-safe notification
 logic. It is a reasonable future change if wait volume grows.
 
+### Machine-readable schema and capability discovery
+
+Human documentation is necessary but insufficient for integrations. Clients also
+need to discover the exact enum values, accepted wire shapes, bounds, and methods
+of the running build. Two query methods provide that contract:
+
+```bash
+cmux agent-schema
+cmux agent-capabilities
+cmux agent-capabilities codex
+```
+
+`agent-schema` returns a JSON Schema Draft 2020-12 document with protocol version,
+newline-delimited request/reply envelope, method params/results, shared record
+definitions, state/detail conditions, and numeric bounds. It models integer
+values and digit strings where both cross the real socket boundary: direct JSON
+clients usually send numbers, while the dependency-free CLI forwards flag values
+as strings before runtime normalization.
+
+`agent-capabilities` returns:
+
+- every semantic enum and agent method supported by this build;
+- feature flags for sequencing, freshness, expiry, focus, wait, queries, and
+  reconnect snapshots;
+- lifecycle, query, and wait limits;
+- shipped adapter mode, high-level signal coverage, sequencing, and cleanup
+  behavior, optionally filtered by provider.
+
+Capability discovery does not inspect user configuration and does not say an
+integration is installed. Mixing “this binary supports command hooks” with “this
+home directory currently contains those hooks” would make a read-only protocol
+query depend on mutable provider files and permissions. Local install auditing
+belongs in a separate integration-status command.
+
+All advertised numeric bounds come from `src/shared/agentLimits.ts`, which is also
+imported by runtime validation. This avoids a common schema failure mode where
+documentation and enforcement drift after one constant changes. The protocol
+schema itself is versioned independently of the application package version so a
+breaking wire change has an explicit compatibility signal.
+
 ## 19.13 Adapter architecture
 
 Provider schemas stop at `bin/`:
@@ -801,3 +841,4 @@ The architecture leaves clear places for future work:
 10. Where would you add a new provider without leaking its schema into React?
 11. Why is stale state converted to `unknown` before the record is removed?
 12. Why do list limits need `matched` and `truncated` metadata?
+13. Why does the wire schema accept both integer values and numeric strings?

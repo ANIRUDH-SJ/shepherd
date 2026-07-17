@@ -135,6 +135,15 @@ async function main() {
   assert(snapshot?.method === 'agent-snapshot', 'sends the agent snapshot method')
   assert(snapshot?.params.sessionId === 'session-1', 'maps the provider session filter')
 
+  await runCli(['agent-schema'])
+  const schema = requests[6]
+  assert(schema?.method === 'agent-schema', 'requests the machine-readable agent schema')
+
+  await runCli(['agent-capabilities', 'codex'])
+  const capabilities = requests[7]
+  assert(capabilities?.method === 'agent-capabilities', 'requests agent capabilities')
+  assert(capabilities?.params.provider === 'codex', 'maps the positional capability provider')
+
   await runCli(
     ['agent-hook', 'codex'],
     JSON.stringify({
@@ -143,7 +152,7 @@ async function main() {
       tool_name: 'Bash'
     })
   )
-  const hook = requests[6]
+  const hook = requests[8]
   assert(hook?.method === 'agent-report', 'hook event becomes an agent report')
   assert(hook?.params.provider === 'codex', 'hook preserves provider identity')
   assert(hook?.params.state === 'blocked', 'permission hook reports blocked')

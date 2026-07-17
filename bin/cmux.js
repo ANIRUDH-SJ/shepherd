@@ -36,6 +36,8 @@ Usage:
   cmux agent-clear <agent-id>         remove an agent record
   cmux list-agents [query flags]      list and summarize matching agents
   cmux agent-snapshot [query flags]   snapshot workspaces and matching agents
+  cmux agent-schema                   print the machine-readable agent contract
+  cmux agent-capabilities [provider]  discover protocol and adapter support
   cmux focus-agent <agent-id>         focus an agent's exact terminal
   cmux wait-agent <agent-id> --state S [--timeout-ms N]
                                       wait for semantic state blocked/done/etc.
@@ -139,6 +141,8 @@ for (let i = hookRequest ? argv.length : 1; i < argv.length; i++) {
 }
 if (method === 'focus-agent' || method === 'agent-clear') {
   if (positional[0] && !params.agentId) params.agentId = positional[0]
+} else if (method === 'agent-capabilities') {
+  if (positional[0] && !params.provider) params.provider = positional[0]
 } else if (method === 'wait-agent') {
   if (positional[0] && !params.agentId) params.agentId = positional[0]
   if (positional[1] && !params.state) params.state = positional[1]
