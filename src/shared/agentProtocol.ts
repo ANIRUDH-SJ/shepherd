@@ -7,10 +7,15 @@ import {
 } from './agent'
 import {
   DEFAULT_AGENT_QUERY_LIMIT,
+  DEFAULT_AGENT_INSPECT_BYTES,
+  DEFAULT_AGENT_INSPECT_LINES,
   DEFAULT_AGENT_WAIT_TIMEOUT_MS,
+  MAX_AGENT_INSPECT_BYTES,
+  MAX_AGENT_INSPECT_LINES,
   MAX_AGENT_LIFECYCLE_MS,
   MAX_AGENT_QUERY_LIMIT,
-  MAX_AGENT_WAIT_TIMEOUT_MS
+  MAX_AGENT_WAIT_TIMEOUT_MS,
+  MAX_TERMINAL_CAPTURE_BYTES
 } from './agentLimits'
 
 export const AGENT_PROTOCOL_VERSION = 1
@@ -21,6 +26,7 @@ export const AGENT_PROTOCOL_METHODS = [
   'list-agents',
   'agent-snapshot',
   'focus-agent',
+  'inspect-agent',
   'wait-agent',
   'agent-schema',
   'agent-capabilities'
@@ -178,6 +184,26 @@ export const AGENT_PROTOCOL_SCHEMA = {
       },
       result: { $ref: '#/$defs/okResult' }
     },
+    'inspect-agent': {
+      kind: 'query',
+      params: {
+        type: 'object',
+        required: ['agentId'],
+        properties: {
+          agentId: stringField(200),
+          lines: integerInput(1, MAX_AGENT_INSPECT_LINES, DEFAULT_AGENT_INSPECT_LINES),
+          maxBytes: integerInput(1, MAX_AGENT_INSPECT_BYTES, DEFAULT_AGENT_INSPECT_BYTES)
+        }
+      },
+      result: {
+        type: 'object',
+        required: ['agent', 'terminal'],
+        properties: {
+          agent: { $ref: '#/$defs/agentRecord' },
+          terminal: { $ref: '#/$defs/terminalInspection' }
+        }
+      }
+    },
     'wait-agent': {
       kind: 'query',
       params: {
@@ -262,6 +288,42 @@ export const AGENT_PROTOCOL_SCHEMA = {
       required: ['id', 'name'],
       properties: { id: { type: 'string' }, name: { type: 'string' } }
     },
+    terminalInspection: {
+      type: 'object',
+      required: ['surfaceId', 'pid', 'foreground', 'cwd', 'cols', 'rows', 'createdAt', 'output'],
+      properties: {
+        surfaceId: { type: 'string' },
+        workspaceId: { type: 'string' },
+        pid: { type: 'integer', minimum: 1 },
+        foreground: {
+          oneOf: [
+            { type: 'null' },
+            {
+              type: 'object',
+              required: ['pid', 'name'],
+              properties: {
+                pid: { type: 'integer', minimum: 1 },
+                name: { type: 'string' }
+              }
+            }
+          ]
+        },
+        cwd: { type: 'string' },
+        cols: { type: 'integer', minimum: 1 },
+        rows: { type: 'integer', minimum: 1 },
+        createdAt: { type: 'integer', minimum: 0 },
+        output: {
+          type: 'object',
+          required: ['text', 'lines', 'bytes', 'truncated'],
+          properties: {
+            text: { type: 'string' },
+            lines: { type: 'integer', minimum: 0 },
+            bytes: { type: 'integer', minimum: 0, maximum: MAX_AGENT_INSPECT_BYTES },
+            truncated: { type: 'boolean' }
+          }
+        }
+      }
+    },
     okResult: {
       type: 'object',
       required: ['ok'],
@@ -338,6 +400,7 @@ export function agentProtocolCapabilities(provider?: unknown): AgentCapabilities
         staleTransition: true,
         expiry: true,
         exactFocus: true,
+        boundedTerminalInspection: true,
         semanticWait: true,
         boundedQueries: true,
         reconnectSnapshot: true
@@ -346,6 +409,11 @@ export function agentProtocolCapabilities(provider?: unknown): AgentCapabilities
         maxLifecycleMs: MAX_AGENT_LIFECYCLE_MS,
         defaultQueryLimit: DEFAULT_AGENT_QUERY_LIMIT,
         maxQueryLimit: MAX_AGENT_QUERY_LIMIT,
+        defaultInspectLines: DEFAULT_AGENT_INSPECT_LINES,
+        maxInspectLines: MAX_AGENT_INSPECT_LINES,
+        defaultInspectBytes: DEFAULT_AGENT_INSPECT_BYTES,
+        maxInspectBytes: MAX_AGENT_INSPECT_BYTES,
+        maxTerminalCaptureBytes: MAX_TERMINAL_CAPTURE_BYTES,
         defaultWaitTimeoutMs: DEFAULT_AGENT_WAIT_TIMEOUT_MS,
         maxWaitTimeoutMs: MAX_AGENT_WAIT_TIMEOUT_MS
       },
