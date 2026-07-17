@@ -1,5 +1,11 @@
 'use strict'
-const { CODEX_TTL_MS, activityForTool, eventRevision, mapAgentEvent } = require('./agent-events')
+const {
+  CODEX_STALE_MS,
+  CODEX_TTL_MS,
+  activityForTool,
+  eventRevision,
+  mapAgentEvent
+} = require('./agent-events')
 
 let failures = 0
 function assert(condition, message) {
@@ -26,6 +32,10 @@ assert(
   'prompt thinks'
 )
 assert(promptEvent?.params.sessionId === 'session-1', 'preserves native session provenance')
+assert(
+  promptEvent?.params.staleAfterMs === CODEX_STALE_MS.working,
+  'Codex working state becomes unknown when reporting stops'
+)
 assert(promptEvent?.params.ttlMs === CODEX_TTL_MS.working, 'Codex working state expires safely')
 
 assert(eventRevision({ sequence: '7' }) === 7, 'accepts a producer sequence number')
@@ -48,6 +58,10 @@ const approval = mapAgentEvent('codex', {
 })
 assert(approval?.params.state === 'blocked', 'permission request blocks the agent')
 assert(approval?.params.blockReason === 'approval', 'permission request records approval reason')
+assert(
+  approval?.params.staleAfterMs === CODEX_STALE_MS.blocked,
+  'Codex approval state has a long stale window'
+)
 assert(approval?.params.ttlMs === CODEX_TTL_MS.blocked, 'Codex approval survives a long wait')
 
 const done = mapAgentEvent('claude', { hook_event_name: 'Stop' })

@@ -38,6 +38,7 @@ export interface AgentReport {
   sessionId?: string
   revision?: number
   updatedAt: number
+  staleAt?: number
   expiresAt?: number
 }
 
@@ -166,6 +167,21 @@ export function normalizeAgentReport(
     revision = parsed
   }
 
+  let staleAt: number | undefined
+  if (params.staleAfterMs !== undefined) {
+    const parsed =
+      typeof params.staleAfterMs === 'string' ? Number(params.staleAfterMs) : params.staleAfterMs
+    if (
+      typeof parsed !== 'number' ||
+      !Number.isInteger(parsed) ||
+      parsed < 1 ||
+      parsed > MAX_TTL_MS
+    ) {
+      return invalid('staleAfterMs', `must be an integer from 1 to ${MAX_TTL_MS}`)
+    }
+    staleAt = timestamp + parsed
+  }
+
   let expiresAt: number | undefined
   if (params.ttlMs !== undefined) {
     const parsed = typeof params.ttlMs === 'string' ? Number(params.ttlMs) : params.ttlMs
@@ -178,6 +194,9 @@ export function normalizeAgentReport(
       return invalid('ttlMs', `must be an integer from 1 to ${MAX_TTL_MS}`)
     }
     expiresAt = timestamp + parsed
+  }
+  if (staleAt !== undefined && expiresAt !== undefined && staleAt >= expiresAt) {
+    return invalid('staleAfterMs', 'must be less than ttlMs')
   }
 
   const message = displayText(params.message, MAX_MESSAGE_LENGTH)
@@ -199,6 +218,7 @@ export function normalizeAgentReport(
       ...(sessionId ? { sessionId } : {}),
       ...(revision === undefined ? {} : { revision }),
       updatedAt: timestamp,
+      ...(staleAt === undefined ? {} : { staleAt }),
       ...(expiresAt === undefined ? {} : { expiresAt })
     }
   }
