@@ -1,6 +1,8 @@
 import type { Dispatch } from 'react'
+import type { AgentRecord } from '../../../shared/agent'
 import { type AppAction, createWorkspaceAction, type Workspace } from '../state/appReducer'
 import { usageDetails, usageSummary } from '../usageView'
+import AgentList from './AgentList'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sidebar — the vertical list of workspaces (cmux's signature). Each row shows a
@@ -10,6 +12,7 @@ import { usageDetails, usageSummary } from '../usageView'
 
 interface Props {
   workspaces: Workspace[]
+  agents: AgentRecord[]
   activeWorkspaceId: string
   dispatch: Dispatch<AppAction>
   onCollapse: () => void
@@ -17,6 +20,7 @@ interface Props {
 
 export default function Sidebar({
   workspaces,
+  agents,
   activeWorkspaceId,
   dispatch,
   onCollapse
@@ -48,12 +52,12 @@ export default function Sidebar({
               className={
                 'ws-row' +
                 (w.id === activeWorkspaceId ? ' active' : '') +
-                (w.attention ? ' attention' : '')
+                (w.attention || w.agentAttention ? ' attention' : '')
               }
               onClick={() => dispatch({ type: 'selectWorkspace', id: w.id })}
             >
               <div className="ws-row-top">
-                {w.unread && <span className="ws-dot" title="unread" />}
+                {(w.unread || w.agentUnread) && <span className="ws-dot" title="unread" />}
                 <span className="ws-name">{w.name || `workspace ${i + 1}`}</span>
                 {workspaces.length > 1 && (
                   <span
@@ -84,6 +88,8 @@ export default function Sidebar({
           )
         })}
       </div>
+
+      <AgentList agents={agents} workspaces={workspaces} dispatch={dispatch} />
 
       <div className="shortcuts">
         <div className="shortcuts-title">shortcuts</div>

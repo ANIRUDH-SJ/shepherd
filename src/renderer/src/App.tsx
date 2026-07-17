@@ -207,10 +207,22 @@ export default function App(): React.JSX.Element {
     document.body.classList.add('resizing')
   }
 
+  const blockedAgents = state.agents.filter((agent) => agent.state === 'blocked').length
+  const collapsedSidebarLabel = `Show sidebar (Ctrl+Shift+B)${
+    state.agents.length > 0
+      ? ` · ${state.agents.length} agent${state.agents.length === 1 ? '' : 's'}, ${blockedAgents} blocked`
+      : ''
+  }`
+
   return (
     <div className="app">
       {collapsed ? (
-        <button className="sidebar-expand" title="Show sidebar (Ctrl+Shift+B)" onClick={() => setCollapsed(false)}>
+        <button
+          className="sidebar-expand"
+          title={collapsedSidebarLabel}
+          aria-label={collapsedSidebarLabel}
+          onClick={() => setCollapsed(false)}
+        >
           ›
         </button>
       ) : (
@@ -218,6 +230,7 @@ export default function App(): React.JSX.Element {
           <aside className="sidebar" style={{ width: sidebarWidth, flexBasis: sidebarWidth }}>
             <Sidebar
               workspaces={state.workspaces}
+              agents={state.agents}
               activeWorkspaceId={state.activeWorkspaceId}
               dispatch={dispatch}
               onCollapse={() => setCollapsed(true)}
