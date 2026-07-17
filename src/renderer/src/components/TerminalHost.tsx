@@ -57,9 +57,12 @@ export default function TerminalHost({
     }
 
     const offData = window.api.terminal.onData(surfaceId, (data) => term.write(data))
-    const offExit = window.api.terminal.onExit(surfaceId, (code) =>
+    const offExit = window.api.terminal.onExit(surfaceId, (code) => {
       term.write(`\r\n\x1b[90m[process exited with code ${code}]\x1b[0m\r\n`)
-    )
+      window.dispatchEvent(
+        new CustomEvent('cmux:terminal-exit', { detail: { surfaceId, exitCode: code } })
+      )
+    })
     window.api.terminal.create({ id: surfaceId, workspaceId, cols: term.cols, rows: term.rows })
     const onData = term.onData((data) => window.api.terminal.input({ id: surfaceId, data }))
 
@@ -111,5 +114,7 @@ export default function TerminalHost({
     if (focused) refs.current?.term.focus()
   }, [focused])
 
-  return <div className="terminal" ref={containerRef} style={{ display: active ? 'block' : 'none' }} />
+  return (
+    <div className="terminal" ref={containerRef} style={{ display: active ? 'block' : 'none' }} />
+  )
 }

@@ -247,6 +247,37 @@ agentsState = appReducer(agentsState, {
 agentsState = appReducer(agentsState, { type: 'closeWorkspace', id: otherWorkspaceId })
 assert(agentsState.agents.length === 0, 'closing a workspace removes its agents')
 
+let exitedSurfaceState = initialApp()
+const exitedWorkspace = exitedSurfaceState.workspaces[0]
+const exitedSurfaceId = listSurfaceIds(exitedWorkspace.root)[0]
+for (const [agentId, provider] of [
+  ['codex:exited', 'codex'],
+  ['claude:exited', 'claude']
+] as const) {
+  exitedSurfaceState = appReducer(exitedSurfaceState, {
+    type: 'reportAgent',
+    report: {
+      ...blockedReport,
+      agentId,
+      provider,
+      displayName: provider,
+      workspaceId: exitedWorkspace.id,
+      surfaceId: exitedSurfaceId,
+      source: `${provider}:hooks`
+    }
+  })
+}
+assert(exitedSurfaceState.agents.length === 2, 'multiple agents can bind to one live surface')
+exitedSurfaceState = appReducer(exitedSurfaceState, {
+  type: 'clearAgentsForSurface',
+  surfaceId: exitedSurfaceId
+})
+assert(exitedSurfaceState.agents.length === 0, 'terminal exit clears every surface agent')
+assert(
+  !exitedSurfaceState.workspaces[0].agentAttention,
+  'terminal exit recalculates workspace attention'
+)
+
 // session restore: sanitizeRestored validates a snapshot and resets transients
 const snapshot = initialApp()
 snapshot.workspaces[0].unread = true // a transient that must NOT survive a restore
