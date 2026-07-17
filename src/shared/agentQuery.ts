@@ -10,6 +10,9 @@ import {
   type AgentRecord,
   type AgentState
 } from './agent'
+import { DEFAULT_AGENT_QUERY_LIMIT, MAX_AGENT_QUERY_LIMIT } from './agentLimits'
+
+export { DEFAULT_AGENT_QUERY_LIMIT, MAX_AGENT_QUERY_LIMIT } from './agentLimits'
 
 export interface AgentQuery {
   providers?: AgentProvider[]
@@ -39,8 +42,6 @@ export interface AgentQueryResult {
   summary: AgentSummary
 }
 
-const DEFAULT_LIMIT = 200
-const MAX_LIMIT = 1000
 const MAX_FILTER_LENGTH = 200
 
 function parseChoices<const T extends readonly string[]>(
@@ -108,10 +109,15 @@ export function normalizeAgentQuery(params: Record<string, unknown>): AgentQuery
     updatedAfter = parsed
   }
 
-  const limitValue = params.limit ?? DEFAULT_LIMIT
+  const limitValue = params.limit ?? DEFAULT_AGENT_QUERY_LIMIT
   const limit = typeof limitValue === 'string' ? Number(limitValue) : limitValue
-  if (typeof limit !== 'number' || !Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT) {
-    return { ok: false, error: `limit must be an integer from 1 to ${MAX_LIMIT}` }
+  if (
+    typeof limit !== 'number' ||
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > MAX_AGENT_QUERY_LIMIT
+  ) {
+    return { ok: false, error: `limit must be an integer from 1 to ${MAX_AGENT_QUERY_LIMIT}` }
   }
 
   return {

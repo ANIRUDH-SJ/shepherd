@@ -1,3 +1,5 @@
+import { MAX_AGENT_LIFECYCLE_MS } from './agentLimits'
+
 export const AGENT_PROVIDERS = ['codex', 'claude', 'opencode', 'custom'] as const
 export type AgentProvider = (typeof AGENT_PROVIDERS)[number]
 
@@ -54,8 +56,6 @@ const MAX_ID_LENGTH = 200
 const MAX_SOURCE_LENGTH = 80
 const MAX_LABEL_LENGTH = 80
 const MAX_MESSAGE_LENGTH = 240
-const MAX_TTL_MS = 86_400_000
-
 function isOneOf<const T extends readonly string[]>(
   value: unknown,
   choices: T
@@ -175,9 +175,9 @@ export function normalizeAgentReport(
       typeof parsed !== 'number' ||
       !Number.isInteger(parsed) ||
       parsed < 1 ||
-      parsed > MAX_TTL_MS
+      parsed > MAX_AGENT_LIFECYCLE_MS
     ) {
-      return invalid('staleAfterMs', `must be an integer from 1 to ${MAX_TTL_MS}`)
+      return invalid('staleAfterMs', `must be an integer from 1 to ${MAX_AGENT_LIFECYCLE_MS}`)
     }
     staleAt = timestamp + parsed
   }
@@ -189,9 +189,9 @@ export function normalizeAgentReport(
       typeof parsed !== 'number' ||
       !Number.isInteger(parsed) ||
       parsed < 1 ||
-      parsed > MAX_TTL_MS
+      parsed > MAX_AGENT_LIFECYCLE_MS
     ) {
-      return invalid('ttlMs', `must be an integer from 1 to ${MAX_TTL_MS}`)
+      return invalid('ttlMs', `must be an integer from 1 to ${MAX_AGENT_LIFECYCLE_MS}`)
     }
     expiresAt = timestamp + parsed
   }
