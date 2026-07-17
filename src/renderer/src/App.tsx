@@ -10,6 +10,7 @@ import {
 import { splitAction, newSurfaceAction } from './state/workspaceReducer'
 import { findPane } from './layout/tree'
 import { bumpFontSize, resetFontSize } from './settings'
+import type { AgentReport } from '../../shared/agent'
 import type { UsageReport } from '../../shared/usage'
 import Sidebar from './components/Sidebar'
 import WorkspaceView from './components/WorkspaceView'
@@ -101,9 +102,17 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     window.api.socket.syncWorkspaces({
       workspaces: state.workspaces.map((w) => ({ id: w.id, name: w.name })),
-      activeWorkspaceId: state.activeWorkspaceId
+      activeWorkspaceId: state.activeWorkspaceId,
+      agents: state.agents
     })
-  }, [state.workspaces, state.activeWorkspaceId])
+  }, [state.workspaces, state.activeWorkspaceId, state.agents])
+
+  // Expiry is reducer-driven so records from integrations without a clean exit
+  // cannot leave the sidebar stale forever.
+  useEffect(() => {
+    const timer = window.setInterval(() => dispatch({ type: 'expireAgents', now: Date.now() }), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   // Apply incoming socket commands: set-status / log / notify, plus workspace
   // control (new-workspace / select / close). new-workspace has no target id, so
@@ -129,6 +138,18 @@ export default function App(): React.JSX.Element {
         if (report && typeof report === 'object') {
           dispatch({ type: 'reportUsage', id: workspaceId, report: report as UsageReport })
         }
+      } else if (method === 'agent-report') {
+        const report = params.report
+        if (report && typeof report === 'object') {
+          dispatch({ type: 'reportAgent', report: report as AgentReport })
+        }
+      } else if (method === 'agent-clear') {
+        const agentId = typeof params.agentId === 'string' ? params.agentId : ''
+        const source = typeof params.source === 'string' ? params.source : undefined
+        if (agentId) dispatch({ type: 'clearAgent', id: agentId, source })
+      } else if (method === 'focus-agent') {
+        const agentId = typeof params.agentId === 'string' ? params.agentId : ''
+        if (agentId) dispatch({ type: 'focusAgent', id: agentId })
       } else if (method === 'select-workspace') {
         dispatch({ type: 'selectWorkspace', id: workspaceId })
       } else if (method === 'rename-workspace') {
