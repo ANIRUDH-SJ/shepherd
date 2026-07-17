@@ -29,6 +29,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M5** — Socket API & automation (a real cmux feature) ✓
 - [ ] **M6** — Polish, theming & packaging/distribution
 - [x] **M7** — Semantic agent runtime, sidebar, control API, and provider integrations ✓
+- [x] **M8** — Git worktree workspace creation and cwd propagation ✓
 
 ---
 
@@ -185,6 +186,18 @@ documented provider lifecycle events without scraping terminal prose.*
       and installers with regression tests
 - [x] Add the implementation walkthrough and full architecture chapter
 
+## M8 — Git worktree workspaces
+*Goal: create or attach an isolated Git branch directory and open it as a normal
+workspace without shell interpolation or hidden cleanup.*
+
+- [x] Validate absolute repository/target paths and exactly one branch mode
+- [x] Support new branches with optional start point and existing branches
+- [x] Run bounded Git argv processes in Electron main without a shell
+- [x] Create the renderer workspace only after Git succeeds
+- [x] Propagate canonical worktree cwd into the first node-pty shell
+- [x] Cover real temporary repositories, reducer cwd, socket validation, and CLI flags
+- [x] Add implementation learning notes and the architecture textbook chapter
+
 ---
 
 ## Stretch / later (post-v1)
@@ -193,7 +206,7 @@ documented provider lifecycle events without scraping terminal prose.*
 - [ ] PR status/number + listening ports per workspace (git branch lands in v1)
 - [ ] In-app browser panels + browser automation API (`Panel='browser'`)
 - [ ] Remote SSH workspaces + localhost routing; Claude Code Teams mode
-- [ ] Worktree-per-workspace workflow (our value-add; cmux only shows the branch)
+- [ ] Worktree cleanup and diff/review UI (creation workflow landed in M8)
 - [ ] Cross-platform builds (Windows/Mac) — Electron makes this nearly free
 - [ ] Investigate libghostty embedding once its C API stabilizes (most authentic
       renderer — currently too unstable to depend on)
