@@ -162,22 +162,26 @@ body.resizing * {
   gap: var(--space-1);
 }
 .ws-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  position: relative;
   width: 100%;
   text-align: left;
   border: 1px solid transparent;
   font: inherit;
   background: transparent;
   color: inherit;
-  cursor: pointer;
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-lg);
 }
-.ws-row:focus-visible {
+.ws-row-select {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  cursor: pointer;
+}
+.ws-row-select:focus-visible {
   outline: 2px solid var(--color-focus);
-  outline-offset: -2px;
+  outline-offset: 3px;
 }
 .ws-row:hover {
   background: var(--color-surface-hover);
@@ -209,6 +213,7 @@ body.resizing * {
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
+  padding-right: 44px;
 }
 .ws-dot {
   width: 7px;
@@ -256,6 +261,13 @@ body.resizing * {
   padding: 0;
   border-radius: var(--radius-sm);
   cursor: pointer;
+}
+.ws-row-actions {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-5);
+  display: flex;
+  gap: var(--space-1);
 }
 .ws-row:hover .ws-rename,
 .ws-row:focus-within .ws-rename,

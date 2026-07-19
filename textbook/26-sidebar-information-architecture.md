@@ -130,6 +130,12 @@ Keyboard focus must remain visible independently of hover. Reduced-motion rules
 continue to disable repeating attention animation without removing labels,
 counts, borders, or state colors.
 
+Composite rows require careful DOM structure. A row-level selection target must
+not contain its rename and close buttons, and edit mode must not place an input
+inside a button-like element. cmux-linux renders selection and actions as
+siblings, then temporarily removes the selection role while its rename input is
+active.
+
 ## 9. Testing the architecture
 
 Presentation logic is best tested below the pixel layer:

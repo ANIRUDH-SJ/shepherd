@@ -12,14 +12,14 @@ storage, or protocol.
 
 ## What changed
 
-| File | Responsibility |
-| --- | --- |
-| `src/renderer/src/sidebarView.ts` | Derive workspace display identity |
-| `src/renderer/src/agentView.ts` | Build ordered semantic agent groups |
-| `src/renderer/src/components/Sidebar.tsx` | Render workspace hierarchy and actions |
-| `src/renderer/src/components/AgentList.tsx` | Render empty and grouped agent states |
-| `src/renderer/src/components/Icon.tsx` | Supply dependency-free SVG icons |
-| `src/renderer/src/App.css` | Define the compact sidebar layout |
+| File                                        | Responsibility                         |
+| ------------------------------------------- | -------------------------------------- |
+| `src/renderer/src/sidebarView.ts`           | Derive workspace display identity      |
+| `src/renderer/src/agentView.ts`             | Build ordered semantic agent groups    |
+| `src/renderer/src/components/Sidebar.tsx`   | Render workspace hierarchy and actions |
+| `src/renderer/src/components/AgentList.tsx` | Render empty and grouped agent states  |
+| `src/renderer/src/components/Icon.tsx`      | Supply dependency-free SVG icons       |
+| `src/renderer/src/App.css`                  | Define the compact sidebar layout      |
 
 ## 1. Workspace identity
 
@@ -39,6 +39,12 @@ accessible workspace descriptions. Each row then follows one order:
 2. project or positional context, plus token usage;
 3. Git branch or explicit non-Git state;
 4. workspace status and agent rollup when present.
+
+The selection target and its rename/close actions are siblings. During inline
+rename the selection target drops its button role, so neither the action buttons
+nor the text input are nested inside another interactive control. This preserves
+F2, Enter, Space, pointer selection, and focus restoration with a valid
+accessibility tree.
 
 ## 2. Agent urgency groups
 
