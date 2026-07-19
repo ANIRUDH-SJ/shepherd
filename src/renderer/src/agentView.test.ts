@@ -1,6 +1,7 @@
 import type { AgentRecord } from '../../shared/agent'
 import {
   agentAriaLabel,
+  groupAgentsForSidebar,
   agentRollupLabel,
   agentStatusLabel,
   formatAgentElapsed,
@@ -61,6 +62,20 @@ assert(
     'blocked,working-new,working-old,done,idle,unknown',
   'sorts by urgency then recency'
 )
+
+const grouped = groupAgentsForSidebar([
+  agent('quiet', 'idle', 1),
+  agent('external', 'blocked', 2, { blockReason: 'external' }),
+  agent('approval', 'blocked', 3, { blockReason: 'approval' }),
+  agent('active', 'working', 4),
+  agent('finished', 'done', 5)
+])
+assert(
+  grouped.map((group) => group.label).join(',') === 'Needs you,Working,Waiting,Finished,Quiet',
+  'groups agents into explicit urgency bands'
+)
+assert(grouped[0].agents[0].agentId === 'approval', 'puts actionable blocks in Needs you')
+assert(grouped[2].agents[0].agentId === 'external', 'keeps external blocks in Waiting')
 
 const ariaAgent = agent('Codex', 'blocked', 1, {
   blockReason: 'user-input',

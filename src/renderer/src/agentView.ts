@@ -1,4 +1,4 @@
-import type { AgentRecord } from '../../shared/agent'
+import { agentNeedsAttention, type AgentRecord } from '../../shared/agent'
 
 const STATE_PRIORITY: Record<AgentRecord['state'], number> = {
   blocked: 0,
@@ -7,6 +7,34 @@ const STATE_PRIORITY: Record<AgentRecord['state'], number> = {
   idle: 3,
   unknown: 4
 }
+
+export type AgentSidebarGroupKey = 'needs-you' | 'working' | 'waiting' | 'finished' | 'quiet'
+
+export interface AgentSidebarGroup {
+  key: AgentSidebarGroupKey
+  label: string
+  agents: AgentRecord[]
+}
+
+const AGENT_GROUPS: Array<{
+  key: AgentSidebarGroupKey
+  label: string
+  matches: (agent: AgentRecord) => boolean
+}> = [
+  { key: 'needs-you', label: 'Needs you', matches: agentNeedsAttention },
+  { key: 'working', label: 'Working', matches: (agent) => agent.state === 'working' },
+  {
+    key: 'waiting',
+    label: 'Waiting',
+    matches: (agent) => agent.state === 'blocked' && !agentNeedsAttention(agent)
+  },
+  { key: 'finished', label: 'Finished', matches: (agent) => agent.state === 'done' },
+  {
+    key: 'quiet',
+    label: 'Quiet',
+    matches: (agent) => agent.state === 'idle' || agent.state === 'unknown'
+  }
+]
 
 const ACTIVITY_LABELS: Record<NonNullable<AgentRecord['activity']>, string> = {
   thinking: 'thinking',
@@ -40,6 +68,15 @@ export function sortAgentsForSidebar(agents: AgentRecord[]): AgentRecord[] {
     if (recencyDifference !== 0) return recencyDifference
     return a.agentId.localeCompare(b.agentId)
   })
+}
+
+export function groupAgentsForSidebar(agents: AgentRecord[]): AgentSidebarGroup[] {
+  const ordered = sortAgentsForSidebar(agents)
+  return AGENT_GROUPS.map((group) => ({
+    key: group.key,
+    label: group.label,
+    agents: ordered.filter(group.matches)
+  })).filter((group) => group.agents.length > 0)
 }
 
 export function formatAgentElapsed(updatedAt: number, now: number): string {
