@@ -34,6 +34,7 @@ code as we write it.
 | **M11**   | `M11-live-workspace-metadata.md` | Active-terminal cwd, cached Git discovery, live project/branch UI, persistence, and visual proof    |
 | **M12**   | `M12-single-workspace-startup.md` | Deterministic one-workspace startup, active-layout persistence, compatibility, and regression tests |
 | **M13**   | `M13-ui-design-tokens.md` | Semantic palette, typography, geometry, interaction rules, and CSS boundary regression              |
+| **M14**   | `M14-sidebar-information-hierarchy.md` | Project-first workspace identity, agent urgency groups, accessible icons, empty states, and visual proof |
 
 ## How to read a milestone file
 

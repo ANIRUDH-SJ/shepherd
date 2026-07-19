@@ -124,7 +124,7 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | # | cmux feature | How we build it (Electron stack) | Tier |
 |---|---|---|---|
 | 1 | **Object model** (Window→Workspace→Pane→Surface→Panel) | the TS data model in Part 1; terminal panels only for v1 | 🟢 |
-| 2 | **Vertical sidebar** of workspaces w/ name + status subtitle + active highlight | React component, full CSS control to match the screenshot | 🟢 |
+| 2 | **Vertical workspace sidebar** | custom-name/project identity, positional context, live branch/usage/status/agent rollup, accessible SVG actions, and restrained active state | 🟢 |
 | 3 | **Notification rings / tab flash / unread badge** | React state + CSS animation, toggled by socket notify + OSC parse | 🟢 |
 | 4 | **Multiple terminals** | node-pty per terminal panel, map `ptyId → process` in main | 🟢 |
 | 5 | **Split panes** (h/v) | the `PaneNode` split tree + a tiling renderer (react-mosaic or hand-rolled flex) | 🟢 |
@@ -132,7 +132,7 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | 7 | **Socket API + `cmux` CLI** | `net` server in main + tiny Node CLI client (Part 2) | 🟢 |
 | 8 | **Sidebar status API** (`set-status`, `set-progress`, `log`) | socket methods → workspace metadata → React status pills / progress bar | 🟢 (status/notify) · 🟡 (pills+progress polish) |
 | 9 | **OSC 9/99/777 detection** (auto notifications from terminal output) | scan pty output stream in main for these escape codes → fire notification | 🟢 |
-| 10 | **Automatic + semantic agent runtime** | zero-setup PTY process discovery for presence/activity, enriched by validated lifecycle reports, bounded queries/snapshots/inspection, workspace rollups, focus/wait controls, and integrations | 🟢 |
+| 10 | **Automatic + semantic agent runtime** | zero-setup PTY process discovery, enriched lifecycle reports, urgency-grouped sidebar with persistent empty state, bounded queries/inspection, focus/wait controls, and integrations | 🟢 |
 | 11 | **Single-workspace session restoration** | serialize the active workspace layout/cwd; relaunch with exactly that workspace and re-spawn its shells | 🟢 (active layout+cwd) · 🟡 (scrollback/resume-all setting) |
 | 12 | **Live project + Git branch in sidebar** | active shell cwd comes from `/proc`; main resolves/caches the worktree root and reads Git `HEAD`, then React renders separate project/branch rows | 🟢 |
 | 13 | **Keyboard shortcuts** (new/close/split/focus/nav) | a React keymap; mirror cmux's bindings (⌘→Ctrl/Super on Linux) | 🟢 |

@@ -99,6 +99,8 @@ Think of the book in five "acts":
   projection, backward compatibility, and persistence tradeoffs.
 - `25-semantic-ui-tokens.md` — CSS custom properties, semantic visual roles,
   accessibility, validation, and theme extension boundaries.
+- `26-sidebar-information-architecture.md` — project-first identity, urgency
+  grouping, progressive disclosure, accessible icons, and dense layout tradeoffs.
 
 **Reference**
 
@@ -139,6 +141,7 @@ Think of the book in five "acts":
 | `23-live-workspace-metadata.md`         | Shell cwd, Git roots, cached HEAD observation, async ownership, persistence, and project/branch UI       | 06, 09, 20  |
 | `24-single-workspace-startup.md`        | Startup cardinality, active-workspace projection, compatibility, security, and persistence tradeoffs     | 09, 13, 23  |
 | `25-semantic-ui-tokens.md`              | Semantic CSS tokens, cascade architecture, visual hierarchy, accessibility, validation, and theming      | 08, 14      |
+| `26-sidebar-information-architecture.md` | Workspace identity, agent urgency projections, empty states, SVG boundaries, accessibility, and layout   | 08, 19, 25  |
 
 ---
 
@@ -208,3 +211,4 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `23-live-workspace-metadata.md` — live project/branch context from the active terminal
 - `24-single-workspace-startup.md` — deterministic one-workspace relaunch policy
 - `25-semantic-ui-tokens.md` — semantic CSS contract and visual-system foundation
+- `26-sidebar-information-architecture.md` — project-first identity and explicit agent urgency groups

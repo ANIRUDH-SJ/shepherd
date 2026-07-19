@@ -20,12 +20,12 @@ be reviewed and reverted separately.
 
 ### 2. Workspace and agent hierarchy
 
-- [ ] Make custom workspace names and project fallbacks unambiguous
-- [ ] Present branch, usage, status, and agent summary in a stable reading order
-- [ ] Keep a compact Agents empty state visible at startup
-- [ ] Group active agents by urgency and improve accessible state labels
-- [ ] Replace text glyph actions with consistent local SVG icons
-- [ ] Add UI/helper regression coverage and visual verification
+- [x] Make custom workspace names and project fallbacks unambiguous
+- [x] Present branch, usage, status, and agent summary in a stable reading order
+- [x] Keep a compact Agents empty state visible at startup
+- [x] Group active agents by urgency and improve accessible state labels
+- [x] Replace text glyph actions with consistent local SVG icons
+- [x] Add UI/helper regression coverage and visual verification
 
 ### 3. Terminal tabs and pane focus
 
