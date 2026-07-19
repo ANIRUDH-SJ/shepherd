@@ -1,4 +1,9 @@
-import { tabNavigationTarget, terminalPanelId, terminalTabId } from './terminalChrome'
+import {
+  tabNavigationTarget,
+  terminalContextSummary,
+  terminalPanelId,
+  terminalTabId
+} from './terminalChrome'
 
 let failures = 0
 function assert(condition: boolean, message: string): void {
@@ -20,6 +25,24 @@ assert(tabNavigationTarget(ids, 'term-b', 'Enter') === undefined, 'ignores non-n
 assert(tabNavigationTarget([], 'term-a', 'ArrowRight') === undefined, 'handles an empty tab list')
 assert(terminalTabId('term-a') === 'terminal-tab-term-a', 'derives a stable tab id')
 assert(terminalPanelId('term-a') === 'terminal-panel-term-a', 'derives a stable panel id')
+
+const summary = terminalContextSummary(
+  [
+    { id: 'pane-a', surfaces: [{ id: 'term-a' }], activeSurfaceId: 'term-a' },
+    { id: 'pane-b', surfaces: [{ id: 'term-b' }], activeSurfaceId: 'term-b' }
+  ],
+  'pane-b',
+  new Map([
+    ['term-a', 1],
+    ['term-b', 2]
+  ])
+)
+assert(summary.focusLabel === 'Pane 2 · Terminal 2', 'labels the active pane and terminal')
+assert(summary.countLabel === '2 panes · 2 terminals', 'labels pane and terminal counts')
+
+const emptySummary = terminalContextSummary([], 'missing', new Map())
+assert(emptySummary.focusLabel === 'No active terminal', 'handles an empty workspace view')
+assert(emptySummary.countLabel === '0 panes · 0 terminals', 'pluralizes empty counts')
 
 if (failures > 0) throw new Error(`${failures} terminal-chrome test(s) failed`)
 console.log('\n✅ ALL TERMINAL CHROME TESTS PASS')

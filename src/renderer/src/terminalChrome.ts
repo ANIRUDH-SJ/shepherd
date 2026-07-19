@@ -1,3 +1,5 @@
+import type { Pane } from './layout/types'
+
 export type TabNavigationKey = 'ArrowLeft' | 'ArrowRight' | 'Home' | 'End'
 
 const TAB_NAVIGATION_KEYS: TabNavigationKey[] = ['ArrowLeft', 'ArrowRight', 'Home', 'End']
@@ -24,4 +26,30 @@ export function terminalTabId(surfaceId: string): string {
 
 export function terminalPanelId(surfaceId: string): string {
   return `terminal-panel-${surfaceId}`
+}
+
+export interface TerminalContextSummary {
+  focusLabel: string
+  countLabel: string
+}
+
+export function terminalContextSummary(
+  panes: Pane[],
+  activePaneId: string,
+  surfaceNumbers: Map<string, number>
+): TerminalContextSummary {
+  const activePaneIndex = panes.findIndex((pane) => pane.id === activePaneId)
+  const activePane = activePaneIndex >= 0 ? panes[activePaneIndex] : panes[0]
+  const paneNumber = activePaneIndex >= 0 ? activePaneIndex + 1 : activePane ? 1 : undefined
+  const terminalNumber = activePane ? surfaceNumbers.get(activePane.activeSurfaceId) : undefined
+  const paneCount = panes.length
+  const terminalCount = surfaceNumbers.size
+
+  return {
+    focusLabel:
+      paneNumber && terminalNumber
+        ? `Pane ${paneNumber} · Terminal ${terminalNumber}`
+        : 'No active terminal',
+    countLabel: `${paneCount} ${paneCount === 1 ? 'pane' : 'panes'} · ${terminalCount} ${terminalCount === 1 ? 'terminal' : 'terminals'}`
+  }
 }

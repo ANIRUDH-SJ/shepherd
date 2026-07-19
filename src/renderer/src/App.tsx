@@ -281,10 +281,11 @@ export default function App(): React.JSX.Element {
       )}
 
       <main className="workarea">
-        {state.workspaces.map((w) => (
+        {state.workspaces.map((w, position) => (
           <WorkspaceView
             key={w.id}
             workspace={w}
+            position={position}
             active={w.id === state.activeWorkspaceId}
             dispatch={dispatch}
           />

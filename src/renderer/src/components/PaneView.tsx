@@ -12,6 +12,8 @@ import TerminalHost from './TerminalHost'
 
 interface Props {
   pane: Pane
+  paneNumber: number
+  canClosePane: boolean
   rect: Rect
   active: boolean
   workspaceActive: boolean
@@ -23,6 +25,8 @@ interface Props {
 
 export default function PaneView({
   pane,
+  paneNumber,
+  canClosePane,
   rect,
   active,
   workspaceActive,
@@ -34,6 +38,8 @@ export default function PaneView({
   return (
     <div
       className={'pane' + (active ? ' active' : '')}
+      role="group"
+      aria-label={`Pane ${paneNumber}${active ? ', active' : ''}`}
       style={{
         left: `${rect.left}%`,
         top: `${rect.top}%`,
@@ -45,9 +51,13 @@ export default function PaneView({
     >
       <TabBar
         pane={pane}
+        paneNumber={paneNumber}
+        canClosePane={canClosePane}
         surfaceNumbers={surfaceNumbers}
         onSelect={(surfaceId) => dispatch({ type: 'setActiveSurface', paneId: pane.id, surfaceId })}
-        onCloseSurface={(surfaceId) => dispatch({ type: 'closeSurface', paneId: pane.id, surfaceId })}
+        onCloseSurface={(surfaceId) =>
+          dispatch({ type: 'closeSurface', paneId: pane.id, surfaceId })
+        }
         onNewSurface={() => dispatch(newSurfaceAction(pane.id))}
         onSplitRight={() => dispatch(splitAction(pane.id, 'row'))}
         onSplitDown={() => dispatch(splitAction(pane.id, 'column'))}

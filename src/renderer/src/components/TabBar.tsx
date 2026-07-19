@@ -7,6 +7,8 @@ import Icon from './Icon'
 
 interface Props {
   pane: Pane
+  paneNumber: number
+  canClosePane: boolean
   surfaceNumbers: Map<string, number>
   onSelect: (surfaceId: string) => void
   onCloseSurface: (surfaceId: string) => void
@@ -26,6 +28,8 @@ function stop(e: React.MouseEvent): void {
 export default function TabBar(props: Props): React.JSX.Element {
   const {
     pane,
+    paneNumber,
+    canClosePane,
     surfaceNumbers,
     onSelect,
     onCloseSurface,
@@ -35,6 +39,7 @@ export default function TabBar(props: Props): React.JSX.Element {
     onClosePane
   } = props
   const surfaceIds = pane.surfaces.map((surface) => surface.id)
+  const canCloseSurface = pane.surfaces.length > 1 || canClosePane
 
   const navigateTabs = (event: React.KeyboardEvent, surfaceId: string): void => {
     const target = tabNavigationTarget(surfaceIds, surfaceId, event.key)
@@ -45,36 +50,47 @@ export default function TabBar(props: Props): React.JSX.Element {
   }
 
   return (
-    <div className="pane-tabs" role="tablist" aria-label="Terminal tabs">
-      {pane.surfaces.map((s) => (
-        <div key={s.id} className={'tab' + (s.id === pane.activeSurfaceId ? ' active' : '')}>
-          <button
-            type="button"
-            id={terminalTabId(s.id)}
-            className="tab-select"
-            role="tab"
-            aria-selected={s.id === pane.activeSurfaceId}
-            aria-controls={terminalPanelId(s.id)}
-            tabIndex={s.id === pane.activeSurfaceId ? 0 : -1}
-            title={`Terminal ${surfaceNumbers.get(s.id) ?? '?'}`}
-            onMouseDown={stop}
-            onClick={() => onSelect(s.id)}
-            onKeyDown={(event) => navigateTabs(event, s.id)}
+    <div className="pane-tabs">
+      <div className="tab-list" role="tablist" aria-label={`Pane ${paneNumber} terminal tabs`}>
+        {pane.surfaces.map((s) => (
+          <div
+            key={s.id}
+            role="presentation"
+            className={'tab' + (s.id === pane.activeSurfaceId ? ' active' : '')}
           >
-            <span className="tab-title">Terminal {surfaceNumbers.get(s.id) ?? '?'}</span>
-          </button>
-          <button
-            type="button"
-            className="tab-close"
-            title={`Close Terminal ${surfaceNumbers.get(s.id) ?? '?'}`}
-            aria-label={`Close Terminal ${surfaceNumbers.get(s.id) ?? '?'}`}
-            onMouseDown={stop}
-            onClick={() => onCloseSurface(s.id)}
-          >
-            <Icon name="close" />
-          </button>
-        </div>
-      ))}
+            <button
+              type="button"
+              id={terminalTabId(s.id)}
+              className="tab-select"
+              role="tab"
+              aria-selected={s.id === pane.activeSurfaceId}
+              aria-controls={terminalPanelId(s.id)}
+              tabIndex={s.id === pane.activeSurfaceId ? 0 : -1}
+              title={`Terminal ${surfaceNumbers.get(s.id) ?? '?'}`}
+              onMouseDown={stop}
+              onClick={() => onSelect(s.id)}
+              onKeyDown={(event) => navigateTabs(event, s.id)}
+            >
+              <span className="tab-title">Terminal {surfaceNumbers.get(s.id) ?? '?'}</span>
+            </button>
+            <button
+              type="button"
+              className="tab-close"
+              title={
+                canCloseSurface
+                  ? `Close Terminal ${surfaceNumbers.get(s.id) ?? '?'}`
+                  : 'The last terminal cannot be closed'
+              }
+              aria-label={`Close Terminal ${surfaceNumbers.get(s.id) ?? '?'}`}
+              disabled={!canCloseSurface}
+              onMouseDown={stop}
+              onClick={() => onCloseSurface(s.id)}
+            >
+              <Icon name="close" />
+            </button>
+          </div>
+        ))}
+      </div>
 
       <button
         type="button"
@@ -89,30 +105,39 @@ export default function TabBar(props: Props): React.JSX.Element {
 
       <div className="tabs-spacer" />
 
-      <button
-        className="pane-btn"
-        title="Split right (Ctrl+Shift+D)"
-        onMouseDown={stop}
-        onClick={onSplitRight}
-      >
-        ▐
-      </button>
-      <button
-        className="pane-btn"
-        title="Split down (Ctrl+Shift+E)"
-        onMouseDown={stop}
-        onClick={onSplitDown}
-      >
-        ▄
-      </button>
-      <button
-        className="pane-btn"
-        title="Close pane (Ctrl+Shift+W)"
-        onMouseDown={stop}
-        onClick={onClosePane}
-      >
-        ×
-      </button>
+      <div className="pane-actions" role="group" aria-label={`Pane ${paneNumber} actions`}>
+        <button
+          type="button"
+          className="pane-btn"
+          title="Split right (Ctrl+Shift+D)"
+          aria-label={`Split Pane ${paneNumber} right`}
+          onMouseDown={stop}
+          onClick={onSplitRight}
+        >
+          <Icon name="split-right" />
+        </button>
+        <button
+          type="button"
+          className="pane-btn"
+          title="Split down (Ctrl+Shift+E)"
+          aria-label={`Split Pane ${paneNumber} down`}
+          onMouseDown={stop}
+          onClick={onSplitDown}
+        >
+          <Icon name="split-down" />
+        </button>
+        <button
+          type="button"
+          className="pane-btn"
+          title={canClosePane ? 'Close pane (Ctrl+Shift+W)' : 'The last pane cannot be closed'}
+          aria-label={`Close Pane ${paneNumber}`}
+          disabled={!canClosePane}
+          onMouseDown={stop}
+          onClick={onClosePane}
+        >
+          <Icon name="close" />
+        </button>
+      </div>
     </div>
   )
 }

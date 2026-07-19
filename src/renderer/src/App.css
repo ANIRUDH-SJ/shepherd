@@ -662,6 +662,72 @@ kbd {
   display: flex;
   overflow: hidden;
 }
+.workspace-view {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+}
+.workspace-context-strip {
+  display: flex;
+  height: 30px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-sidebar);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  user-select: none;
+}
+.workspace-context-identity,
+.workspace-context-branch {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+.workspace-context-identity {
+  max-width: 42%;
+}
+.workspace-context-identity strong,
+.workspace-context-identity span,
+.workspace-context-branch span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-context-identity strong {
+  color: var(--color-text-secondary);
+  font-size: 10.5px;
+}
+.workspace-context-identity span {
+  color: var(--color-text-subdued);
+}
+.workspace-context-separator {
+  width: 1px;
+  height: 13px;
+  flex: 0 0 auto;
+  background: var(--color-border-strong);
+}
+.workspace-context-branch {
+  max-width: 28%;
+  color: var(--color-git);
+}
+.workspace-context-branch.no-git {
+  color: var(--color-text-subdued);
+}
+.workspace-context-spacer {
+  flex: 1 1 auto;
+}
+.workspace-context-focus {
+  flex: 0 0 auto;
+  color: var(--color-text-subdued);
+  font-variant-numeric: tabular-nums;
+}
 .pane-layer {
   position: relative;
   flex: 1 1 auto;
@@ -680,7 +746,11 @@ kbd {
   background: var(--color-canvas);
 }
 .pane.active {
-  border-color: var(--color-accent-strong);
+  border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+}
+.pane.active .pane-tabs {
+  background: color-mix(in srgb, var(--color-accent) 6%, var(--color-sidebar));
+  box-shadow: inset 0 2px 0 var(--color-accent);
 }
 .pane-tabs {
   display: flex;
@@ -692,6 +762,13 @@ kbd {
   border-bottom: 1px solid var(--color-border);
   user-select: none;
   flex: 0 0 auto;
+}
+.tab-list {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-1);
+  overflow: hidden;
 }
 .tab {
   position: relative;
@@ -752,6 +829,14 @@ kbd {
   padding: 3px 6px;
   border-radius: var(--radius-sm);
 }
+.tab-new,
+.pane-btn {
+  display: grid;
+  width: 24px;
+  height: 22px;
+  place-items: center;
+  padding: 0;
+}
 .tab-close {
   display: grid;
   width: 18px;
@@ -771,6 +856,31 @@ kbd {
   background: var(--color-border);
   color: var(--color-text);
 }
+.pane-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  opacity: 0.32;
+  transition: opacity var(--transition-fast);
+}
+.pane.active .pane-actions {
+  opacity: 0.58;
+}
+.pane:hover .pane-actions,
+.pane:focus-within .pane-actions {
+  opacity: 1;
+}
+.pane-btn:focus-visible,
+.tab-new:focus-visible,
+.tab-close:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: -1px;
+}
+.pane-btn:disabled,
+.tab .tab-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.18;
+}
 .tabs-spacer {
   flex: 1 1 auto;
 }
@@ -783,6 +893,18 @@ kbd {
   position: absolute;
   inset: 0;
   padding: 4px 0 0 6px;
+}
+
+@media (max-width: 720px) {
+  .workspace-context-identity span,
+  .workspace-context-separator,
+  .workspace-context-focus {
+    display: none;
+  }
+  .workspace-context-identity,
+  .workspace-context-branch {
+    max-width: 48%;
+  }
 }
 
 /* ── Dividers ───────────────────────────────────────────────────────────────── */
