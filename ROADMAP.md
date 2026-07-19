@@ -36,6 +36,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M12** — Deterministic single-workspace startup ✓
 - [x] **M13** — Semantic UI design-token foundation ✓
 - [x] **M14** — Sidebar workspace and agent information hierarchy ✓
+- [x] **M15** — Accessible terminal tabs, pane focus, and workspace context ✓
 
 ---
 
@@ -287,6 +288,21 @@ without changing runtime contracts.*
 - [x] Replace sidebar action glyphs with a closed local SVG icon set
 - [x] Cover identity and urgency projections with pure regressions
 - [x] Verify empty and fully populated states in live Electron windows
+- [x] Document implementation, architecture, accessibility, security, and tradeoffs
+
+## M15 — Terminal chrome and context
+*Goal: make nested pane/tab focus clear and keyboard-operable while keeping the
+terminal canvas visually dominant.*
+
+- [x] Implement semantic tablist, tab, and tabpanel relationships
+- [x] Add roving Left/Right/Home/End keyboard navigation with wrap
+- [x] Make surface selection activate its validated owning pane in the reducer
+- [x] Show compact workspace, Git, pane, and terminal context above the pane layer
+- [x] Distinguish active tabs from the active pane with restrained indicators
+- [x] Reveal pane actions on hover and keyboard focus with accessible SVG controls
+- [x] Disable impossible last-pane and last-terminal close actions
+- [x] Cover navigation, DOM ids, context summaries, and reducer state parity
+- [x] Verify single-pane and nested three-pane layouts in live Electron windows
 - [x] Document implementation, architecture, accessibility, security, and tradeoffs
 
 ---

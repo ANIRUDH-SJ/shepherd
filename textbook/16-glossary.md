@@ -135,6 +135,10 @@
   The reducer rejects a sequenced report that is not newer than the stored
   revision, preventing stale lifecycle state from overwriting newer state.
   (see 19-semantic-agent-runtime.md)
+- **roving tabindex** — A keyboard pattern where only the selected item in a
+  composite control has `tabIndex=0`; its siblings use `-1` and arrow keys move
+  selection/focus. Terminal tabs use it to remain one efficient Tab stop. (see
+  27-terminal-interaction-design.md)
 
 ## S
 

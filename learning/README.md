@@ -35,6 +35,7 @@ code as we write it.
 | **M12**   | `M12-single-workspace-startup.md` | Deterministic one-workspace startup, active-layout persistence, compatibility, and regression tests |
 | **M13**   | `M13-ui-design-tokens.md` | Semantic palette, typography, geometry, interaction rules, and CSS boundary regression              |
 | **M14**   | `M14-sidebar-information-hierarchy.md` | Project-first workspace identity, agent urgency groups, accessible icons, empty states, and visual proof |
+| **M15**   | `M15-terminal-chrome.md` | ARIA tabs, roving focus, pane activation, context strip, SVG actions, capability states, and split proof |
 
 ## How to read a milestone file
 

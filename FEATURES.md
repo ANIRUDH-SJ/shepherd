@@ -127,16 +127,16 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | 2 | **Vertical workspace sidebar** | custom-name/project identity, positional context, live branch/usage/status/agent rollup, accessible SVG actions, and restrained active state | 🟢 |
 | 3 | **Notification rings / tab flash / unread badge** | React state + CSS animation, toggled by socket notify + OSC parse | 🟢 |
 | 4 | **Multiple terminals** | node-pty per terminal panel, map `ptyId → process` in main | 🟢 |
-| 5 | **Split panes** (h/v) | the `PaneNode` split tree + a tiling renderer (react-mosaic or hand-rolled flex) | 🟢 |
-| 6 | **Surfaces** (tabs within a pane) | per-pane tab bar in React; each surface owns a panel | 🟢 |
+| 5 | **Split panes** (h/v) | pure split tree + percentage tiling, live dividers, explicit active-pane chrome, and accessible SVG pane actions | 🟢 |
+| 6 | **Surfaces** (tabs within a pane) | mounted xterm panel per surface, semantic tablist/tabpanel links, roving keyboard navigation, and capability-aware close controls | 🟢 |
 | 7 | **Socket API + `cmux` CLI** | `net` server in main + tiny Node CLI client (Part 2) | 🟢 |
 | 8 | **Sidebar status API** (`set-status`, `set-progress`, `log`) | socket methods → workspace metadata → React status pills / progress bar | 🟢 (status/notify) · 🟡 (pills+progress polish) |
 | 9 | **OSC 9/99/777 detection** (auto notifications from terminal output) | scan pty output stream in main for these escape codes → fire notification | 🟢 |
 | 10 | **Automatic + semantic agent runtime** | zero-setup PTY process discovery, enriched lifecycle reports, urgency-grouped sidebar with persistent empty state, bounded queries/inspection, focus/wait controls, and integrations | 🟢 |
 | 11 | **Single-workspace session restoration** | serialize the active workspace layout/cwd; relaunch with exactly that workspace and re-spawn its shells | 🟢 (active layout+cwd) · 🟡 (scrollback/resume-all setting) |
 | 12 | **Live project + Git branch in sidebar** | active shell cwd comes from `/proc`; main resolves/caches the worktree root and reads Git `HEAD`, then React renders separate project/branch rows | 🟢 |
-| 13 | **Keyboard shortcuts** (new/close/split/focus/nav) | a React keymap; mirror cmux's bindings (⌘→Ctrl/Super on Linux) | 🟢 |
-| 14 | **Semantic dark theme** | shared CSS tokens for surfaces, content, focus, state, spacing, and motion; optionally map validated Ghostty colors (#20) | 🟢 (token foundation) · 🟡 (final visual polish) |
+| 13 | **Keyboard shortcuts** (new/close/split/focus/nav) | React keymap plus Left/Right/Home/End tab navigation; Linux Ctrl/Super equivalents | 🟢 |
+| 14 | **Semantic dark theme** | shared CSS tokens for surfaces, content, focus, state, spacing, and motion across sidebar and terminal chrome; optionally map validated Ghostty colors (#20) | 🟢 |
 | 15 | **PR status/number in sidebar** | `gh pr view --json` (or GitHub API) per workspace branch | 🟡 |
 | 16 | **Listening ports in sidebar** | main scans `/proc/net` or `ss -tlnp` for the pane's process tree | 🟡 |
 | 17 | **Status pills w/ icon/color/priority + progress bars** | extend the sidebar renderer; the socket already carries these params | 🟡 |
