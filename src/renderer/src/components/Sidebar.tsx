@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, type Dispatch } from 'react'
 import type { AgentRecord } from '../../../shared/agent'
 import { agentRollupLabel } from '../agentView'
+import { workspaceIdentity } from '../sidebarView'
 import { type AppAction, createWorkspaceAction, type Workspace } from '../state/appReducer'
 import { usageDetails, usageSummary } from '../usageView'
 import AgentList from './AgentList'
+import Icon from './Icon'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sidebar — the vertical list of workspaces (cmux's signature). Each row shows a
@@ -75,21 +77,30 @@ export default function Sidebar({
         <span className="brand">cmux-linux</span>
         <div className="sidebar-head-actions">
           <button
+            type="button"
             className="icon-btn"
             title="New workspace (Ctrl+Shift+N)"
+            aria-label="New workspace"
             onClick={() => dispatch(createWorkspaceAction())}
           >
-            +
+            <Icon name="add" />
           </button>
-          <button className="icon-btn" title="Hide sidebar (Ctrl+Shift+B)" onClick={onCollapse}>
-            ‹
+          <button
+            type="button"
+            className="icon-btn"
+            title="Hide sidebar (Ctrl+Shift+B)"
+            aria-label="Hide sidebar"
+            onClick={onCollapse}
+          >
+            <Icon name="collapse" />
           </button>
         </div>
       </div>
 
       <div className="ws-list">
         {workspaces.map((w, i) => {
-          const displayName = w.name || `workspace ${i + 1}`
+          const identity = workspaceIdentity(w, i)
+          const displayName = identity.primary
           const editing = editingId === w.id
           const summary = usageSummary(w.usage)
           const agentSummary = agentRollupLabel(
@@ -98,19 +109,11 @@ export default function Sidebar({
           return (
             <div
               key={w.id}
-              ref={(element) => {
-                if (element) rowRefs.current.set(w.id, element)
-                else rowRefs.current.delete(w.id)
-              }}
-              role="button"
-              tabIndex={0}
-              aria-label={`${displayName}, project ${w.projectName}, ${w.gitBranch ? `branch ${w.gitBranch}` : 'not a Git repository'}${w.id === activeWorkspaceId ? ', active workspace' : ''}${agentSummary ? `, ${agentSummary}` : ''}`}
               className={
                 'ws-row' +
                 (w.id === activeWorkspaceId ? ' active' : '') +
                 (w.attention || w.agentAttention ? ' attention' : '')
               }
-              onClick={() => dispatch({ type: 'selectWorkspace', id: w.id })}
               onContextMenu={(event) => {
                 if (event.target instanceof HTMLInputElement) return
                 event.preventDefault()
@@ -122,61 +125,113 @@ export default function Sidebar({
                   y: Math.max(8, Math.min(event.clientY, window.innerHeight - height - 8))
                 })
               }}
-              onKeyDown={(event) => {
-                if (event.target !== event.currentTarget || editing) return
-                if (event.key === 'F2') {
-                  event.preventDefault()
-                  startRename(w)
-                } else if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault()
-                  dispatch({ type: 'selectWorkspace', id: w.id })
-                }
-              }}
             >
-              <div className="ws-row-top">
-                {(w.unread || w.agentUnread) && <span className="ws-dot" title="unread" />}
-                {editing ? (
-                  <input
-                    className="ws-name-input"
-                    value={draftName}
-                    placeholder={displayName}
-                    maxLength={64}
-                    autoFocus
-                    aria-label={`Rename ${displayName}`}
-                    onClick={(event) => event.stopPropagation()}
-                    onChange={(event) => setDraftName(event.target.value)}
-                    onBlur={() => {
-                      if (ignoreNextBlur.current) {
-                        ignoreNextBlur.current = false
-                        return
-                      }
-                      finishRename(w, true, false)
-                    }}
-                    onKeyDown={(event) => {
-                      event.stopPropagation()
-                      if (event.key === 'Enter') {
-                        event.preventDefault()
-                        ignoreNextBlur.current = true
-                        finishRename(w, true, true)
-                      } else if (event.key === 'Escape') {
-                        event.preventDefault()
-                        ignoreNextBlur.current = true
-                        finishRename(w, false, true)
-                      }
-                    }}
-                  />
-                ) : (
+              <div
+                ref={(element) => {
+                  if (element) rowRefs.current.set(w.id, element)
+                  else rowRefs.current.delete(w.id)
+                }}
+                className="ws-row-select"
+                role={editing ? undefined : 'button'}
+                tabIndex={editing ? undefined : 0}
+                aria-label={
+                  editing
+                    ? undefined
+                    : `${displayName}, ${identity.positional}, project ${w.projectName}, ${w.gitBranch ? `branch ${w.gitBranch}` : 'not a Git repository'}${w.id === activeWorkspaceId ? ', active workspace' : ''}${agentSummary ? `, ${agentSummary}` : ''}`
+                }
+                onClick={() => {
+                  if (!editing) dispatch({ type: 'selectWorkspace', id: w.id })
+                }}
+                onKeyDown={(event) => {
+                  if (event.target !== event.currentTarget || editing) return
+                  if (event.key === 'F2') {
+                    event.preventDefault()
+                    startRename(w)
+                  } else if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    dispatch({ type: 'selectWorkspace', id: w.id })
+                  }
+                }}
+              >
+                <div className="ws-row-top">
+                  {(w.unread || w.agentUnread) && <span className="ws-dot" title="unread" />}
+                  {editing ? (
+                    <input
+                      className="ws-name-input"
+                      value={draftName}
+                      placeholder={displayName}
+                      maxLength={64}
+                      autoFocus
+                      aria-label={`Rename ${displayName}`}
+                      onChange={(event) => setDraftName(event.target.value)}
+                      onBlur={() => {
+                        if (ignoreNextBlur.current) {
+                          ignoreNextBlur.current = false
+                          return
+                        }
+                        finishRename(w, true, false)
+                      }}
+                      onKeyDown={(event) => {
+                        event.stopPropagation()
+                        if (event.key === 'Enter') {
+                          event.preventDefault()
+                          ignoreNextBlur.current = true
+                          finishRename(w, true, true)
+                        } else if (event.key === 'Escape') {
+                          event.preventDefault()
+                          ignoreNextBlur.current = true
+                          finishRename(w, false, true)
+                        }
+                      }}
+                    />
+                  ) : (
+                    <span
+                      className="ws-name"
+                      title="Double-click to rename"
+                      onDoubleClick={(event) => {
+                        event.stopPropagation()
+                        startRename(w)
+                      }}
+                    >
+                      {displayName}
+                    </span>
+                  )}
+                </div>
+                <div className="ws-meta">
                   <span
-                    className="ws-name"
-                    title="Double-click to rename"
-                    onDoubleClick={(event) => {
-                      event.stopPropagation()
-                      startRename(w)
-                    }}
+                    className="ws-context"
+                    title={`${identity.context}\nProject: ${w.projectName}\nDirectory: ${w.cwd}`}
                   >
-                    {displayName}
+                    {identity.context}
                   </span>
+                  {summary && (
+                    <span
+                      className="ws-usage"
+                      title={usageDetails(w.usage)}
+                      aria-label={usageDetails(w.usage)}
+                    >
+                      {summary}
+                    </span>
+                  )}
+                </div>
+                <div className="ws-detail-row">
+                  <span
+                    className={'ws-branch' + (w.gitBranch ? '' : ' no-git')}
+                    title={w.gitBranch ? `Git branch: ${w.gitBranch}` : 'Not a Git repository'}
+                  >
+                    <Icon name="branch" />
+                    <span>{w.gitBranch ?? 'No Git repository'}</span>
+                  </span>
+                </div>
+                {w.status && <div className="ws-status">{w.status}</div>}
+                {agentSummary && (
+                  <div className="ws-agent-rollup" title={`Agents: ${agentSummary}`}>
+                    <Icon name="agents" />
+                    <span>{agentSummary}</span>
+                  </div>
                 )}
+              </div>
+              <div className="ws-row-actions">
                 {!editing && (
                   <button
                     type="button"
@@ -188,7 +243,7 @@ export default function Sidebar({
                       startRename(w)
                     }}
                   >
-                    ✎
+                    <Icon name="rename" />
                   </button>
                 )}
                 {workspaces.length > 1 && (
@@ -202,39 +257,10 @@ export default function Sidebar({
                       dispatch({ type: 'closeWorkspace', id: w.id })
                     }}
                   >
-                    ×
+                    <Icon name="close" />
                   </button>
                 )}
               </div>
-              <div className="ws-meta">
-                <span
-                  className="ws-project"
-                  title={`Project: ${w.projectName}\nDirectory: ${w.cwd}`}
-                >
-                  {w.projectName}
-                </span>
-                {summary && (
-                  <span
-                    className="ws-usage"
-                    title={usageDetails(w.usage)}
-                    aria-label={usageDetails(w.usage)}
-                  >
-                    {summary}
-                  </span>
-                )}
-              </div>
-              <div
-                className={'ws-branch' + (w.gitBranch ? '' : ' no-git')}
-                title={w.gitBranch ? `Git branch: ${w.gitBranch}` : 'Not a Git repository'}
-              >
-                git: {w.gitBranch ?? 'no git'}
-              </div>
-              {w.status && <div className="ws-status">{w.status}</div>}
-              {agentSummary && (
-                <div className="ws-agent-rollup" title={`Agents: ${agentSummary}`}>
-                  {agentSummary}
-                </div>
-              )}
             </div>
           )
         })}
@@ -259,6 +285,7 @@ export default function Sidebar({
               if (workspace) startRename(workspace)
             }}
           >
+            <Icon name="rename" />
             Rename workspace
           </button>
         </div>

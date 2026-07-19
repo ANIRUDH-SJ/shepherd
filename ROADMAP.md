@@ -35,6 +35,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M11** — Live workspace project and Git branch metadata ✓
 - [x] **M12** — Deterministic single-workspace startup ✓
 - [x] **M13** — Semantic UI design-token foundation ✓
+- [x] **M14** — Sidebar workspace and agent information hierarchy ✓
 
 ---
 
@@ -273,6 +274,20 @@ changing sidebar and terminal information architecture.*
 - [x] Preserve reduced-motion behavior for repeating attention animations
 - [x] Enforce the root token boundary with an executable regression test
 - [x] Document the code, CSS architecture, accessibility, security, and tradeoffs
+
+## M14 — Sidebar information hierarchy
+*Goal: make project identity and actionable agent state readable at a glance
+without changing runtime contracts.*
+
+- [x] Promote the live project when a workspace has no custom name
+- [x] Keep workspace position as stable secondary context
+- [x] Render branch, usage, status, and agent rollup in a predictable order
+- [x] Keep the Agents section and compact empty explanation visible from startup
+- [x] Group agents into actionable, working, waiting, finished, and quiet bands
+- [x] Replace sidebar action glyphs with a closed local SVG icon set
+- [x] Cover identity and urgency projections with pure regressions
+- [x] Verify empty and fully populated states in live Electron windows
+- [x] Document implementation, architecture, accessibility, security, and tradeoffs
 
 ---
 

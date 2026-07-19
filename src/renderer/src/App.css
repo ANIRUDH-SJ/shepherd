@@ -85,6 +85,12 @@ button,
     opacity var(--transition-fast);
 }
 
+.ui-icon {
+  width: 1em;
+  height: 1em;
+  flex: 0 0 auto;
+}
+
 body.resizing,
 body.resizing * {
   user-select: none !important;
@@ -128,13 +134,17 @@ body.resizing * {
   gap: var(--space-1);
 }
 .icon-btn {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
   border: 0;
   background: transparent;
   color: var(--color-text-muted);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1;
-  padding: 2px 7px;
+  padding: 0;
   border-radius: var(--radius-md);
 }
 .icon-btn:hover {
@@ -152,31 +162,37 @@ body.resizing * {
   gap: var(--space-1);
 }
 .ws-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  position: relative;
   width: 100%;
   text-align: left;
-  border: 0;
+  border: 1px solid transparent;
   font: inherit;
   background: transparent;
   color: inherit;
-  cursor: pointer;
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-lg);
 }
-.ws-row:focus-visible {
+.ws-row-select {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  cursor: pointer;
+}
+.ws-row-select:focus-visible {
   outline: 2px solid var(--color-focus);
-  outline-offset: -2px;
+  outline-offset: 3px;
 }
 .ws-row:hover {
   background: var(--color-surface-hover);
 }
 .ws-row.active {
-  background: var(--color-selection);
+  border-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  background: color-mix(in srgb, var(--color-selection) 30%, var(--color-surface));
+  box-shadow: inset 2px 0 0 var(--color-accent);
 }
 .ws-row.active .ws-status,
-.ws-row.active .ws-project,
+.ws-row.active .ws-context,
 .ws-row.active .ws-branch {
   color: var(--color-selection-text);
 }
@@ -196,6 +212,8 @@ body.resizing * {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-width: 0;
+  padding-right: 44px;
 }
 .ws-dot {
   width: 7px;
@@ -230,15 +248,26 @@ body.resizing * {
 }
 .ws-rename,
 .ws-close {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
   border: 0;
   background: transparent;
   color: var(--color-text-secondary);
   opacity: 0;
   font-size: 14px;
   line-height: 1;
-  padding: 0 3px;
+  padding: 0;
   border-radius: var(--radius-sm);
   cursor: pointer;
+}
+.ws-row-actions {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-5);
+  display: flex;
+  gap: var(--space-1);
 }
 .ws-row:hover .ws-rename,
 .ws-row:focus-within .ws-rename,
@@ -262,6 +291,9 @@ body.resizing * {
   box-shadow: var(--shadow-popover);
 }
 .ws-context-menu button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   width: 100%;
   border: 0;
   border-radius: var(--radius-md);
@@ -292,7 +324,7 @@ body.resizing * {
   gap: var(--space-4);
   min-width: 0;
 }
-.ws-project,
+.ws-context,
 .ws-branch {
   color: var(--color-text-muted);
   font-family: var(--font-mono);
@@ -303,12 +335,26 @@ body.resizing * {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.ws-project {
+.ws-context {
   flex: 1 1 auto;
+}
+.ws-detail-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 .ws-branch {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   color: var(--color-git);
+}
+.ws-branch > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ws-branch.no-git {
   color: var(--color-text-subdued);
@@ -327,6 +373,9 @@ body.resizing * {
   color: var(--color-selection-text);
 }
 .ws-agent-rollup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   color: var(--color-text-subdued);
   font-family: var(--font-mono);
   font-size: 9.5px;
@@ -335,6 +384,11 @@ body.resizing * {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.ws-agent-rollup > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .ws-row.active .ws-agent-rollup {
   color: var(--color-selection-text);
 }
@@ -342,7 +396,7 @@ body.resizing * {
 /* Semantic agent list */
 .agent-section {
   flex: 0 1 40%;
-  min-height: 72px;
+  min-height: 92px;
   margin-top: var(--space-5);
   padding: 9px var(--space-2) 0;
   border-top: 1px solid var(--color-border);
@@ -364,6 +418,31 @@ body.resizing * {
 }
 .agent-list {
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.agent-group {
+  min-width: 0;
+}
+.agent-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-2) var(--space-2);
+  color: var(--color-text-subdued);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.agent-group.group-needs-you .agent-group-head {
+  color: var(--color-danger);
+}
+.agent-group.group-working .agent-group-head {
+  color: var(--color-working);
+}
+.agent-group > [role='list'] {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
@@ -467,10 +546,33 @@ body.resizing * {
   color: var(--color-success);
 }
 .agent-empty {
-  padding: 6px 4px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: var(--space-1) 0;
+  padding: var(--space-4);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
   color: var(--color-text-faint);
   font-family: var(--font-mono);
   font-size: 10px;
+}
+.agent-empty > .ui-icon {
+  font-size: 18px;
+}
+.agent-empty span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.agent-empty strong {
+  color: var(--color-text-muted);
+  font-size: 10.5px;
+}
+.agent-empty small {
+  color: var(--color-text-faint);
+  font-size: 9px;
 }
 @keyframes agent-pulse {
   0%,

@@ -82,6 +82,11 @@
 
 ## I
 
+- **information hierarchy** — The ordering and grouping that tells users which
+  facts matter first. The sidebar promotes custom workspace names or live
+  projects, then shows position, Git, status, and explicitly grouped agent
+  urgency. (see 26-sidebar-information-architecture.md)
+
 - **IPC (Inter-Process Communication)** — Any mechanism for separate processes to exchange data. In Electron it's the message channel between main and renderer; treat it exactly like frontend↔backend API calls. (see 04-ipc-inter-process-communication.md)
 - **ipcMain / ipcRenderer** — Electron's two IPC endpoints. `ipcRenderer` (in the renderer) sends, invokes, and listens; `ipcMain` (in main) handles those requests and can push messages back. (see 04-ipc-inter-process-communication.md)
 
