@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, type Dispatch } from 'react'
 import type { AgentRecord } from '../../../shared/agent'
 import { agentRollupLabel } from '../agentView'
+import { workspaceIdentity } from '../sidebarView'
 import { type AppAction, createWorkspaceAction, type Workspace } from '../state/appReducer'
 import { usageDetails, usageSummary } from '../usageView'
 import AgentList from './AgentList'
+import Icon from './Icon'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sidebar — the vertical list of workspaces (cmux's signature). Each row shows a
@@ -75,21 +77,30 @@ export default function Sidebar({
         <span className="brand">cmux-linux</span>
         <div className="sidebar-head-actions">
           <button
+            type="button"
             className="icon-btn"
             title="New workspace (Ctrl+Shift+N)"
+            aria-label="New workspace"
             onClick={() => dispatch(createWorkspaceAction())}
           >
-            +
+            <Icon name="add" />
           </button>
-          <button className="icon-btn" title="Hide sidebar (Ctrl+Shift+B)" onClick={onCollapse}>
-            ‹
+          <button
+            type="button"
+            className="icon-btn"
+            title="Hide sidebar (Ctrl+Shift+B)"
+            aria-label="Hide sidebar"
+            onClick={onCollapse}
+          >
+            <Icon name="collapse" />
           </button>
         </div>
       </div>
 
       <div className="ws-list">
         {workspaces.map((w, i) => {
-          const displayName = w.name || `workspace ${i + 1}`
+          const identity = workspaceIdentity(w, i)
+          const displayName = identity.primary
           const editing = editingId === w.id
           const summary = usageSummary(w.usage)
           const agentSummary = agentRollupLabel(
@@ -104,7 +115,7 @@ export default function Sidebar({
               }}
               role="button"
               tabIndex={0}
-              aria-label={`${displayName}, project ${w.projectName}, ${w.gitBranch ? `branch ${w.gitBranch}` : 'not a Git repository'}${w.id === activeWorkspaceId ? ', active workspace' : ''}${agentSummary ? `, ${agentSummary}` : ''}`}
+              aria-label={`${displayName}, ${identity.positional}, project ${w.projectName}, ${w.gitBranch ? `branch ${w.gitBranch}` : 'not a Git repository'}${w.id === activeWorkspaceId ? ', active workspace' : ''}${agentSummary ? `, ${agentSummary}` : ''}`}
               className={
                 'ws-row' +
                 (w.id === activeWorkspaceId ? ' active' : '') +
@@ -188,7 +199,7 @@ export default function Sidebar({
                       startRename(w)
                     }}
                   >
-                    ✎
+                    <Icon name="rename" />
                   </button>
                 )}
                 {workspaces.length > 1 && (
@@ -202,16 +213,16 @@ export default function Sidebar({
                       dispatch({ type: 'closeWorkspace', id: w.id })
                     }}
                   >
-                    ×
+                    <Icon name="close" />
                   </button>
                 )}
               </div>
               <div className="ws-meta">
                 <span
-                  className="ws-project"
-                  title={`Project: ${w.projectName}\nDirectory: ${w.cwd}`}
+                  className="ws-context"
+                  title={`${identity.context}\nProject: ${w.projectName}\nDirectory: ${w.cwd}`}
                 >
-                  {w.projectName}
+                  {identity.context}
                 </span>
                 {summary && (
                   <span
@@ -223,16 +234,20 @@ export default function Sidebar({
                   </span>
                 )}
               </div>
-              <div
-                className={'ws-branch' + (w.gitBranch ? '' : ' no-git')}
-                title={w.gitBranch ? `Git branch: ${w.gitBranch}` : 'Not a Git repository'}
-              >
-                git: {w.gitBranch ?? 'no git'}
+              <div className="ws-detail-row">
+                <span
+                  className={'ws-branch' + (w.gitBranch ? '' : ' no-git')}
+                  title={w.gitBranch ? `Git branch: ${w.gitBranch}` : 'Not a Git repository'}
+                >
+                  <Icon name="branch" />
+                  <span>{w.gitBranch ?? 'No Git repository'}</span>
+                </span>
               </div>
               {w.status && <div className="ws-status">{w.status}</div>}
               {agentSummary && (
                 <div className="ws-agent-rollup" title={`Agents: ${agentSummary}`}>
-                  {agentSummary}
+                  <Icon name="agents" />
+                  <span>{agentSummary}</span>
                 </div>
               )}
             </div>
@@ -259,6 +274,7 @@ export default function Sidebar({
               if (workspace) startRename(workspace)
             }}
           >
+            <Icon name="rename" />
             Rename workspace
           </button>
         </div>
