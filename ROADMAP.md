@@ -34,6 +34,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M10** — Automatic terminal-agent discovery with no provider setup ✓
 - [x] **M11** — Live workspace project and Git branch metadata ✓
 - [x] **M12** — Deterministic single-workspace startup ✓
+- [x] **M13** — Semantic UI design-token foundation ✓
 
 ---
 
@@ -260,6 +261,18 @@ durable context from the previous session.*
 - [x] Reset transient agents, usage, attention, and derived Git metadata on restore
 - [x] Cover legacy restore and serializer cardinality with reducer regressions
 - [x] Document the implementation, alternatives, security, and tradeoffs
+
+## M13 — Semantic UI design tokens
+*Goal: give every renderer component one semantic visual vocabulary before
+changing sidebar and terminal information architecture.*
+
+- [x] Define surface, content, interaction, and semantic-state color roles
+- [x] Define shared UI/mono fonts, spacing, radii, shadow, and motion values
+- [x] Replace raw component colors with CSS custom-property consumption
+- [x] Standardize selection, scrollbar, focus, and control transitions
+- [x] Preserve reduced-motion behavior for repeating attention animations
+- [x] Enforce the root token boundary with an executable regression test
+- [x] Document the code, CSS architecture, accessibility, security, and tradeoffs
 
 ---
 

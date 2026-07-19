@@ -136,7 +136,7 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | 11 | **Single-workspace session restoration** | serialize the active workspace layout/cwd; relaunch with exactly that workspace and re-spawn its shells | 🟢 (active layout+cwd) · 🟡 (scrollback/resume-all setting) |
 | 12 | **Live project + Git branch in sidebar** | active shell cwd comes from `/proc`; main resolves/caches the worktree root and reads Git `HEAD`, then React renders separate project/branch rows | 🟢 |
 | 13 | **Keyboard shortcuts** (new/close/split/focus/nav) | a React keymap; mirror cmux's bindings (⌘→Ctrl/Super on Linux) | 🟢 |
-| 14 | **Dark theme matching cmux** | CSS variables + xterm theme; optionally read Ghostty colors (#20) | 🟢 (our theme) |
+| 14 | **Semantic dark theme** | shared CSS tokens for surfaces, content, focus, state, spacing, and motion; optionally map validated Ghostty colors (#20) | 🟢 (token foundation) · 🟡 (final visual polish) |
 | 15 | **PR status/number in sidebar** | `gh pr view --json` (or GitHub API) per workspace branch | 🟡 |
 | 16 | **Listening ports in sidebar** | main scans `/proc/net` or `ss -tlnp` for the pane's process tree | 🟡 |
 | 17 | **Status pills w/ icon/color/priority + progress bars** | extend the sidebar renderer; the socket already carries these params | 🟡 |

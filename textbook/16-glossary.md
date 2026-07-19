@@ -49,6 +49,10 @@
 - **`.deb`** — The Debian/Ubuntu package format; a `.deb` installs the app system-wide via `apt`/`dpkg`. One of our distribution targets. (see 15-packaging-and-distribution.md)
 - **debounce** — A timing technique that delays running a function until a burst of rapid triggers stops (e.g. run only 300 ms after the last change). We use it so session state is written once after edits settle rather than on every keystroke. (see 13-session-persistence.md)
 - **desktop notification** — A native OS pop-up (via Electron's Notification API) we raise when an agent needs attention, on top of the in-app ring/flash. (see 12-notifications-and-osc.md)
+- **design token** — A named visual contract such as `--color-focus` or
+  `--radius-md` that components consume instead of copying literal values. A
+  semantic token describes intent, allowing palettes and density to evolve
+  without rewriting component selectors. (see 25-semantic-ui-tokens.md)
 - **discriminated union** — A TypeScript pattern where several object shapes share a common literal "tag" field (e.g. `kind: 'leaf' | 'split'`) so the compiler can narrow to the right shape once you check the tag. Our `PaneNode` layout tree is one. (see 09-typescript-and-the-data-model.md)
 
 ## E
