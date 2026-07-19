@@ -97,6 +97,8 @@ Think of the book in five "acts":
   cached branch observation, state ownership, persistence, and sidebar design.
 - `24-single-workspace-startup.md` — startup cardinality, active-workspace
   projection, backward compatibility, and persistence tradeoffs.
+- `25-semantic-ui-tokens.md` — CSS custom properties, semantic visual roles,
+  accessibility, validation, and theme extension boundaries.
 
 **Reference**
 
@@ -136,6 +138,7 @@ Think of the book in five "acts":
 | `22-automatic-process-discovery.md`     | Linux PTY process ancestry, safe command identity, classification, activity, precedence, and cleanup    | 06, 19      |
 | `23-live-workspace-metadata.md`         | Shell cwd, Git roots, cached HEAD observation, async ownership, persistence, and project/branch UI       | 06, 09, 20  |
 | `24-single-workspace-startup.md`        | Startup cardinality, active-workspace projection, compatibility, security, and persistence tradeoffs     | 09, 13, 23  |
+| `25-semantic-ui-tokens.md`              | Semantic CSS tokens, cascade architecture, visual hierarchy, accessibility, validation, and theming      | 08, 14      |
 
 ---
 
@@ -204,3 +207,4 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `22-automatic-process-discovery.md` — zero-setup agent presence and safe process ancestry
 - `23-live-workspace-metadata.md` — live project/branch context from the active terminal
 - `24-single-workspace-startup.md` — deterministic one-workspace relaunch policy
+- `25-semantic-ui-tokens.md` — semantic CSS contract and visual-system foundation

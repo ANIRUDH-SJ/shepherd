@@ -8,7 +8,7 @@ Vertical named sidebar with live project/branch context and per-agent status,
 notification rings when an agent needs you, split terminal panes, and a socket
 API for automation.
 
-> **Status: early development.** Core runtime milestones **M0–M5** and **M7–M12**
+> **Status: early development.** Core runtime milestones **M0–M5** and **M7–M13**
 > are complete — real shells, split panes, live workspace/Git context, automatic
 > agent discovery, session restore, and the Unix-socket API. **M6** (polish &
 > packaging) is in progress. See
