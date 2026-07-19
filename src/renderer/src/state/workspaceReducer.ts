@@ -70,7 +70,10 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
     }
 
     case 'newSurface':
-      return { root: addSurface(state.root, action.paneId, action.surface), activePaneId: action.paneId }
+      return {
+        root: addSurface(state.root, action.paneId, action.surface),
+        activePaneId: action.paneId
+      }
 
     case 'closeSurface': {
       const pane = findPane(state.root, action.paneId)
@@ -85,13 +88,23 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
     }
 
     case 'setActiveSurface':
-      return { ...state, root: setActiveSurface(state.root, action.paneId, action.surfaceId) }
+      if (!findPane(state.root, action.paneId)) return state
+      return {
+        ...state,
+        root: setActiveSurface(state.root, action.paneId, action.surfaceId),
+        activePaneId: action.paneId
+      }
 
     case 'setActivePane':
-      return state.activePaneId === action.paneId ? state : { ...state, activePaneId: action.paneId }
+      return state.activePaneId === action.paneId
+        ? state
+        : { ...state, activePaneId: action.paneId }
 
     case 'resize':
-      return { ...state, root: resizeSplit(state.root, action.splitId, action.index, action.deltaFraction) }
+      return {
+        ...state,
+        root: resizeSplit(state.root, action.splitId, action.index, action.deltaFraction)
+      }
 
     default:
       return state
