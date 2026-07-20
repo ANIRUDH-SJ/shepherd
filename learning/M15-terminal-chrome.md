@@ -37,7 +37,8 @@ the component focuses the newly active tab on the next animation frame.
 
 New-tab and pane-action buttons are siblings of the tablist, so unrelated
 controls are not announced as tabs. Tab close remains attached visually to its
-tab and has a complete accessible label.
+tab and has a complete accessible label, but does not add one Tab stop per
+terminal. A focused tab exposes and handles Delete as its keyboard close action.
 
 ## 2. Matching pointer and keyboard state
 

@@ -41,7 +41,13 @@ export default function TabBar(props: Props): React.JSX.Element {
   const surfaceIds = pane.surfaces.map((surface) => surface.id)
   const canCloseSurface = pane.surfaces.length > 1 || canClosePane
 
-  const navigateTabs = (event: React.KeyboardEvent, surfaceId: string): void => {
+  const handleTabKeyDown = (event: React.KeyboardEvent, surfaceId: string): void => {
+    if (event.key === 'Delete' && canCloseSurface) {
+      event.preventDefault()
+      onCloseSurface(surfaceId)
+      return
+    }
+
     const target = tabNavigationTarget(surfaceIds, surfaceId, event.key)
     if (!target) return
     event.preventDefault()
@@ -65,11 +71,12 @@ export default function TabBar(props: Props): React.JSX.Element {
               role="tab"
               aria-selected={s.id === pane.activeSurfaceId}
               aria-controls={terminalPanelId(s.id)}
+              aria-keyshortcuts="Delete"
               tabIndex={s.id === pane.activeSurfaceId ? 0 : -1}
-              title={`Terminal ${surfaceNumbers.get(s.id) ?? '?'}`}
+              title={`Terminal ${surfaceNumbers.get(s.id) ?? '?'}${canCloseSurface ? ' (Delete to close)' : ''}`}
               onMouseDown={stop}
               onClick={() => onSelect(s.id)}
-              onKeyDown={(event) => navigateTabs(event, s.id)}
+              onKeyDown={(event) => handleTabKeyDown(event, s.id)}
             >
               <span className="tab-title">Terminal {surfaceNumbers.get(s.id) ?? '?'}</span>
             </button>
@@ -82,6 +89,7 @@ export default function TabBar(props: Props): React.JSX.Element {
                   : 'The last terminal cannot be closed'
               }
               aria-label={`Close Terminal ${surfaceNumbers.get(s.id) ?? '?'}`}
+              tabIndex={-1}
               disabled={!canCloseSurface}
               onMouseDown={stop}
               onClick={() => onCloseSurface(s.id)}

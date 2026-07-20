@@ -57,6 +57,11 @@ reaching the next control. The standard tabs pattern uses a roving tab stop:
 After state changes, focus moves to the selected tab. This creates one Tab stop
 for the whole set while keeping every tab programmatically focusable.
 
+An adjacent pointer close button should use `tabIndex=-1`; otherwise every tab
+quietly adds another stop and defeats the roving model. The focused tab handles
+Delete and advertises it through `aria-keyshortcuts`, preserving keyboard access
+without making users traverse every repeated close control.
+
 A pure navigation function should operate on ordered ids, not DOM nodes. That
 makes wrap behavior testable and leaves React responsible only for dispatch and
 focus timing.
