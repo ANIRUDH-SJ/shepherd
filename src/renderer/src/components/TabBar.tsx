@@ -71,7 +71,7 @@ export default function TabBar(props: Props): React.JSX.Element {
               role="tab"
               aria-selected={s.id === pane.activeSurfaceId}
               aria-controls={terminalPanelId(s.id)}
-              aria-keyshortcuts="Delete"
+              aria-keyshortcuts={canCloseSurface ? 'Delete' : undefined}
               tabIndex={s.id === pane.activeSurfaceId ? 0 : -1}
               title={`Terminal ${surfaceNumbers.get(s.id) ?? '?'}${canCloseSurface ? ' (Delete to close)' : ''}`}
               onMouseDown={stop}
