@@ -29,11 +29,11 @@ be reviewed and reverted separately.
 
 ### 3. Terminal tabs and pane focus
 
-- [ ] Clarify active tab and active pane without large color fills
-- [ ] Make pane actions discoverable on hover and keyboard focus
-- [ ] Improve tab semantics, tooltips, and keyboard focus behavior
-- [ ] Add a compact workspace context strip above the terminal area
-- [ ] Cover component behavior and verify split-pane layouts visually
+- [x] Clarify active tab and active pane without large color fills
+- [x] Make pane actions discoverable on hover and keyboard focus
+- [x] Improve tab semantics, tooltips, and keyboard focus behavior
+- [x] Add a compact workspace context strip above the terminal area
+- [x] Cover component behavior and verify split-pane layouts visually
 
 ## Constraints
 

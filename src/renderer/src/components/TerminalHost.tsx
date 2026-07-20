@@ -4,6 +4,7 @@ import { FitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { getFontSize } from '../settings'
+import { terminalPanelId, terminalTabId } from '../terminalChrome'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TerminalHost — ONE live terminal, bound to ONE backend shell by `surfaceId`.
@@ -123,6 +124,13 @@ export default function TerminalHost({
   }, [focused])
 
   return (
-    <div className="terminal" ref={containerRef} style={{ display: active ? 'block' : 'none' }} />
+    <div
+      id={terminalPanelId(surfaceId)}
+      className="terminal"
+      ref={containerRef}
+      role="tabpanel"
+      aria-labelledby={terminalTabId(surfaceId)}
+      hidden={!active}
+    />
   )
 }

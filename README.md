@@ -8,7 +8,7 @@ Vertical named sidebar with live project/branch context and per-agent status,
 notification rings when an agent needs you, split terminal panes, and a socket
 API for automation.
 
-> **Status: early development.** Core runtime milestones **M0–M5** and **M7–M14**
+> **Status: early development.** Core runtime milestones **M0–M5** and **M7–M15**
 > are complete — real shells, split panes, live workspace/Git context, automatic
 > agent discovery, session restore, and the Unix-socket API. **M6** (polish &
 > packaging) is in progress. See
@@ -53,6 +53,9 @@ cmux-linux            # or launch it from your app menu
 | `Ctrl+Shift+B` | toggle sidebar |
 | `Ctrl+Shift+=` / `-` / `0` | zoom terminal in / out / reset |
 | `F2` on a workspace | rename workspace (`Enter` saves, `Escape` cancels) |
+
+When a terminal tab has keyboard focus, Left/Right wraps across tabs, Home/End
+jumps to the first or last tab in that pane, and Delete closes the focused tab.
 
 You can also right-click a workspace and choose **Rename workspace**, double-click
 its name, or use its pencil action. Submitting an empty name returns to the live

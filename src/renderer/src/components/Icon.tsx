@@ -1,6 +1,15 @@
 import type { ReactNode } from 'react'
 
-export type IconName = 'add' | 'collapse' | 'rename' | 'close' | 'branch' | 'agents'
+export type IconName =
+  | 'add'
+  | 'collapse'
+  | 'rename'
+  | 'close'
+  | 'branch'
+  | 'agents'
+  | 'terminal'
+  | 'split-right'
+  | 'split-down'
 
 interface Props {
   name: IconName
@@ -53,6 +62,30 @@ function iconPaths(name: IconName): ReactNode {
           <rect x="4" y="7" width="16" height="12" rx="3" />
           <path d="M9 11h.01M15 11h.01" />
           <path d="M9 15h6M12 7V4M9 4h6" />
+        </>
+      )
+    case 'terminal':
+      return (
+        <>
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="m7 9 3 3-3 3" />
+          <path d="M13 15h4" />
+        </>
+      )
+    case 'split-right':
+      return (
+        <>
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="M12 4v16" />
+          <path d="m15 9 3 3-3 3" />
+        </>
+      )
+    case 'split-down':
+      return (
+        <>
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="M3 12h18" />
+          <path d="m9 15 3 3 3-3" />
         </>
       )
   }
