@@ -43,7 +43,14 @@ const invalid = workspaceReducer(selected, {
   paneId: 'missing-pane',
   surfaceId: 'missing-surface'
 })
-assert(invalid === selected, 'invalid tab selection leaves state unchanged')
+assert(invalid === selected, 'invalid pane selection leaves state unchanged')
+
+const invalidSurface = workspaceReducer(initial, {
+  type: 'setActiveSurface',
+  paneId: right.id,
+  surfaceId: 'missing-surface'
+})
+assert(invalidSurface === initial, 'invalid surface selection leaves state unchanged')
 
 if (failures > 0) throw new Error(`${failures} workspace-reducer test(s) failed`)
 console.log('\n✅ ALL WORKSPACE REDUCER TESTS PASS')

@@ -45,10 +45,11 @@ Mouse events already reached `PaneView`'s capture handler before a tab stopped
 propagation, which made the clicked pane active. Keyboard events have no mouse
 capture path.
 
-The `setActiveSurface` reducer case now validates the pane, updates that pane's
-active surface, and assigns `activePaneId` in one transition. This makes socket,
-keyboard, and pointer selection agree. `workspaceReducer.test.ts` proves both the
-successful transition and the fail-closed invalid-pane case.
+The `setActiveSurface` reducer case now validates the pane-and-surface pair,
+updates that pane's active surface, and assigns `activePaneId` in one transition.
+This makes socket, keyboard, and pointer selection agree.
+`workspaceReducer.test.ts` proves the successful transition and fail-closed
+invalid-pane and invalid-surface cases.
 
 ## 3. Tab panels and xterm
 

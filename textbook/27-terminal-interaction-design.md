@@ -72,7 +72,7 @@ The durable fix belongs in state semantics:
 
 ```text
 select surface(paneId, surfaceId)
-  validate pane
+  validate pane-and-surface pair
   select surface in pane
   set activePaneId = paneId
 ```
@@ -177,9 +177,9 @@ static union. Workspace/path/branch strings are rendered as React text and nativ
 titles, not HTML or CSS.
 
 Navigation helpers return no target for unknown keys or empty lists. Reducer
-selection validates the pane and returns the original state for an invalid id.
-These fail-closed rules avoid moving focus to a nonexistent panel or storing an
-invalid active pane.
+selection validates both ids and returns the original state for an invalid pane
+or surface. These fail-closed rules avoid moving focus to a nonexistent panel or
+storing an invalid active pane.
 
 ## 12. Testing strategy
 

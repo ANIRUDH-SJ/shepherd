@@ -87,13 +87,15 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
       return { ...state, root: closeSurface(state.root, action.paneId, action.surfaceId) }
     }
 
-    case 'setActiveSurface':
-      if (!findPane(state.root, action.paneId)) return state
+    case 'setActiveSurface': {
+      const pane = findPane(state.root, action.paneId)
+      if (!pane?.surfaces.some((surface) => surface.id === action.surfaceId)) return state
       return {
         ...state,
         root: setActiveSurface(state.root, action.paneId, action.surfaceId),
         activePaneId: action.paneId
       }
+    }
 
     case 'setActivePane':
       return state.activePaneId === action.paneId
