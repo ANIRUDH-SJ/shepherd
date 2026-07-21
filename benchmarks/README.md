@@ -60,7 +60,8 @@ stops the run before a terminal is launched.
 
 The JSON retains every warmup, sample, failure, environment record, fixture
 digest, and median/p95/MAD summary. Subject order is deterministically shuffled
-by round.
+by round. Result publication is exclusive: an existing output path is rejected
+and never replaced.
 
 ## Safety and cleanup
 
@@ -70,4 +71,5 @@ terminal server can retain its existing profile and state, so record that as a
 comparison limitation. Measurement can include an allowlisted shared server such
 as `gnome-terminal-server`; cleanup deliberately cannot signal that server. Only
 marker-verified launch trees and workers are terminated. Do not interact with
-the benchmark windows while a run is active.
+the benchmark windows while a run is active. `SIGINT` and `SIGTERM` run the same
+idempotent cleanup before the harness exits.

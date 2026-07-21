@@ -209,7 +209,8 @@ input:
 - minimize inherited environment;
 - write control files with restrictive permissions;
 - restrict outputs to an intentional result root and reject symlink escapes; and
-- write JSON to a new temporary file, then atomically rename it.
+- write JSON to a new temporary file, then publish it with an exclusive hard link
+  so an existing result cannot be replaced.
 
 The benchmark worker should retain only fixture data and its random run id. It
 does not need terminal prompts, user commands, general environment variables, or

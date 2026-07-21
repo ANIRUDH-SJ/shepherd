@@ -105,7 +105,9 @@ Before signaling the worker, cleanup verifies that its current PID still carries
 the same marker. `SIGTERM` gets a grace interval before `SIGKILL`. The regression
 suite includes a marked shared server and proves it remains outside the cleanup
 set. A corrected four-subject live pilot then completed with no failures or
-surviving benchmark processes.
+surviving benchmark processes. The runner also registers `SIGINT` and `SIGTERM`
+handlers around the active sample; both await the same idempotent cleanup promise
+before exiting with the conventional signal status.
 
 ## 6. Pressure gates and result classification
 
@@ -118,8 +120,9 @@ Subject order is deterministically shuffled for each round. Every child receives
 private launch-time XDG directories, a unique socket, bounded readiness/parser
 timeouts, and minimal allowlisted host environment. Failures are retained with
 their round and log path instead of silently reducing the sample count. Output is
-written exclusively under `/tmp` or `benchmarks/results`, through a temporary
-file and atomic rename.
+written exclusively under `/tmp` or `benchmarks/results`. A fully written
+temporary file is published with an exclusive hard link, so a concurrent or
+pre-existing result is never overwritten.
 
 ## Production and live verification
 
@@ -138,6 +141,11 @@ GNOME Terminal 3.52.0. It validated launch, process accounting, the DSR round
 trip, cleanup, and JSON generation. Its 88.5% swap-use baseline makes its timing
 non-publishable; the JSON correctly labels it `pilot`, and no performance ranking
 is drawn from it.
+
+A separate interruption smoke test stopped Kitty during a 60-second settle
+window. The harness returned exit code 130, published no partial result, and left
+no Kitty or worker process. A no-overwrite integration check also rejected an
+existing result path before launching a subject.
 
 ## Checkpoint
 
