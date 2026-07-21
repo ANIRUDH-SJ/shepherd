@@ -36,6 +36,7 @@ code as we write it.
 | **M13**   | `M13-ui-design-tokens.md` | Semantic palette, typography, geometry, interaction rules, and CSS boundary regression              |
 | **M14**   | `M14-sidebar-information-hierarchy.md` | Project-first workspace identity, agent urgency groups, accessible icons, empty states, and visual proof |
 | **M15**   | `M15-terminal-chrome.md` | ARIA tabs, roving focus, pane activation, context strip, SVG actions, capability states, and split proof |
+| **M16**   | `M16-terminal-benchmark-harness.md` | Production artifact proof, deterministic fixtures, process accounting, pressure gates, safe cleanup, and pilot validation |
 
 ## How to read a milestone file
 

@@ -103,6 +103,9 @@ Think of the book in five "acts":
   grouping, progressive disclosure, accessible icons, and dense layout tradeoffs.
 - `27-terminal-interaction-design.md` — ARIA tabs, roving focus, pane/tab state,
   xterm lifetime, context strips, capability controls, and interaction tradeoffs.
+- `28-terminal-performance-measurement.md` — honest benchmark boundaries,
+  deterministic workloads, PSS/CPU accounting, statistics, process safety, and
+  extension into rendered and interaction suites.
 
 **Reference**
 
@@ -145,6 +148,7 @@ Think of the book in five "acts":
 | `25-semantic-ui-tokens.md`              | Semantic CSS tokens, cascade architecture, visual hierarchy, accessibility, validation, and theming      | 08, 14      |
 | `26-sidebar-information-architecture.md` | Workspace identity, agent urgency projections, empty states, SVG boundaries, accessibility, and layout   | 08, 19, 25  |
 | `27-terminal-interaction-design.md`       | Semantic tabs, roving focus, pane activation, xterm visibility, context strips, and capability controls   | 07, 08, 10, 25 |
+| `28-terminal-performance-measurement.md`  | Production benchmarks, workload/end-point design, PSS/CPU, robust statistics, process ownership, and safety | 02, 06, 07, 15 |
 
 ---
 
@@ -216,3 +220,4 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `25-semantic-ui-tokens.md` — semantic CSS contract and visual-system foundation
 - `26-sidebar-information-architecture.md` — project-first identity and explicit agent urgency groups
 - `27-terminal-interaction-design.md` — accessible nested pane/tab focus and terminal chrome
+- `28-terminal-performance-measurement.md` — reproducible terminal measurement and safe process accounting

@@ -23,26 +23,26 @@ the comparison set.
 
 ### 1. Production baseline
 
-- [ ] Run tests, lint, typecheck, and production build from synchronized `main`
-- [ ] Produce fresh AppImage and `.deb` artifacts
-- [ ] Smoke-test startup, terminal creation, input, output, and clean shutdown
-- [ ] Verify the packaged CLI and native `node-pty` addon
-- [ ] Record artifact sizes and SHA-256 checksums without committing installers
+- [x] Run tests, lint, typecheck, and production build from synchronized `main`
+- [x] Produce fresh AppImage and `.deb` artifacts
+- [x] Smoke-test startup, terminal creation, input, output, and clean shutdown
+- [x] Verify the packaged CLI and native `node-pty` addon
+- [x] Record artifact sizes and SHA-256 checksums without committing installers
 
 ### 2. Reproducible harness
 
-- [ ] Add deterministic ASCII, Unicode, and ANSI/control-sequence fixtures
-- [ ] Capture environment and terminal versions in machine-readable form
-- [ ] Launch every subject with isolated configuration and state directories
-- [ ] Bound every subprocess with explicit readiness and shutdown timeouts
-- [ ] Measure full process-tree PSS/RSS and sampled idle CPU
-- [ ] Retain individual samples and calculate median, p95, spread, and failures
-- [ ] Test the parsers, statistics, validation, and cleanup behavior
+- [x] Add deterministic ASCII, Unicode, and ANSI/control-sequence fixtures
+- [x] Capture environment and terminal versions in machine-readable form
+- [x] Supply isolated launch state and record shared-server configuration limits
+- [x] Bound every subprocess with explicit readiness and shutdown timeouts
+- [x] Measure full process-tree PSS/RSS and sampled idle CPU
+- [x] Retain individual samples and calculate median, p95, spread, and failures
+- [x] Test the parsers, statistics, validation, and cleanup behavior
 
 ### 3. Measurement suites
 
 - [ ] Measure warm process-to-shell-ready startup separately from AppImage startup
-- [ ] Measure idle memory and CPU after a fixed settling period
+- [x] Measure idle memory and CPU after a fixed settling period
 - [ ] Measure parser-oriented and visibly rendered output workloads separately
 - [ ] Measure automated scroll and resize behavior with frame/CPU observations
 - [ ] Measure 1, 2, 4, and 8 terminal scalability where equivalent layouts exist
@@ -52,21 +52,21 @@ the comparison set.
 
 ### 4. Controlled execution
 
-- [ ] Stop unrelated benchmark subjects without disrupting user terminals
+- [x] Stop benchmark subjects without disrupting shared user terminal servers
 - [ ] Use AC power, a stable CPU policy, fixed display geometry, and matching fonts
-- [ ] Require a low, recorded memory/swap and background-CPU baseline
-- [ ] Randomize subject order and run at least five warmups plus twenty samples
-- [ ] Keep pilot data separate from final raw measurements
-- [ ] Record missing capabilities and incomparable cases rather than estimating
+- [x] Require a low, recorded memory/swap and background-CPU baseline
+- [x] Randomize subject order and require five warmups plus twenty samples
+- [x] Keep pilot data separate from final raw measurements
+- [x] Record missing capabilities and incomparable cases rather than estimating
 
 ### 5. Analysis and delivery
 
 - [ ] Publish raw JSON/CSV, exact commands, validation output, and summarized tables
-- [ ] Explain confidence, confounders, vendor-authored benchmarks, and limitations
-- [ ] Add a code walkthrough to `learning/`
-- [ ] Add architecture, alternatives, security, and tradeoffs to `textbook/`
-- [ ] Update relevant indexes, roadmap entries, and feature documentation
-- [ ] Run the complete repository quality gate and public-content scan
+- [x] Explain confidence, confounders, vendor-authored benchmarks, and limitations
+- [x] Add a code walkthrough to `learning/`
+- [x] Add architecture, alternatives, security, and tradeoffs to `textbook/`
+- [x] Update relevant indexes, roadmap entries, and feature documentation
+- [x] Run the complete repository quality gate and public-content scan
 - [ ] Review, open a dedicated PR, and merge only reproducible work
 
 ## Measurement definitions

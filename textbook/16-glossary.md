@@ -54,6 +54,9 @@
   semantic token describes intent, allowing palettes and density to evolve
   without rewriting component selectors. (see 25-semantic-ui-tokens.md)
 - **discriminated union** — A TypeScript pattern where several object shapes share a common literal "tag" field (e.g. `kind: 'leaf' | 'split'`) so the compiler can narrow to the right shape once you check the tag. Our `PaneNode` layout tree is one. (see 09-typescript-and-the-data-model.md)
+- **DSR (Device Status Report)** — A terminal control query and response. The
+  benchmark appends `ESC[5n`; receiving `ESC[0n` proves the parser reached that
+  query, but not that the final frame was displayed. (see 28-terminal-performance-measurement.md)
 
 ## E
 
@@ -106,6 +109,9 @@
 - **Map (pty registry)** — A JavaScript `Map` we keep in the main process from `ptyId` → the live node-pty process, so incoming IPC (e.g. "write to pane X") can find the right shell. It's just our lookup table of open terminals. (see 06-node-pty.md)
 - **master / slave** — see *primary / subordinate*.
 - **message framing** — The rule for where one message ends and the next begins in a byte stream. Our socket uses newline-delimited JSON: one message per line, so the receiver splits on `\n`. (see 11-the-socket-api.md)
+- **MAD (median absolute deviation)** — A robust spread statistic: take the
+  median distance of samples from their median. It is less dominated by one
+  extreme timing than standard deviation. (see 28-terminal-performance-measurement.md)
 
 ## N
 
@@ -124,6 +130,9 @@
 - **preload script** — A special script Electron runs in the renderer *before* the web page loads, with access to a limited bridge API. It's where we use contextBridge to build `window.api`. (see 05-preload-and-context-isolation.md)
 - **primary / subordinate (master / slave)** — The two ends of a pty pair. The controlling program (our app, via node-pty) holds the *primary* end; the shell runs attached to the *subordinate* end, which looks like a real terminal to it. (Older docs call these master/slave.) (see 02-how-terminals-work.md)
 - **pseudo-terminal (PTY)** — A software emulation of a physical terminal: a kernel-provided pair of endpoints that lets one program feed input to, and read output from, another program (a shell) as if a human were sitting at a terminal. (see 02-how-terminals-work.md; the library that spawns them: 06-node-pty.md)
+- **PSS (proportional set size)** — Resident memory with each shared page divided
+  among the processes mapping it. Summing PSS gives a fairer multi-process total
+  than summing RSS for Electron. (see 28-terminal-performance-measurement.md)
 - **PTY** — see *pseudo-terminal*.
 
 ## R

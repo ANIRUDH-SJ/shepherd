@@ -153,6 +153,7 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | 28 | **iOS companion / realtime sync** | out of scope for a Linux desktop app | ⚪ |
 | 29 | **libghostty rendering** | we use xterm.js instead (see the decisions log) | ⚪ |
 | 30 | **Sparkle auto-update** | use AppImage self-update or GitHub Releases instead | ⚪ |
+| 31 | **Reproducible performance benchmarks** | production-only startup/resource/parser harness with raw samples, host-pressure gates, and safe process accounting; rendered/interaction suites follow | 🟢 foundation · 🟡 expanded suites |
 
 ---
 
