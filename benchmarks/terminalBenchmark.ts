@@ -1,15 +1,18 @@
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import {
+  accessSync,
   closeSync,
+  constants as fsConstants,
   existsSync,
+  linkSync,
   mkdirSync,
   mkdtempSync,
   openSync,
   readFileSync,
   readdirSync,
   realpathSync,
-  renameSync,
   statSync,
+  unlinkSync,
   writeFileSync
 } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -106,6 +109,23 @@ const allowedChildEnvironment = [
   'XDG_RUNTIME_DIR',
   'XDG_SESSION_TYPE'
 ]
+let activeRunCleanup: (() => Promise<void>) | undefined
+let signalCleanupStarted = false
+
+async function exitAfterSignal(signal: 'SIGINT' | 'SIGTERM'): Promise<void> {
+  const exitCode = signal === 'SIGINT' ? 130 : 143
+  if (signalCleanupStarted) process.exit(exitCode)
+  signalCleanupStarted = true
+  try {
+    await activeRunCleanup?.()
+  } catch (error) {
+    console.error(`benchmark: cleanup after ${signal} failed: ${String(error)}`)
+  }
+  process.exit(exitCode)
+}
+
+process.on('SIGINT', () => void exitAfterSignal('SIGINT'))
+process.on('SIGTERM', () => void exitAfterSignal('SIGTERM'))
 
 function usage(): never {
   console.error(`Usage:
@@ -198,6 +218,18 @@ function prepareOutputPath(path: string): void {
   const realParent = realpathSync(dirname(path))
   if (!isInside(realpathSync(outputRoot), realParent))
     throw new Error('output parent escapes its allowed root')
+  if (existsSync(path)) throw new Error(`output already exists: ${path}`)
+}
+
+function validateExecutable(path: string, label: string): void {
+  if (!existsSync(path) || !statSync(path).isFile()) {
+    throw new Error(`${label} does not exist: ${path}`)
+  }
+  try {
+    accessSync(path, fsConstants.X_OK)
+  } catch {
+    throw new Error(`${label} is not executable: ${path}`)
+  }
 }
 
 function loadConfig(path: string): BenchmarkConfig {
@@ -229,10 +261,13 @@ async function waitForRecord(
   errorPath: string,
   runId: string,
   timeoutMs: number,
-  child: ChildProcess
+  child: ChildProcess,
+  launchError: () => Error | undefined
 ): Promise<ControlRecord> {
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
+    const error = launchError()
+    if (error) throw new Error(`could not launch subject: ${error.message}`)
     if (existsSync(errorPath)) {
       const error = readControlRecord(errorPath, runId)
       throw new Error(error.message ?? 'benchmark worker failed')
@@ -490,12 +525,35 @@ async function runSubject(
     env: environment,
     stdio: ['ignore', log, log]
   })
+  let launchError: Error | undefined
+  child.once('error', (error) => {
+    launchError = error
+  })
   closeSync(log)
-  if (!child.pid) throw new Error('benchmark subject did not receive a pid')
   let workerPid: number | undefined
+  let cleanupPromise: Promise<void> | undefined
+  const cleanup = (): Promise<void> => {
+    cleanupPromise ??= (async () => {
+      if (!existsSync(stopFile)) writeFileSync(stopFile, '', { mode: 0o600 })
+      await terminateOwnedProcesses(runId, child, workerPid, subject.relatedCommands)
+    })()
+    return cleanupPromise
+  }
+  activeRunCleanup = cleanup
 
   try {
-    const ready = await waitForRecord(readyFile, errorFile, runId, options.timeoutMs, child)
+    if (!child.pid) {
+      await new Promise<void>((resolveTurn) => setImmediate(resolveTurn))
+      throw launchError ?? new Error('benchmark subject did not receive a pid')
+    }
+    const ready = await waitForRecord(
+      readyFile,
+      errorFile,
+      runId,
+      options.timeoutMs,
+      child,
+      () => launchError
+    )
     workerPid = ready.pid
     const startupMs = Number(BigInt(ready.hrtimeNs) - startNs) / 1_000_000
     if (ready.fixtureBytes !== fixtureBytes)
@@ -517,7 +575,14 @@ async function runSubject(
 
     const parserStartNs = process.hrtime.bigint()
     process.kill(ready.pid, 'SIGUSR1')
-    const done = await waitForRecord(doneFile, errorFile, runId, options.timeoutMs, child)
+    const done = await waitForRecord(
+      doneFile,
+      errorFile,
+      runId,
+      options.timeoutMs,
+      child,
+      () => launchError
+    )
     const parserRoundTripMs = Number(BigInt(done.hrtimeNs) - parserStartNs) / 1_000_000
     const parserMiBPerSecond = fixtureBytes / (1024 * 1024) / (parserRoundTripMs / 1000)
 
@@ -534,8 +599,8 @@ async function runSubject(
       parserMiBPerSecond
     }
   } finally {
-    if (!existsSync(stopFile)) writeFileSync(stopFile, '', { mode: 0o600 })
-    await terminateOwnedProcesses(runId, child, workerPid, subject.relatedCommands)
+    await cleanup()
+    if (activeRunCleanup === cleanup) activeRunCleanup = undefined
   }
 }
 
@@ -558,12 +623,8 @@ async function main(): Promise<void> {
     throw new Error('subject filter contains an unknown id')
   }
   for (const subject of subjects) {
-    if (!existsSync(subject.command) || !statSync(subject.command).isFile()) {
-      throw new Error(`subject executable does not exist: ${subject.command}`)
-    }
-    if (!existsSync(subject.versionCommand) || !statSync(subject.versionCommand).isFile()) {
-      throw new Error(`subject version executable does not exist: ${subject.versionCommand}`)
-    }
+    validateExecutable(subject.command, 'subject executable')
+    validateExecutable(subject.versionCommand, 'subject version executable')
   }
   if (!existsSync(workerPath)) throw new Error('benchmark worker source is missing')
 
@@ -668,7 +729,11 @@ async function main(): Promise<void> {
     mode: 0o600,
     flag: 'wx'
   })
-  renameSync(temporaryOutput, options.outputPath)
+  try {
+    linkSync(temporaryOutput, options.outputPath)
+  } finally {
+    unlinkSync(temporaryOutput)
+  }
   console.log(`wrote ${pilot ? 'pilot' : 'publishable'} results to ${options.outputPath}`)
   if (failures.length > 0 || measured.length !== subjects.length * options.samples)
     process.exitCode = 1
