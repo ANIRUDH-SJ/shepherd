@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "display": ":0",
+  "subjects": [
+    {
+      "id": "cmux-unpacked",
+      "label": "cmux-linux unpacked production build",
+      "mode": "cmux",
+      "command": "/absolute/path/to/cmux-linux/release/linux-unpacked/cmux-linux",
+      "args": [],
+      "versionCommand": "/usr/bin/git",
+      "versionArgs": ["-C", "/absolute/path/to/cmux-linux", "rev-parse", "HEAD"],
+      "source": "local production build; replace with the exact commit"
+    },
+    {
+      "id": "gnome-terminal",
+      "label": "GNOME Terminal",
+      "mode": "terminal",
+      "command": "/usr/bin/gnome-terminal",
+      "args": ["--wait", "--geometry=110x38", "--", "{shell}"],
+      "versionCommand": "/usr/bin/gnome-terminal",
+      "versionArgs": ["--version"],
+      "source": "system package; replace with the exact package version",
+      "relatedCommands": ["gnome-terminal-"]
+    },
+    {
+      "id": "kitty",
+      "label": "Kitty",
+      "mode": "terminal",
+      "command": "/absolute/path/to/kitty",
+      "args": ["--config", "NONE", "--override", "font_family=monospace", "{shell}"],
+      "versionCommand": "/absolute/path/to/kitty",
+      "versionArgs": ["--version"],
+      "source": "official release; replace with the exact version and checksum"
+    }
+  ]
+}

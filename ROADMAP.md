@@ -37,6 +37,8 @@ frontend", IPC = "the API calls between them".
 - [x] **M13** — Semantic UI design-token foundation ✓
 - [x] **M14** — Sidebar workspace and agent information hierarchy ✓
 - [x] **M15** — Accessible terminal tabs, pane focus, and workspace context ✓
+- [x] **M16** — Reproducible terminal benchmark foundation ✓
+- [ ] **M17** — Render, interaction, scalability, and agent-overhead benchmarks
 
 ---
 
@@ -304,6 +306,36 @@ terminal canvas visually dominant.*
 - [x] Cover navigation, DOM ids, context summaries, and reducer state parity
 - [x] Verify single-pane and nested three-pane layouts in live Electron windows
 - [x] Document implementation, architecture, accessibility, security, and tradeoffs
+
+## M16 — Reproducible terminal benchmark foundation
+*Goal: replace terminal-performance impressions with a production-only,
+machine-readable, safe, and repeatable measurement protocol.*
+
+- [x] Build and smoke-test fresh AppImage and Debian production artifacts
+- [x] Run one identical controlling-TTY worker inside every terminal subject
+- [x] Generate deterministic ASCII, Unicode, and ANSI fixtures with digests
+- [x] Measure process-to-worker-ready startup, PSS/RSS, idle CPU, and parser round trip
+- [x] Capture exact versions, sources, commit, hardware, display, GL, and host pressure
+- [x] Retain raw samples/failures and derive median, p95, mean, range, and MAD
+- [x] Randomize subject order and distinguish warmups from measured rounds
+- [x] Reject pressured hosts unless the run is explicitly and permanently a pilot
+- [x] Separate broad measurement ownership from marker-verified cleanup authority
+- [x] Validate cmux-linux, Kitty, Ghostty, and GNOME Terminal in a live pilot
+- [x] Document usage, actual code, architecture, security, alternatives, and tradeoffs
+
+## M17 — Expanded terminal performance suites
+*Goal: measure presentation and interaction behavior that parser throughput
+cannot represent, then scale the same workloads across terminal counts.*
+
+- [ ] Measure AppImage cold/warm launch separately from the unpacked binary
+- [ ] Add a visible sentinel and settled-frame presentation observer
+- [ ] Measure software event-to-present input latency with explicit proxy labeling
+- [ ] Automate matched scrolling and window/pane resizing with frame/CPU observations
+- [ ] Measure equivalent 1, 2, 4, and 8 terminal layouts
+- [ ] Isolate automatic agent-discovery overhead from terminal-count overhead
+- [ ] Run a redirected CPU workload as a terminal-independent control
+- [ ] Compare hardware acceleration, software rendering, and unavailable-GPU fallback
+- [ ] Publish controlled raw JSON/CSV plus analysis only after the pressure gate passes
 
 ---
 
