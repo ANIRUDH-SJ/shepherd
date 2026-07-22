@@ -5,6 +5,12 @@ fixture. It currently measures process-to-worker-ready startup, settled process
 memory, sampled idle CPU, and a parser-confirmed output round trip. It does not
 claim input-to-photon latency or rendered-frame throughput.
 
+## Recorded reports
+
+- [`results/2026-07-21-pilot.md`](./results/2026-07-21-pilot.md) — four-terminal
+  harness-validation pilot; retained for raw observations and limitations, not a
+  publishable ranking.
+
 ## Prerequisites
 
 - Linux with readable `/proc/<pid>/stat`, `/proc/<pid>/environ`, and
