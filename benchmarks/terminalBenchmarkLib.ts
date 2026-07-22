@@ -213,11 +213,16 @@ export function parseSmapsRollup(text: string): MemoryUsage {
     const match = /^(Rss|Pss|Private_Clean|Private_Dirty|SwapPss):\s+(\d+)\s+kB$/.exec(line)
     if (match) values.set(match[1], Number(match[2]))
   }
+  const required = ['Rss', 'Pss', 'Private_Clean', 'Private_Dirty', 'SwapPss']
+  const missing = required.filter((key) => !values.has(key))
+  if (missing.length > 0) {
+    throw new Error(`incomplete smaps_rollup record: missing ${missing.join(', ')}`)
+  }
   return {
-    rssKiB: values.get('Rss') ?? 0,
-    pssKiB: values.get('Pss') ?? 0,
-    privateKiB: (values.get('Private_Clean') ?? 0) + (values.get('Private_Dirty') ?? 0),
-    swapPssKiB: values.get('SwapPss') ?? 0
+    rssKiB: values.get('Rss')!,
+    pssKiB: values.get('Pss')!,
+    privateKiB: values.get('Private_Clean')! + values.get('Private_Dirty')!,
+    swapPssKiB: values.get('SwapPss')!
   }
 }
 

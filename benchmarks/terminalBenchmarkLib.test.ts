@@ -49,6 +49,7 @@ const memory = parseSmapsRollup(
 )
 assert(memory.rssKiB === 120 && memory.pssKiB === 80, 'parses RSS and PSS')
 assert(memory.privateKiB === 40 && memory.swapPssKiB === 4, 'parses private and swap memory')
+rejects(() => parseSmapsRollup('Rss: 120 kB\nPss: 80 kB'), 'rejects incomplete memory data')
 
 const stat = parseProcStat('123 (terminal worker) S 45 1 1 0 0 0 0 0 0 0 20 7 0 0 0')
 assert(stat.command === 'terminal worker', 'parses process names containing spaces')
