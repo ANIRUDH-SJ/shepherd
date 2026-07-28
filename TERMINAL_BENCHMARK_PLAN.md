@@ -7,6 +7,9 @@ startup, latency, throughput, memory, and scalability into one misleading score.
 The benchmark must be reproducible, retain raw samples, and distinguish pilot
 runs from publishable results.
 
+The follow-up optimization program, acceptance gates, and proposed PR sequence
+are documented in `PERFORMANCE_ENHANCEMENT_PLAN.md`.
+
 ## Comparison set
 
 - cmux-linux production AppImage and unpacked production binary
