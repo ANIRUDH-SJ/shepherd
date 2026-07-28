@@ -1,14 +1,23 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { performance } from 'node:perf_hooks'
 import { join } from 'path'
 import { registerPtyIpc, killAllTerminals } from './pty'
 import { startSocketServer, stopSocketServer, updateWorkspaceMirror } from './socket'
 import { startAutomaticAgentDiscovery, type AutomaticAgentDiscoveryRuntime } from './agentDiscovery'
 import { startWorkspaceMetadataDiscovery, type WorkspaceMetadataRuntime } from './workspaceMetadata'
+import { RuntimePerformanceRecorder } from './runtimePerformance'
 import { loadSession, saveSession } from './session'
 import { IPC, type SocketApply, type WorkspacesSync } from '../shared/ipc'
+import { runtimePerformanceDiagnosticsEnabled } from '../shared/runtimePerformance'
 
 let automaticAgentDiscovery: AutomaticAgentDiscoveryRuntime | null = null
 let workspaceMetadataDiscovery: WorkspaceMetadataRuntime | null = null
+const runtimePerformance = new RuntimePerformanceRecorder({
+  enabled: runtimePerformanceDiagnosticsEnabled(process.env),
+  now: () => performance.now()
+})
+runtimePerformance.mark('main-process-start', 0)
+runtimePerformance.mark('main-module-loaded')
 
 function sendSocketCommand(cmd: SocketApply): void {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -40,10 +49,12 @@ function createWindow(): void {
       nodeIntegration: false
     }
   })
+  runtimePerformance.mark('window-created')
 
   // Show only once the page is painted — avoids a white flash on launch.
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+    runtimePerformance.mark('window-visible')
   })
 
   // Open target=_blank / external links in the user's browser, not a new window.
@@ -62,6 +73,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  runtimePerformance.mark('electron-ready')
   registerPtyIpc() // wire up the terminal IPC handlers before any window loads
 
   // Socket server: route incoming commands to the renderer to update app state.
@@ -80,6 +92,7 @@ app.whenReady().then(() => {
     e.returnValue = loadSession()
   })
   ipcMain.on(IPC.SESSION_SAVE, (_e, state) => saveSession(state))
+  runtimePerformance.mark('backend-services-started')
 
   createWindow()
 
@@ -99,6 +112,7 @@ app.on('window-all-closed', () => {
 
 // Extra safety: kill shells + close the socket if the app quits some other way too.
 app.on('before-quit', () => {
+  runtimePerformance.flush()
   automaticAgentDiscovery?.stop()
   automaticAgentDiscovery = null
   workspaceMetadataDiscovery?.stop()
