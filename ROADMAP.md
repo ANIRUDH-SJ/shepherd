@@ -338,6 +338,20 @@ cannot represent, then scale the same workloads across terminal counts.*
 - [ ] Compare hardware acceleration, software rendering, and unavailable-GPU fallback
 - [ ] Publish controlled raw JSON/CSV plus analysis only after the pressure gate passes
 
+## M18 — Readiness-driven background startup
+*Goal: keep terminal construction on the startup critical path while preserving
+eventually consistent agent and workspace observers.*
+
+- [x] Define a payload-free, one-shot first-terminal readiness handshake
+- [x] Keep PTY, session, socket, workspace mirroring, and window setup early
+- [x] Defer agent discovery and workspace metadata to separate later event-loop turns
+- [x] Replay the newest pre-start workspace mirror to each delayed service
+- [x] Cancel pending work and stop live services safely during shutdown
+- [x] Trace terminal readiness separately from background-service activation
+- [x] Cover scheduling, deduplication, replay, failure, and cleanup with tests
+- [x] Verify live metadata refresh plus automatic agent appearance and removal
+- [x] Document implementation, architecture, security, alternatives, and tradeoffs
+
 ---
 
 ## Stretch / later (post-v1)

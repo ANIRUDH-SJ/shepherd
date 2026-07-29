@@ -65,6 +65,10 @@ and every startup phase must have a documented beginning and end.
 
 ### 2. Shorten the startup critical path
 
+Status: implemented. See `learning/M18-deferred-background-startup.md` for the
+code walkthrough and `textbook/30-startup-critical-path-scheduling.md` for the
+architecture and scheduling tradeoffs.
+
 Render the window, create xterm, and spawn the first PTY before starting work that
 does not affect the first prompt. Candidate services to defer include automatic
 agent discovery, Git/workspace metadata probing, session housekeeping, and
@@ -165,7 +169,7 @@ benchmarks show no new dropped or stale frames.
 | Order | Branch                           | Scope                                                    | Status      | Depends on                |
 | ----: | -------------------------------- | -------------------------------------------------------- | ----------- | ------------------------- |
 |     1 | `perf/runtime-instrumentation`   | Startup milestones and opt-in diagnostics                | Implemented | benchmark foundation      |
-|     2 | `perf/defer-background-services` | Move noncritical services after first-terminal readiness | Planned     | PR 1                      |
+|     2 | `perf/defer-background-services` | Move noncritical services after first-terminal readiness | Implemented | PR 1                      |
 |     3 | `perf/terminal-output-batching`  | Bounded batching, flow control, and hot-path tests       | Planned     | PR 1                      |
 |     4 | `perf/adaptive-runtime-polling`  | Activity-aware agent and metadata scheduling             | Planned     | PR 1                      |
 |     5 | `perf/terminal-memory-lifecycle` | Memory accounting, limits, and disposal fixes            | Planned     | expanded scaling suite    |
