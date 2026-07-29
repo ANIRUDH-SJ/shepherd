@@ -39,6 +39,7 @@ code as we write it.
 | **M16**   | `M16-terminal-benchmark-harness.md` | Production artifact proof, deterministic fixtures, process accounting, pressure gates, safe cleanup, and pilot validation |
 | **M17**   | `M17-runtime-performance-instrumentation.md` | Opt-in main/renderer/xterm/PTY startup milestones, bounded summaries, disabled hot paths, and live proof |
 | **M18**   | `M18-deferred-background-startup.md` | First-terminal readiness handshake, delayed discovery services, latest-state replay, cleanup, and live proof |
+| **M19**   | `M19-terminal-output-batching.md` | Bounded PTY batching, xterm acknowledgements, backpressure, lifecycle correctness, and matched benchmark proof |
 
 ## How to read a milestone file
 

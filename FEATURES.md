@@ -154,6 +154,7 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | 29 | **libghostty rendering** | we use xterm.js instead (see the decisions log) | ⚪ |
 | 30 | **Sparkle auto-update** | use AppImage self-update or GitHub Releases instead | ⚪ |
 | 31 | **Reproducible performance diagnostics** | production harness, opt-in lifecycle traces, and readiness-driven deferred discovery; rendered/interaction suites follow | 🟢 foundation · 🟡 expanded suites |
+| 32 | **Bounded terminal output flow** | 32 KiB/4 ms main-process batching, xterm write acknowledgements, interactive bypass, and PTY high/low-water backpressure | 🟢 |
 
 ---
 

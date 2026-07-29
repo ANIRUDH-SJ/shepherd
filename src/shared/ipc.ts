@@ -16,6 +16,7 @@ export const IPC = {
   TERM_INPUT: 'terminal:input',
   TERM_RESIZE: 'terminal:resize',
   TERM_DISPOSE: 'terminal:dispose',
+  TERM_DATA_ACK: 'terminal:data-ack',
   // main → renderer  (push via webContents.send / ipcRenderer.on)
   TERM_DATA: 'terminal:data',
   TERM_EXIT: 'terminal:exit',
@@ -60,6 +61,26 @@ export interface TermResize {
 export interface TermData {
   id: string
   data: string
+  sequence?: number
+}
+
+/** Renderer confirmation that xterm consumed one output batch. */
+export interface TermDataAck {
+  id: string
+  sequence: number
+}
+
+export function isTermDataAck(value: unknown): value is TermDataAck {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<TermDataAck>
+  return (
+    typeof candidate.id === 'string' &&
+    candidate.id.length > 0 &&
+    candidate.id.length <= 256 &&
+    typeof candidate.sequence === 'number' &&
+    Number.isSafeInteger(candidate.sequence) &&
+    candidate.sequence > 0
+  )
 }
 
 /** A shell exited. */
@@ -95,7 +116,7 @@ export interface CmuxApi {
     /** Kill a shell and forget it. */
     dispose(id: string): void
     /** Subscribe to a shell's output. Returns an unsubscribe function. */
-    onData(id: string, cb: (data: string) => void): () => void
+    onData(id: string, cb: (data: string, acknowledge: () => void) => void): () => void
     /** Subscribe to a shell's exit. Returns an unsubscribe function. */
     onExit(id: string, cb: (exitCode: number) => void): () => void
   }

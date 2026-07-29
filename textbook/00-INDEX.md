@@ -112,6 +112,9 @@ Think of the book in five "acts":
 - `30-startup-critical-path-scheduling.md` — semantic terminal readiness,
   deferred observer scheduling, latest-state replay, failure isolation, and
   cleanup.
+- `31-bounded-terminal-output-flow.md` — byte/time batching, xterm
+  acknowledgements, high/low-water backpressure, interactive latency, ordering,
+  lifecycle, and measured tradeoffs.
 
 **Reference**
 
@@ -157,6 +160,7 @@ Think of the book in five "acts":
 | `28-terminal-performance-measurement.md`  | Production benchmarks, workload/end-point design, PSS/CPU, robust statistics, process ownership, and safety | 02, 06, 07, 15 |
 | `29-runtime-performance-observability.md` | Cross-process startup traces, semantic boundaries, monotonic clocks, disabled overhead, security, and optimization | 03, 04, 07, 28 |
 | `30-startup-critical-path-scheduling.md` | Critical-path classification, readiness handshakes, late consumers, event-loop turns, and failure handling | 03, 04, 29 |
+| `31-bounded-terminal-output-flow.md` | Producer/consumer batching, acknowledgement windows, PTY backpressure, ordering, lifecycle, security, and measurement | 02, 04, 06, 07, 28 |
 
 ---
 

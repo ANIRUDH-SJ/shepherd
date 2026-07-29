@@ -68,23 +68,24 @@ export default function TerminalHost({
       /* no WebGL — xterm uses its DOM/canvas renderer */
     }
 
-    let writeData: (data: string) => void
+    let writeData: (data: string, acknowledge: () => void) => void
     if (measuresStartup) {
       let waitingForFirstOutput = true
-      writeData = (data) => {
+      writeData = (data, acknowledge) => {
         if (!waitingForFirstOutput) {
-          term.write(data)
+          term.write(data, acknowledge)
           return
         }
         waitingForFirstOutput = false
         term.write(data, () => {
+          acknowledge()
           window.requestAnimationFrame(() => {
             window.api.performance.mark('terminal-first-output-written')
           })
         })
       }
     } else {
-      writeData = (data) => term.write(data)
+      writeData = (data, acknowledge) => term.write(data, acknowledge)
     }
     const offData = window.api.terminal.onData(surfaceId, writeData)
     const offExit = window.api.terminal.onExit(surfaceId, (code) => {

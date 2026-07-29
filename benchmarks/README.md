@@ -7,6 +7,9 @@ claim input-to-photon latency or rendered-frame throughput.
 
 ## Recorded reports
 
+- [`results/2026-07-29-output-batching.md`](./results/2026-07-29-output-batching.md)
+  — matched before/after production comparison for bounded, acknowledged PTY
+  output batching, including counter-metrics and pressure qualifications.
 - [`results/2026-07-21-pilot.md`](./results/2026-07-21-pilot.md) — four-terminal
   harness-validation pilot; retained for raw observations and limitations, not a
   publishable ranking.

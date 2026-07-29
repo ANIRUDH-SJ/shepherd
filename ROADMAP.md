@@ -39,6 +39,8 @@ frontend", IPC = "the API calls between them".
 - [x] **M15** — Accessible terminal tabs, pane focus, and workspace context ✓
 - [x] **M16** — Reproducible terminal benchmark foundation ✓
 - [ ] **M17** — Render, interaction, scalability, and agent-overhead benchmarks
+- [x] **M18** — Readiness-driven background startup ✓
+- [x] **M19** — Bounded, acknowledged terminal output batching ✓
 
 ---
 
@@ -350,6 +352,23 @@ eventually consistent agent and workspace observers.*
 - [x] Trace terminal readiness separately from background-service activation
 - [x] Cover scheduling, deduplication, replay, failure, and cleanup with tests
 - [x] Verify live metadata refresh plus automatic agent appearance and removal
+- [x] Document implementation, architecture, security, alternatives, and tradeoffs
+
+## M19 — Bounded terminal output batching
+*Goal: reduce per-chunk work during sustained PTY output without delaying
+interactive output or allowing an unbounded renderer queue.*
+
+- [x] Coalesce adjacent background output with a 32 KiB target and 4 ms deadline
+- [x] Forward the first PTY output and recent-input output immediately
+- [x] Acknowledge each batch only after xterm consumes its write
+- [x] Limit normal renderer in-flight output to 128 KiB
+- [x] Pause node-pty at 256 KiB and resume it below 64 KiB
+- [x] Preserve terminal ordering, split Unicode, inspection, and OSC parsing
+- [x] Drain pending output before exit and explicit terminal disposal
+- [x] Validate acknowledgements and bind them to the terminal's owning window
+- [x] Cover batching, flow control, failure, and lifecycle boundaries with tests
+- [x] Prove ANSI, Unicode, OSC, input, and exit ordering in live Electron
+- [x] Record a matched 20-sample production comparison and its limitations
 - [x] Document implementation, architecture, security, alternatives, and tradeoffs
 
 ---
