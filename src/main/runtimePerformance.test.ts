@@ -50,16 +50,16 @@ const required: RuntimePerformanceMarkName[] = [
   'pty-spawned',
   'pty-first-output',
   'terminal-first-output-written',
-  'first-terminal-ready',
   'window-visible'
 ]
 for (const name of required) recorder.mark(name)
 
-assert(output.length === 0, 'waits for deferred services after terminal readiness')
+assert(output.length === 0, 'waits for the readiness handshake and deferred services')
 assert(
   recorder.snapshot().events.at(-1)?.name === 'startup-ready',
-  'records terminal readiness before background completion'
+  'records first-output readiness without waiting for the separate handshake'
 )
+recorder.mark('first-terminal-ready')
 recorder.mark('agent-discovery-started')
 recorder.mark('workspace-metadata-started')
 recorder.mark('background-services-started')

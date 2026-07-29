@@ -21,7 +21,6 @@ const STARTUP_READY_REQUIRED_MARKS: ReadonlySet<RuntimePerformanceMarkName> = ne
   'pty-spawned',
   'pty-first-output',
   'terminal-first-output-written',
-  'first-terminal-ready',
   'window-visible'
 ])
 
@@ -69,7 +68,11 @@ export class RuntimePerformanceRecorder {
   }
 
   private isComplete(): boolean {
-    return this.events.has('startup-ready') && this.events.has('background-services-started')
+    return (
+      this.events.has('startup-ready') &&
+      this.events.has('first-terminal-ready') &&
+      this.events.has('background-services-started')
+    )
   }
 
   private isStartupReady(): boolean {
