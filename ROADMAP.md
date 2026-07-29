@@ -39,6 +39,8 @@ frontend", IPC = "the API calls between them".
 - [x] **M15** — Accessible terminal tabs, pane focus, and workspace context ✓
 - [x] **M16** — Reproducible terminal benchmark foundation ✓
 - [ ] **M17** — Render, interaction, scalability, and agent-overhead benchmarks
+- [x] **M18** — Readiness-driven background startup ✓
+- [x] **M19** — Bounded, acknowledged terminal output batching ✓
 
 ---
 
@@ -47,7 +49,8 @@ frontend", IPC = "the API calls between them".
 > API this roadmap now reflects. Read it alongside these milestones.
 
 ## M0 — Project setup & scaffolding
-*Goal: an empty Electron + React + TS window that opens and hot-reloads.*
+
+_Goal: an empty Electron + React + TS window that opens and hot-reloads._
 
 - [ ] Init repo: `git init`, add `.gitignore`, `LICENSE` (MIT), `README.md`
 - [ ] Scaffold with `electron-vite` (Vite + Electron + React + TS template)
@@ -59,9 +62,10 @@ frontend", IPC = "the API calls between them".
 - [ ] Commit the baseline
 
 ## M1 — Window shell: sidebar + one live terminal
-*Goal: a window with a placeholder sidebar on the left and ONE terminal you can
+
+_Goal: a window with a placeholder sidebar on the left and ONE terminal you can
 actually type commands into. This is the make-or-break milestone — it teaches
-the pty-over-IPC loop.*
+the pty-over-IPC loop._
 
 - [ ] Install `xterm`, `@xterm/addon-fit`, `@xterm/addon-webgl`, `node-pty`
 - [ ] Lay out the app shell: fixed-width sidebar + flexible main area (CSS)
@@ -77,8 +81,9 @@ the pty-over-IPC loop.*
 - [ ] Commit
 
 ## M2 — Multiple terminals, tabs & split panes
-*Goal: open several terminals, organized into tabs, with horizontal/vertical
-splits inside a tab — like cmux's panes.*
+
+_Goal: open several terminals, organized into tabs, with horizontal/vertical
+splits inside a tab — like cmux's panes._
 
 - [ ] Refactor: a `Terminal` React component keyed by a unique `paneId`
 - [ ] Main process: manage a **map of ptyId → pty process** (not just one)
@@ -95,8 +100,9 @@ splits inside a tab — like cmux's panes.*
 - [ ] Commit
 
 ## M3 — The cmux sidebar (the signature look)
-*Goal: the left sidebar matches the screenshot — named workspaces, a status
-subtitle per item, active highlight, and notification markers.*
+
+_Goal: the left sidebar matches the screenshot — named workspaces, a status
+subtitle per item, active highlight, and notification markers._
 
 - [ ] Define a "workspace" model (name, cwd, status, unread/attention flag)
 - [ ] Build the sidebar React component to match cmux styling (dark theme)
@@ -116,8 +122,9 @@ subtitle per item, active highlight, and notification markers.*
 - [ ] Commit
 
 ## M4 — Agent integration & session persistence
-*Goal: real AI agents drive the sidebar status, and the workspace survives a
-restart.*
+
+_Goal: real AI agents drive the sidebar status, and the workspace survives a
+restart._
 
 - [ ] Define the status protocol: what an agent signals
       "waiting / running / done / needs attention"
@@ -132,8 +139,9 @@ restart.*
 - [ ] Commit
 
 ## M5 — Full socket control API (real cmux feature)
-*Goal: expand the M3 socket server from status-only to full programmatic control,
-mirroring cmux's method surface. Easier in Node than cmux's Swift version.*
+
+_Goal: expand the M3 socket server from status-only to full programmatic control,
+mirroring cmux's method surface. Easier in Node than cmux's Swift version._
 
 - [ ] Adopt cmux's wire format: newline-terminated JSON `{id, method, params}` (FEATURES.md Part 2)
 - [ ] `workspace.*` — create / list / select / current / close
@@ -145,7 +153,8 @@ mirroring cmux's method surface. Easier in Node than cmux's Swift version.*
 - [ ] Commit
 
 ## M6 — Polish, theming & packaging/distribution
-*Goal: it looks finished and other people can install it.*
+
+_Goal: it looks finished and other people can install it._
 
 - [ ] Final theme pass to match cmux (colors, fonts, spacing, rings)
 - [x] App icon + window title/branding
@@ -165,8 +174,9 @@ mirroring cmux's method surface. Easier in Node than cmux's Swift version.*
 - [ ] Tag a `v0.1.0` release
 
 ## M7 — Semantic agent runtime
-*Goal: show provider-neutral live agent state, make it actionable, and connect
-documented provider lifecycle events without scraping terminal prose.*
+
+_Goal: show provider-neutral live agent state, make it actionable, and connect
+documented provider lifecycle events without scraping terminal prose._
 
 - [x] Define semantic states (`working`, `blocked`, `done`, `idle`, `unknown`)
       separately from working activity and blocked reason
@@ -196,8 +206,9 @@ documented provider lifecycle events without scraping terminal prose.*
 - [x] Add the implementation walkthrough and full architecture chapter
 
 ## M8 — Git worktree workspaces
-*Goal: create or attach an isolated Git branch directory and open it as a normal
-workspace without shell interpolation or hidden cleanup.*
+
+_Goal: create or attach an isolated Git branch directory and open it as a normal
+workspace without shell interpolation or hidden cleanup._
 
 - [x] Validate absolute repository/target paths and exactly one branch mode
 - [x] Support new branches with optional start point and existing branches
@@ -208,7 +219,8 @@ workspace without shell interpolation or hidden cleanup.*
 - [x] Add implementation learning notes and the architecture textbook chapter
 
 ## M9 — Live agent subscriptions
-*Goal: let automation observe filtered semantic state without polling or scraping.*
+
+_Goal: let automation observe filtered semantic state without polling or scraping._
 
 - [x] Reuse validated agent queries for long-lived subscriptions
 - [x] Start every stream with a versioned sequence-zero snapshot
@@ -220,8 +232,9 @@ workspace without shell interpolation or hidden cleanup.*
 - [x] Add socket, protocol, CLI, learning, and architecture coverage
 
 ## M10 — Automatic terminal-agent discovery
-*Goal: list agents started in cmux-linux terminals without requiring hooks,
-configuration edits, or manual lifecycle reports.*
+
+_Goal: list agents started in cmux-linux terminals without requiring hooks,
+configuration edits, or manual lifecycle reports._
 
 - [x] Anchor discovery to registered PTYs for exact workspace/surface ownership
 - [x] Read bounded Linux foreground-to-shell process ancestry
@@ -236,8 +249,9 @@ configuration edits, or manual lifecycle reports.*
 - [x] Add the implementation walkthrough and architecture textbook chapter
 
 ## M11 — Live workspace project and Git branch
-*Goal: replace the static cwd placeholder with project and branch context that
-tracks the active terminal after `cd`, `git switch`, or `git checkout`.*
+
+_Goal: replace the static cwd placeholder with project and branch context that
+tracks the active terminal after `cd`, `git switch`, or `git checkout`._
 
 - [x] Mirror the active terminal surface for every workspace
 - [x] Read the interactive shell cwd from bounded Linux `/proc` state
@@ -253,8 +267,9 @@ tracks the active terminal after `cd`, `git switch`, or `git checkout`.*
 - [x] Add implementation learning notes and the full architecture chapter
 
 ## M12 — Deterministic single-workspace startup
-*Goal: every launch begins with one workspace while retaining the most relevant
-durable context from the previous session.*
+
+_Goal: every launch begins with one workspace while retaining the most relevant
+durable context from the previous session._
 
 - [x] Confirm fresh construction already creates exactly one workspace
 - [x] Identify multi-workspace session replay as the duplicate-looking startup source
@@ -267,8 +282,9 @@ durable context from the previous session.*
 - [x] Document the implementation, alternatives, security, and tradeoffs
 
 ## M13 — Semantic UI design tokens
-*Goal: give every renderer component one semantic visual vocabulary before
-changing sidebar and terminal information architecture.*
+
+_Goal: give every renderer component one semantic visual vocabulary before
+changing sidebar and terminal information architecture._
 
 - [x] Define surface, content, interaction, and semantic-state color roles
 - [x] Define shared UI/mono fonts, spacing, radii, shadow, and motion values
@@ -279,8 +295,9 @@ changing sidebar and terminal information architecture.*
 - [x] Document the code, CSS architecture, accessibility, security, and tradeoffs
 
 ## M14 — Sidebar information hierarchy
-*Goal: make project identity and actionable agent state readable at a glance
-without changing runtime contracts.*
+
+_Goal: make project identity and actionable agent state readable at a glance
+without changing runtime contracts._
 
 - [x] Promote the live project when a workspace has no custom name
 - [x] Keep workspace position as stable secondary context
@@ -293,8 +310,9 @@ without changing runtime contracts.*
 - [x] Document implementation, architecture, accessibility, security, and tradeoffs
 
 ## M15 — Terminal chrome and context
-*Goal: make nested pane/tab focus clear and keyboard-operable while keeping the
-terminal canvas visually dominant.*
+
+_Goal: make nested pane/tab focus clear and keyboard-operable while keeping the
+terminal canvas visually dominant._
 
 - [x] Implement semantic tablist, tab, and tabpanel relationships
 - [x] Add roving Left/Right/Home/End keyboard navigation with wrap
@@ -308,8 +326,9 @@ terminal canvas visually dominant.*
 - [x] Document implementation, architecture, accessibility, security, and tradeoffs
 
 ## M16 — Reproducible terminal benchmark foundation
-*Goal: replace terminal-performance impressions with a production-only,
-machine-readable, safe, and repeatable measurement protocol.*
+
+_Goal: replace terminal-performance impressions with a production-only,
+machine-readable, safe, and repeatable measurement protocol._
 
 - [x] Build and smoke-test fresh AppImage and Debian production artifacts
 - [x] Run one identical controlling-TTY worker inside every terminal subject
@@ -324,8 +343,9 @@ machine-readable, safe, and repeatable measurement protocol.*
 - [x] Document usage, actual code, architecture, security, alternatives, and tradeoffs
 
 ## M17 — Expanded terminal performance suites
-*Goal: measure presentation and interaction behavior that parser throughput
-cannot represent, then scale the same workloads across terminal counts.*
+
+_Goal: measure presentation and interaction behavior that parser throughput
+cannot represent, then scale the same workloads across terminal counts._
 
 - [x] Add opt-in main/renderer/xterm/PTY startup milestones and bounded JSON summaries
 - [ ] Measure AppImage cold/warm launch separately from the unpacked binary
@@ -339,8 +359,9 @@ cannot represent, then scale the same workloads across terminal counts.*
 - [ ] Publish controlled raw JSON/CSV plus analysis only after the pressure gate passes
 
 ## M18 — Readiness-driven background startup
-*Goal: keep terminal construction on the startup critical path while preserving
-eventually consistent agent and workspace observers.*
+
+_Goal: keep terminal construction on the startup critical path while preserving
+eventually consistent agent and workspace observers._
 
 - [x] Define a payload-free, one-shot first-terminal readiness handshake
 - [x] Keep PTY, session, socket, workspace mirroring, and window setup early
@@ -350,6 +371,24 @@ eventually consistent agent and workspace observers.*
 - [x] Trace terminal readiness separately from background-service activation
 - [x] Cover scheduling, deduplication, replay, failure, and cleanup with tests
 - [x] Verify live metadata refresh plus automatic agent appearance and removal
+- [x] Document implementation, architecture, security, alternatives, and tradeoffs
+
+## M19 — Bounded terminal output batching
+
+_Goal: reduce per-chunk work during sustained PTY output without delaying
+interactive output or allowing an unbounded renderer queue._
+
+- [x] Coalesce adjacent background output with a 32 KiB target and 4 ms deadline
+- [x] Forward the first PTY output and recent-input output immediately
+- [x] Acknowledge each batch only after xterm consumes its write
+- [x] Limit normal renderer in-flight output to 128 KiB
+- [x] Pause node-pty at 256 KiB and resume it below 64 KiB
+- [x] Preserve terminal ordering, split Unicode, inspection, and OSC parsing
+- [x] Drain pending output before exit and explicit terminal disposal
+- [x] Validate acknowledgements and bind them to the terminal's owning window
+- [x] Cover batching, flow control, failure, and lifecycle boundaries with tests
+- [x] Prove ANSI, Unicode, OSC, input, and exit ordering in live Electron
+- [x] Record a matched 20-sample production comparison and its limitations
 - [x] Document implementation, architecture, security, alternatives, and tradeoffs
 
 ---

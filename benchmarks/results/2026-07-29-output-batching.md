@@ -10,10 +10,10 @@ classified the run as `publishable`. Recorded failures: 0.
 
 ## Compared builds
 
-| Subject | Commit | Source |
-| ------- | ------ | ------ |
-| Before batching | `4ab9221fa33dfeef826686641c5dfd09e24a1834` | Detached production build from the merge immediately before this feature |
-| After batching | `cb9dbe5ba1f9a326212929d0b95d692089fc138e` | Clean production build containing the four implementation and test commits |
+| Subject         | Commit                                     | Source                                                                     |
+| --------------- | ------------------------------------------ | -------------------------------------------------------------------------- |
+| Before batching | `4ab9221fa33dfeef826686641c5dfd09e24a1834` | Detached production build from the merge immediately before this feature   |
+| After batching  | `cb9dbe5ba1f9a326212929d0b95d692089fc138e` | Clean production build containing the four implementation and test commits |
 
 Both subjects used unpacked `npm run dist:dir` artifacts built with the same
 dependency installation and native-module ABI.
@@ -23,14 +23,14 @@ dependency installation and native-module ABI.
 Lower is better except for throughput. MAD is the median absolute deviation.
 Each summary contains 20 measured samples after five warm-ups.
 
-| Metric | Before median | Before p95 | Before MAD | After median | After p95 | After MAD | Median change |
-| ------ | ------------: | ---------: | ---------: | -----------: | --------: | --------: | ------------: |
-| Startup (ms) | 559.0 | 582.8 | 10.1 | 560.4 | 591.5 | 11.5 | +0.25% |
-| PSS (MiB) | 140.21 | 155.12 | 1.96 | 140.69 | 155.75 | 3.56 | +0.34% |
-| RSS (MiB) | 663.73 | 667.06 | 1.87 | 663.85 | 665.68 | 1.30 | +0.02% |
-| Idle CPU (%) | 7.00 | 8.00 | 1.00 | 7.00 | 8.00 | 1.00 | 0.00% |
-| Parser round trip (ms) | 390.92 | 462.11 | 15.65 | 321.69 | 343.56 | 12.71 | **-17.71%** |
-| Parser throughput (MiB/s) | 20.47 | 21.98 | 0.81 | 24.87 | 26.07 | 0.98 | **+21.48%** |
+| Metric                    | Before median | Before p95 | Before MAD | After median | After p95 | After MAD | Median change |
+| ------------------------- | ------------: | ---------: | ---------: | -----------: | --------: | --------: | ------------: |
+| Startup (ms)              |         559.0 |      582.8 |       10.1 |        560.4 |     591.5 |      11.5 |        +0.25% |
+| PSS (MiB)                 |        140.21 |     155.12 |       1.96 |       140.69 |    155.75 |      3.56 |        +0.34% |
+| RSS (MiB)                 |        663.73 |     667.06 |       1.87 |       663.85 |    665.68 |      1.30 |        +0.02% |
+| Idle CPU (%)              |          7.00 |       8.00 |       1.00 |         7.00 |      8.00 |      1.00 |         0.00% |
+| Parser round trip (ms)    |        390.92 |     462.11 |      15.65 |       321.69 |    343.56 |     12.71 |   **-17.71%** |
+| Parser throughput (MiB/s) |         20.47 |      21.98 |       0.81 |        24.87 |     26.07 |      0.98 |   **+21.48%** |
 
 The candidate completed faster in every one of the 20 matched measured rounds.
 Its paired parser-time improvement ranged from 8.9% to 35.3%, with a 16.5%

@@ -85,10 +85,14 @@ first-input handling.
 
 ### 3. Batch the PTY output pipeline
 
-The current hot path handles every `node-pty` data event immediately in
-`src/main/pty.ts`, updates inspection state, parses OSC data, sends IPC, and calls
-`term.write` in `TerminalHost.tsx`. Investigate a bounded per-terminal batcher
-that:
+Status: implemented. See `learning/M19-terminal-output-batching.md` for the code
+walkthrough, `textbook/31-bounded-terminal-output-flow.md` for the engineering
+design, and `benchmarks/results/2026-07-29-output-batching.md` for the matched
+production comparison.
+
+Before this feature, the hot path handled every `node-pty` data event immediately
+in `src/main/pty.ts`, updated inspection state, parsed OSC data, sent IPC, and
+called `term.write` in `TerminalHost.tsx`. The delivered per-terminal batcher:
 
 - coalesces adjacent output chunks over a very short interval or byte threshold;
 - preserves byte order and terminal boundaries;
@@ -97,14 +101,15 @@ that:
 - respects xterm write completion and applies bounded backpressure;
 - flushes immediately for small interactive output and on exit/dispose.
 
-Benchmark candidate batch sizes in the 4–32 KiB range rather than selecting a
-constant by intuition. Put a strict time cap on batching so echo and prompts stay
-responsive. Cap queued bytes and define overload behavior so a noisy process
-cannot grow memory without bound.
+The accepted implementation uses a 32 KiB target, a 4 ms time cap, a 128 KiB
+normal in-flight window, and 256/64 KiB PTY pause/resume watermarks. The matched
+comparison validates that configuration against the unbatched baseline. A
+4–32 KiB parameter sweep remains an extension point before any adaptive tuning.
 
-Acceptance gate: parser-oriented throughput and sustained-output CPU improve,
-while input echo, prompt display, OSC handling, exit ordering, Unicode boundaries,
-and bounded-queue tests remain correct.
+Acceptance evidence: median parser-oriented throughput improved 21.48%, with the
+candidate winning all 20 paired rounds. Startup, idle CPU, and memory remained
+effectively unchanged. Tests and live Electron proof cover input echo, prompt
+display, OSC handling, exit ordering, Unicode boundaries, and the bounded queue.
 
 ### 4. Reduce idle polling and duplicate work
 
@@ -170,7 +175,7 @@ benchmarks show no new dropped or stale frames.
 | ----: | -------------------------------- | -------------------------------------------------------- | ----------- | ------------------------- |
 |     1 | `perf/runtime-instrumentation`   | Startup milestones and opt-in diagnostics                | Implemented | benchmark foundation      |
 |     2 | `perf/defer-background-services` | Move noncritical services after first-terminal readiness | Implemented | PR 1                      |
-|     3 | `perf/terminal-output-batching`  | Bounded batching, flow control, and hot-path tests       | Planned     | PR 1                      |
+|     3 | `perf/terminal-output-batching`  | Bounded batching, flow control, and hot-path tests       | Implemented | PR 1                      |
 |     4 | `perf/adaptive-runtime-polling`  | Activity-aware agent and metadata scheduling             | Planned     | PR 1                      |
 |     5 | `perf/terminal-memory-lifecycle` | Memory accounting, limits, and disposal fixes            | Planned     | expanded scaling suite    |
 |     6 | `perf/render-resize-scheduling`  | WebGL visibility and coalesced fit/resize                | Planned     | rendered-output suite     |
