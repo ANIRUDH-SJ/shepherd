@@ -1,17 +1,14 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
-import {
-  IPC,
-  type CmuxApi,
-  type TermData,
-  type TermExit,
-  type SocketApply
-} from '../shared/ipc'
+import { IPC, type CmuxApi, type TermData, type TermExit, type SocketApply } from '../shared/ipc'
+import { runtimePerformanceDiagnosticsEnabled } from '../shared/runtimePerformance'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PRELOAD  (the secure bridge between main and renderer)
 // Wraps ipcRenderer into a tidy, typed `window.api`. The renderer NEVER touches
 // ipcRenderer directly — only this surface. See textbook/05.
 // ─────────────────────────────────────────────────────────────────────────────
+
+const performanceDiagnosticsEnabled = runtimePerformanceDiagnosticsEnabled(process.env)
 
 const api: CmuxApi = {
   version: '0.0.1',
@@ -58,6 +55,13 @@ const api: CmuxApi = {
   session: {
     loadSync: () => ipcRenderer.sendSync(IPC.SESSION_LOAD_SYNC),
     save: (state) => ipcRenderer.send(IPC.SESSION_SAVE, state)
+  },
+
+  performance: {
+    enabled: performanceDiagnosticsEnabled,
+    mark: (name) => {
+      if (performanceDiagnosticsEnabled) ipcRenderer.send(IPC.PERFORMANCE_MARK, name)
+    }
   }
 }
 

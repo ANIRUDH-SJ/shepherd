@@ -13,6 +13,7 @@ import {
   resizeTerminalInspection
 } from './terminalInspection'
 import { IPC, type TermCreateOptions, type TermInput, type TermResize } from '../shared/ipc'
+import type { RuntimePerformanceMarkName } from '../shared/runtimePerformance'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PTY MANAGER  (main process — the "real shell" half of the terminal)
@@ -53,7 +54,11 @@ function currentEnv(): Record<string, string> {
 }
 
 /** Spawn a shell and stream its output to the window that asked for it. */
-function createTerminal(sender: WebContents, opts: TermCreateOptions): void {
+function createTerminal(
+  sender: WebContents,
+  opts: TermCreateOptions,
+  markPerformance?: (name: RuntimePerformanceMarkName) => void
+): void {
   // Defensive: if this id already has a shell, kill the old one first.
   terminals.get(opts.id)?.proc.kill()
   removeTerminalInspection(opts.id)
@@ -82,6 +87,7 @@ function createTerminal(sender: WebContents, opts: TermCreateOptions): void {
     cwd,
     env
   })
+  if (opts.startupPerformanceCandidate) markPerformance?.('pty-spawned')
   terminals.set(opts.id, { proc, workspaceId: opts.workspaceId, oscBuffer: '' })
   registerTerminalInspection({
     surfaceId: opts.id,
@@ -94,7 +100,12 @@ function createTerminal(sender: WebContents, opts: TermCreateOptions): void {
 
   // Shell output → renderer (guard against a closed window), then sniff for OSC
   // notification codes (a copy — the raw data still goes to xterm untouched).
+  let waitingForFirstOutput = Boolean(markPerformance && opts.startupPerformanceCandidate)
   proc.onData((data) => {
+    if (waitingForFirstOutput) {
+      waitingForFirstOutput = false
+      markPerformance?.('pty-first-output')
+    }
     appendTerminalInspectionOutput(opts.id, data)
     if (!sender.isDestroyed()) sender.send(IPC.TERM_DATA, { id: opts.id, data })
     sniffOsc(opts.id, sender, data)
@@ -130,10 +141,11 @@ function sniffOsc(id: string, sender: WebContents, data: string): void {
 }
 
 /** Register every terminal IPC handler. Call once at startup. */
-export function registerPtyIpc(): void {
+export function registerPtyIpc(markPerformance?: (name: RuntimePerformanceMarkName) => void): void {
   // request/response: spawn a shell
   ipcMain.handle(IPC.TERM_CREATE, (event, opts: TermCreateOptions) => {
-    createTerminal(event.sender, opts)
+    if (opts.startupPerformanceCandidate) markPerformance?.('pty-spawn-requested')
+    createTerminal(event.sender, opts, markPerformance)
   })
 
   // fire-and-forget: keystrokes in

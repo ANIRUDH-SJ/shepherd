@@ -8,7 +8,10 @@ import { startWorkspaceMetadataDiscovery, type WorkspaceMetadataRuntime } from '
 import { RuntimePerformanceRecorder } from './runtimePerformance'
 import { loadSession, saveSession } from './session'
 import { IPC, type SocketApply, type WorkspacesSync } from '../shared/ipc'
-import { runtimePerformanceDiagnosticsEnabled } from '../shared/runtimePerformance'
+import {
+  isRuntimePerformanceMarkName,
+  runtimePerformanceDiagnosticsEnabled
+} from '../shared/runtimePerformance'
 
 let automaticAgentDiscovery: AutomaticAgentDiscoveryRuntime | null = null
 let workspaceMetadataDiscovery: WorkspaceMetadataRuntime | null = null
@@ -74,7 +77,11 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   runtimePerformance.mark('electron-ready')
-  registerPtyIpc() // wire up the terminal IPC handlers before any window loads
+  // Wire up the terminal IPC handlers before any window loads.
+  registerPtyIpc(runtimePerformance.enabled ? (name) => runtimePerformance.mark(name) : undefined)
+  ipcMain.on(IPC.PERFORMANCE_MARK, (_event, name: unknown) => {
+    if (isRuntimePerformanceMarkName(name)) runtimePerformance.mark(name)
+  })
 
   // Socket server: route incoming commands to the renderer to update app state.
   startSocketServer(sendSocketCommand)
