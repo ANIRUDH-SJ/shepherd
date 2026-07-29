@@ -1,5 +1,12 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
-import { IPC, type CmuxApi, type TermData, type TermExit, type SocketApply } from '../shared/ipc'
+import {
+  IPC,
+  type CmuxApi,
+  type TermData,
+  type TermDataAck,
+  type TermExit,
+  type SocketApply
+} from '../shared/ipc'
 import { runtimePerformanceDiagnosticsEnabled } from '../shared/runtimePerformance'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,7 +29,14 @@ const api: CmuxApi = {
 
     onData: (id, cb) => {
       const listener = (_e: IpcRendererEvent, msg: TermData): void => {
-        if (msg.id === id) cb(msg.data)
+        if (msg.id !== id) return
+        let acknowledged = false
+        cb(msg.data, () => {
+          if (acknowledged || !Number.isSafeInteger(msg.sequence)) return
+          acknowledged = true
+          const acknowledgement: TermDataAck = { id, sequence: msg.sequence! }
+          ipcRenderer.send(IPC.TERM_DATA_ACK, acknowledgement)
+        })
       }
       ipcRenderer.on(IPC.TERM_DATA, listener)
       return () => {
