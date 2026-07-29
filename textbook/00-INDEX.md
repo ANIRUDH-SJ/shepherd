@@ -106,6 +106,9 @@ Think of the book in five "acts":
 - `28-terminal-performance-measurement.md` — honest benchmark boundaries,
   deterministic workloads, PSS/CPU accounting, statistics, process safety, and
   extension into rendered and interaction suites.
+- `29-runtime-performance-observability.md` — cross-process startup milestones,
+  monotonic timing, opt-in overhead, bounded IPC, readiness semantics, and
+  optimization workflow.
 
 **Reference**
 
@@ -149,6 +152,7 @@ Think of the book in five "acts":
 | `26-sidebar-information-architecture.md` | Workspace identity, agent urgency projections, empty states, SVG boundaries, accessibility, and layout   | 08, 19, 25  |
 | `27-terminal-interaction-design.md`       | Semantic tabs, roving focus, pane activation, xterm visibility, context strips, and capability controls   | 07, 08, 10, 25 |
 | `28-terminal-performance-measurement.md`  | Production benchmarks, workload/end-point design, PSS/CPU, robust statistics, process ownership, and safety | 02, 06, 07, 15 |
+| `29-runtime-performance-observability.md` | Cross-process startup traces, semantic boundaries, monotonic clocks, disabled overhead, security, and optimization | 03, 04, 07, 28 |
 
 ---
 

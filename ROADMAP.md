@@ -327,6 +327,7 @@ machine-readable, safe, and repeatable measurement protocol.*
 *Goal: measure presentation and interaction behavior that parser throughput
 cannot represent, then scale the same workloads across terminal counts.*
 
+- [x] Add opt-in main/renderer/xterm/PTY startup milestones and bounded JSON summaries
 - [ ] Measure AppImage cold/warm launch separately from the unpacked binary
 - [ ] Add a visible sentinel and settled-frame presentation observer
 - [ ] Measure software event-to-present input latency with explicit proxy labeling

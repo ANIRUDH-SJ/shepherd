@@ -43,6 +43,10 @@ Chromium/Electron has a larger fixed runtime.
 
 ### 1. Add runtime performance instrumentation
 
+Status: implemented. See `learning/M17-runtime-performance-instrumentation.md`
+for the code walkthrough and `textbook/29-runtime-performance-observability.md`
+for the architecture and tradeoffs.
+
 Create lightweight monotonic milestones for:
 
 - main-process start and Electron ready;
@@ -158,15 +162,15 @@ benchmarks show no new dropped or stale frames.
 
 ## Proposed PR sequence
 
-| Order | Branch                           | Scope                                                    | Depends on                |
-| ----: | -------------------------------- | -------------------------------------------------------- | ------------------------- |
-|     1 | `perf/runtime-instrumentation`   | Startup milestones and opt-in diagnostics                | benchmark foundation      |
-|     2 | `perf/defer-background-services` | Move noncritical services after first-terminal readiness | PR 1                      |
-|     3 | `perf/terminal-output-batching`  | Bounded batching, flow control, and hot-path tests       | PR 1                      |
-|     4 | `perf/adaptive-runtime-polling`  | Activity-aware agent and metadata scheduling             | PR 1                      |
-|     5 | `perf/terminal-memory-lifecycle` | Memory accounting, limits, and disposal fixes            | expanded scaling suite    |
-|     6 | `perf/render-resize-scheduling`  | WebGL visibility and coalesced fit/resize                | rendered-output suite     |
-|     7 | `benchmarks/performance-rerun`   | Controlled before/after results and analysis             | accepted optimization PRs |
+| Order | Branch                           | Scope                                                    | Status      | Depends on                |
+| ----: | -------------------------------- | -------------------------------------------------------- | ----------- | ------------------------- |
+|     1 | `perf/runtime-instrumentation`   | Startup milestones and opt-in diagnostics                | Implemented | benchmark foundation      |
+|     2 | `perf/defer-background-services` | Move noncritical services after first-terminal readiness | Planned     | PR 1                      |
+|     3 | `perf/terminal-output-batching`  | Bounded batching, flow control, and hot-path tests       | Planned     | PR 1                      |
+|     4 | `perf/adaptive-runtime-polling`  | Activity-aware agent and metadata scheduling             | Planned     | PR 1                      |
+|     5 | `perf/terminal-memory-lifecycle` | Memory accounting, limits, and disposal fixes            | Planned     | expanded scaling suite    |
+|     6 | `perf/render-resize-scheduling`  | WebGL visibility and coalesced fit/resize                | Planned     | rendered-output suite     |
+|     7 | `benchmarks/performance-rerun`   | Controlled before/after results and analysis             | Planned     | accepted optimization PRs |
 
 PRs 2–4 may be developed independently after instrumentation, but each must
 rebase on the latest accepted baseline and report its own effect. Documentation
