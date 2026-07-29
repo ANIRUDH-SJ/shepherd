@@ -84,6 +84,10 @@ export class RuntimePerformanceRecorder {
 
   private emit(complete: boolean): void {
     this.emitted = true
-    this.output(`${RUNTIME_PERFORMANCE_LOG_PREFIX}${JSON.stringify(this.snapshot(complete))}`)
+    try {
+      this.output(`${RUNTIME_PERFORMANCE_LOG_PREFIX}${JSON.stringify(this.snapshot(complete))}`)
+    } catch {
+      // Opt-in diagnostics must never take down the application.
+    }
   }
 }

@@ -85,5 +85,21 @@ assert(
   'omits false readiness'
 )
 
+let survivedOutputFailure = true
+const failingOutput = new RuntimePerformanceRecorder({
+  enabled: true,
+  now: () => 1,
+  output: () => {
+    throw new Error('closed diagnostic stream')
+  }
+})
+failingOutput.mark('main-process-start', 0)
+try {
+  failingOutput.flush()
+} catch {
+  survivedOutputFailure = false
+}
+assert(survivedOutputFailure, 'isolates diagnostic output failures from application startup')
+
 if (failures > 0) throw new Error(`${failures} runtime performance recorder test(s) failed`)
 console.log('\n✅ ALL RUNTIME PERFORMANCE RECORDER TESTS PASS')
