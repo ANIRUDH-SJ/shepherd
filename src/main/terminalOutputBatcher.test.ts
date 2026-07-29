@@ -115,15 +115,18 @@ pressured.push('bbbb')
 assert(pressureSent.length === 1, 'bounds sends while the renderer has an in-flight batch')
 assert(pauses === 1, 'pauses PTY reads at the queue high-water mark')
 pressured.push('cc')
+pressured.acknowledge(999)
+assert(pressureSent.length === 1, 'ignores an unknown acknowledgement sequence')
 pressured.acknowledge(pressureSent[0]!.sequence)
 assert(pressureSent[1]?.data === 'bbbbcc', 'releases queued output after acknowledgement')
 assert(resumes === 0, 'keeps reads paused above the low-water mark')
 pressured.acknowledge(pressureSent[1]!.sequence)
 assert(resumes === 1, 'resumes PTY reads below the low-water mark')
 
-pressured.push('tail')
+pressured.push('ta')
+assert(pressureSent.length === 2, 'holds an undersized tail before exit')
 pressured.drain()
-assert(pressureSent.at(-1)?.data === 'tail', 'drains pending output before process exit')
+assert(pressureSent.at(-1)?.data === 'ta', 'drains pending output before process exit')
 
 const disposeScheduler = manualScheduler()
 let disposedSends = 0
@@ -148,13 +151,22 @@ disposed.push('ignored')
 assert(disposedSends === 1, 'cancels delayed sends and ignores output after disposal')
 assert(balancedResume === 1, 'balances a paused PTY when the batcher is disposed')
 
+const closedScheduler = manualScheduler()
+let closedRendererSends = 0
 const closedRenderer = new TerminalOutputBatcher({
-  send: () => false,
-  schedule: manualScheduler().schedule
+  send: () => {
+    closedRendererSends++
+    return false
+  },
+  schedule: closedScheduler.schedule
 })
 closedRenderer.push('orphaned')
-closedRenderer.markInteractive()
-assert(true, 'releases output immediately when no renderer can acknowledge it')
+closedRenderer.push('still accepted')
+closedScheduler.runNext()
+assert(
+  closedRendererSends === 2,
+  'releases capacity immediately when no renderer can acknowledge it'
+)
 
 if (failures > 0) throw new Error(`${failures} terminal output batcher test(s) failed`)
 console.log('\n✅ ALL TERMINAL OUTPUT BATCHER TESTS PASS')
