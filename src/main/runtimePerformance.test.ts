@@ -50,18 +50,34 @@ const required: RuntimePerformanceMarkName[] = [
   'pty-spawned',
   'pty-first-output',
   'terminal-first-output-written',
+  'first-terminal-ready',
   'window-visible'
 ]
 for (const name of required) recorder.mark(name)
 
-assert(output.length === 1, 'emits once when startup becomes complete')
+assert(output.length === 0, 'waits for deferred services after terminal readiness')
+assert(
+  recorder.snapshot().events.at(-1)?.name === 'startup-ready',
+  'records terminal readiness before background completion'
+)
+recorder.mark('agent-discovery-started')
+recorder.mark('workspace-metadata-started')
+recorder.mark('background-services-started')
+assert(output.length === 1, 'emits once when startup and background services are complete')
 assert(output[0]?.startsWith(RUNTIME_PERFORMANCE_LOG_PREFIX) === true, 'uses a stable log prefix')
 const summary = JSON.parse(output[0]!.slice(RUNTIME_PERFORMANCE_LOG_PREFIX.length)) as {
   complete: boolean
   events: { name: string; elapsedMs: number }[]
 }
 assert(summary.complete === true, 'labels a complete startup summary')
-assert(summary.events.at(-1)?.name === 'startup-ready', 'adds a final readiness milestone')
+assert(
+  summary.events.some((event) => event.name === 'startup-ready'),
+  'retains the terminal readiness milestone in the completed trace'
+)
+assert(
+  summary.events.at(-1)?.name === 'background-services-started',
+  'finishes after deferred services start'
+)
 recorder.flush()
 assert(output.length === 1, 'does not emit the completed summary twice')
 

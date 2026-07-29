@@ -88,9 +88,16 @@ app.whenReady().then(() => {
   deferredBackgroundServices = new DeferredBackgroundServices({
     startAgentDiscovery: () => startAutomaticAgentDiscovery(sendSocketCommand),
     startWorkspaceMetadata: () => startWorkspaceMetadataDiscovery(sendSocketCommand),
+    onServiceStarted: (service) => {
+      runtimePerformance.mark(
+        service === 'agent-discovery' ? 'agent-discovery-started' : 'workspace-metadata-started'
+      )
+    },
+    onReady: () => runtimePerformance.mark('background-services-started'),
     onError: (service, error) => console.error(`[startup] ${service} failed to start:`, error)
   })
   ipcMain.on(IPC.STARTUP_FIRST_TERMINAL_READY, () => {
+    runtimePerformance.mark('first-terminal-ready')
     deferredBackgroundServices?.firstTerminalReady()
   })
   // Renderer mirrors its workspace list here so the socket can resolve ids/names.
