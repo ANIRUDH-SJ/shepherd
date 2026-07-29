@@ -33,11 +33,12 @@ fixed labels such as `electron-ready`, `terminal-renderer-webgl`,
 `pty-first-output`, and `window-visible`. `RuntimePerformanceMarkName` is derived
 from that tuple, so main, preload, and renderer compile against the same contract.
 
-The runtime guard `isRuntimePerformanceMarkName()` matters because TypeScript
-types disappear at IPC. A compromised or buggy renderer can still send arbitrary
-JavaScript values. Main records only a known string and rejects everything else.
-There is no free-form detail field that could accidentally collect a prompt,
-command, terminal chunk, path, argument, or environment value.
+The runtime guard `isRendererRuntimePerformanceMarkName()` matters because
+TypeScript types disappear at IPC. A compromised or buggy renderer can still
+send arbitrary JavaScript values. Main records only a renderer-owned name and
+rejects unknown values plus main-owned names such as `electron-ready`. There is
+no free-form detail field that could accidentally collect a prompt, command,
+terminal chunk, path, argument, or environment value.
 
 `runtimePerformanceDiagnosticsEnabled()` accepts only:
 

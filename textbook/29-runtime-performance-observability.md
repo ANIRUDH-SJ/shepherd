@@ -157,8 +157,10 @@ and console output. The normal application should not.
 ## 7. Bound the protocol at the trust boundary
 
 Compile-time unions help developers but do not validate IPC. The renderer is a
-less-trusted process, so main accepts only a fixed allowlist of milestone names.
-The message carries no detail object and no caller-supplied timestamp.
+less-trusted process, so main accepts only a fixed subset of renderer-owned
+milestone names. It rejects unknown values and main-owned milestones such as
+`electron-ready`. The message carries no detail object and no caller-supplied
+timestamp.
 
 That design prevents accidental collection of:
 

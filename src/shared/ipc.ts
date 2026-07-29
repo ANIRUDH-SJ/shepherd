@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { AgentRecord } from './agent'
-import type { RuntimePerformanceMarkName } from './runtimePerformance'
+import type { RendererRuntimePerformanceMarkName } from './runtimePerformance'
 // SHARED IPC CONTRACT
 // Imported by ALL THREE sides (main, preload, renderer) so they agree on channel
 // names and message shapes. Types here are compile-time only — they vanish at
@@ -113,6 +113,6 @@ export interface CmuxApi {
     /** True only when CMUX_PERF_DIAGNOSTICS=1 was set before launch. */
     enabled: boolean
     /** Report one of the fixed, content-free startup milestones. */
-    mark(name: RuntimePerformanceMarkName): void
+    mark(name: RendererRuntimePerformanceMarkName): void
   }
 }

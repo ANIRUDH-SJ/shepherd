@@ -1,5 +1,6 @@
 import {
   RUNTIME_PERFORMANCE_MARK_NAMES,
+  isRendererRuntimePerformanceMarkName,
   isRuntimePerformanceMarkName,
   runtimePerformanceDiagnosticsEnabled
 } from './runtimePerformance'
@@ -25,6 +26,14 @@ assert(!runtimePerformanceDiagnosticsEnabled({}), 'keeps diagnostics disabled by
 assert(isRuntimePerformanceMarkName('renderer-mounted'), 'accepts a published milestone')
 assert(!isRuntimePerformanceMarkName('renderer:arbitrary'), 'rejects an unknown milestone')
 assert(!isRuntimePerformanceMarkName({ name: 'electron-ready' }), 'rejects non-string payloads')
+assert(
+  isRendererRuntimePerformanceMarkName('terminal-opened'),
+  'accepts a renderer-owned milestone'
+)
+assert(
+  !isRendererRuntimePerformanceMarkName('electron-ready'),
+  'rejects a main-owned milestone from renderer IPC'
+)
 assert(
   new Set(RUNTIME_PERFORMANCE_MARK_NAMES).size === RUNTIME_PERFORMANCE_MARK_NAMES.length,
   'uses unique milestone names'

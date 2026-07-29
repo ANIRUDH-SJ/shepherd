@@ -9,7 +9,7 @@ import { RuntimePerformanceRecorder } from './runtimePerformance'
 import { loadSession, saveSession } from './session'
 import { IPC, type SocketApply, type WorkspacesSync } from '../shared/ipc'
 import {
-  isRuntimePerformanceMarkName,
+  isRendererRuntimePerformanceMarkName,
   runtimePerformanceDiagnosticsEnabled
 } from '../shared/runtimePerformance'
 
@@ -80,7 +80,7 @@ app.whenReady().then(() => {
   // Wire up the terminal IPC handlers before any window loads.
   registerPtyIpc(runtimePerformance.enabled ? (name) => runtimePerformance.mark(name) : undefined)
   ipcMain.on(IPC.PERFORMANCE_MARK, (_event, name: unknown) => {
-    if (isRuntimePerformanceMarkName(name)) runtimePerformance.mark(name)
+    if (isRendererRuntimePerformanceMarkName(name)) runtimePerformance.mark(name)
   })
 
   // Socket server: route incoming commands to the renderer to update app state.
