@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { AgentRecord } from './agent'
+import type { RendererRuntimePerformanceMarkName } from './runtimePerformance'
 // SHARED IPC CONTRACT
 // Imported by ALL THREE sides (main, preload, renderer) so they agree on channel
 // names and message shapes. Types here are compile-time only — they vanish at
@@ -23,7 +24,9 @@ export const IPC = {
   WORKSPACES_SYNC: 'workspaces:sync', // renderer → main
   // session persistence
   SESSION_LOAD_SYNC: 'session:load', // renderer → main (synchronous, once at startup)
-  SESSION_SAVE: 'session:save' // renderer → main (debounced)
+  SESSION_SAVE: 'session:save', // renderer → main (debounced)
+  // opt-in startup diagnostics
+  PERFORMANCE_MARK: 'performance:mark' // renderer → main
 } as const
 
 // ── Message payloads ─────────────────────────────────────────────────────────
@@ -35,6 +38,7 @@ export interface TermCreateOptions {
   cols: number
   rows: number
   cwd?: string
+  startupPerformanceCandidate?: boolean
 }
 
 /** A chunk of keystrokes headed for a shell. */
@@ -104,5 +108,11 @@ export interface CmuxApi {
     loadSync(): unknown
     /** Persist the current app state (called debounced on change). */
     save(state: unknown): void
+  }
+  performance: {
+    /** True only when CMUX_PERF_DIAGNOSTICS=1 was set before launch. */
+    enabled: boolean
+    /** Report one of the fixed, content-free startup milestones. */
+    mark(name: RendererRuntimePerformanceMarkName): void
   }
 }

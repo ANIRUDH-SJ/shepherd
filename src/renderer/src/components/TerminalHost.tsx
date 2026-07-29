@@ -47,7 +47,10 @@ export default function TerminalHost({
     const fit = new FitAddon()
     term.loadAddon(fit)
     term.open(container)
+    const measuresStartup = window.api.performance.enabled && focused
+    if (measuresStartup) window.api.performance.mark('terminal-opened')
     fit.fit()
+    if (measuresStartup) window.api.performance.mark('terminal-fitted')
     refs.current = { term, fit }
 
     // GPU rendering for smooth scrolling; fall back silently if WebGL is unavailable.
@@ -55,11 +58,35 @@ export default function TerminalHost({
       const webgl = new WebglAddon()
       webgl.onContextLoss(() => webgl.dispose())
       term.loadAddon(webgl)
+      if (measuresStartup) {
+        window.api.performance.mark('terminal-renderer-webgl')
+      }
     } catch {
+      if (measuresStartup) {
+        window.api.performance.mark('terminal-renderer-fallback')
+      }
       /* no WebGL — xterm uses its DOM/canvas renderer */
     }
 
-    const offData = window.api.terminal.onData(surfaceId, (data) => term.write(data))
+    let writeData: (data: string) => void
+    if (measuresStartup) {
+      let waitingForFirstOutput = true
+      writeData = (data) => {
+        if (!waitingForFirstOutput) {
+          term.write(data)
+          return
+        }
+        waitingForFirstOutput = false
+        term.write(data, () => {
+          window.requestAnimationFrame(() => {
+            window.api.performance.mark('terminal-first-output-written')
+          })
+        })
+      }
+    } else {
+      writeData = (data) => term.write(data)
+    }
+    const offData = window.api.terminal.onData(surfaceId, writeData)
     const offExit = window.api.terminal.onExit(surfaceId, (code) => {
       term.write(`\r\n\x1b[90m[process exited with code ${code}]\x1b[0m\r\n`)
       window.dispatchEvent(
@@ -71,7 +98,8 @@ export default function TerminalHost({
       workspaceId,
       cwd,
       cols: term.cols,
-      rows: term.rows
+      rows: term.rows,
+      ...(measuresStartup ? { startupPerformanceCandidate: true } : {})
     })
     const onData = term.onData((data) => window.api.terminal.input({ id: surfaceId, data }))
 
