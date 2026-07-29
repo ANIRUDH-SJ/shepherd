@@ -100,16 +100,23 @@ function createTerminal(
 
   // Shell output → renderer (guard against a closed window), then sniff for OSC
   // notification codes (a copy — the raw data still goes to xterm untouched).
-  let waitingForFirstOutput = Boolean(markPerformance && opts.startupPerformanceCandidate)
-  proc.onData((data) => {
-    if (waitingForFirstOutput) {
-      waitingForFirstOutput = false
-      markPerformance?.('pty-first-output')
-    }
+  const forwardData = (data: string): void => {
     appendTerminalInspectionOutput(opts.id, data)
     if (!sender.isDestroyed()) sender.send(IPC.TERM_DATA, { id: opts.id, data })
     sniffOsc(opts.id, sender, data)
-  })
+  }
+  if (markPerformance && opts.startupPerformanceCandidate) {
+    let waitingForFirstOutput = true
+    proc.onData((data) => {
+      if (waitingForFirstOutput) {
+        waitingForFirstOutput = false
+        markPerformance('pty-first-output')
+      }
+      forwardData(data)
+    })
+  } else {
+    proc.onData(forwardData)
+  }
 
   // Shell exited → tell the renderer, then forget it.
   proc.onExit(({ exitCode }) => {

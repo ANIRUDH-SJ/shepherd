@@ -68,19 +68,25 @@ export default function TerminalHost({
       /* no WebGL — xterm uses its DOM/canvas renderer */
     }
 
-    let waitingForFirstOutput = measuresStartup
-    const offData = window.api.terminal.onData(surfaceId, (data) => {
-      if (!waitingForFirstOutput) {
-        term.write(data)
-        return
-      }
-      waitingForFirstOutput = false
-      term.write(data, () => {
-        window.requestAnimationFrame(() => {
-          window.api.performance.mark('terminal-first-output-written')
+    let writeData: (data: string) => void
+    if (measuresStartup) {
+      let waitingForFirstOutput = true
+      writeData = (data) => {
+        if (!waitingForFirstOutput) {
+          term.write(data)
+          return
+        }
+        waitingForFirstOutput = false
+        term.write(data, () => {
+          window.requestAnimationFrame(() => {
+            window.api.performance.mark('terminal-first-output-written')
+          })
         })
-      })
-    })
+      }
+    } else {
+      writeData = (data) => term.write(data)
+    }
+    const offData = window.api.terminal.onData(surfaceId, writeData)
     const offExit = window.api.terminal.onExit(surfaceId, (code) => {
       term.write(`\r\n\x1b[90m[process exited with code ${code}]\x1b[0m\r\n`)
       window.dispatchEvent(
@@ -93,7 +99,7 @@ export default function TerminalHost({
       cwd,
       cols: term.cols,
       rows: term.rows,
-      startupPerformanceCandidate: measuresStartup
+      ...(measuresStartup ? { startupPerformanceCandidate: true } : {})
     })
     const onData = term.onData((data) => window.api.terminal.input({ id: surfaceId, data }))
 
