@@ -2,9 +2,8 @@
 
 Researched from the actual cmux source (cmux.com docs + `manaflow-ai/cmux` on
 GitHub), then mapped feature-by-feature onto **our** Electron + xterm.js + node-pty
-
-- React stack. This is the reference for _what cmux does_ and _how we'll build each
-  piece_. Pairs with `ROADMAP.md` (the build order).
++ React stack. This is the reference for *what cmux does* and *how we'll build each
+piece*. Pairs with `ROADMAP.md` (the build order).
 
 > **The single most important finding:** rich sidebar status is driven by a
 > **socket API**. Agents push status/log/notification data over a Unix socket, and
@@ -32,55 +31,34 @@ Window
 - **Surface** — a tab inside a pane; a pane can hold several surfaces. Env: `CMUX_SURFACE_ID`.
 - **Panel** — what's rendered in a surface: a **Terminal** (Ghostty session) or a **Browser**.
 
-**Mapping to the screenshot you shared:** the left list = _workspaces_; each big
-tiled region = a _pane_; the little tab bars on top of some regions = _surfaces_;
-the terminal content = a _terminal panel_.
+**Mapping to the screenshot you shared:** the left list = *workspaces*; each big
+tiled region = a *pane*; the little tab bars on top of some regions = *surfaces*;
+the terminal content = a *terminal panel*.
 
 ### Our data model (React/TypeScript)
 
 ```ts
-type PanelType = 'terminal' | 'browser'
+type PanelType = 'terminal' | 'browser';
 
-interface Panel {
-  id: string
-  type: PanelType
-  ptyId?: string
-  url?: string
-}
-interface Surface {
-  id: string
-  title: string
-  panel: Panel
-} // a tab
-interface Pane {
-  id: string
-  surfaces: Surface[]
-  activeSurfaceId: string
-}
-type PaneNode =
-  | { kind: 'leaf'; pane: Pane }
-  | { kind: 'split'; dir: 'row' | 'col'; sizes: number[]; children: PaneNode[] }
+interface Panel   { id: string; type: PanelType; ptyId?: string; url?: string; }
+interface Surface { id: string; title: string; panel: Panel; }          // a tab
+interface Pane    { id: string; surfaces: Surface[]; activeSurfaceId: string; }
+type    PaneNode  = { kind: 'leaf'; pane: Pane }
+                  | { kind: 'split'; dir: 'row' | 'col'; sizes: number[]; children: PaneNode[] };
 
 interface Workspace {
-  id: string
-  name: string
-  cwd: string
-  layout: PaneNode // the split tree
+  id: string; name: string; cwd: string;
+  layout: PaneNode;                        // the split tree
   // --- sidebar metadata, all pushed via the socket API (Part 2) ---
-  status: StatusPill[] // set-status
-  progress?: { value: number; label?: string }
-  logs: LogEntry[]
-  notifications: Notif[]
-  unread: boolean
-  attention: boolean // drives the ring/flash
-  git?: { branch?: string; pr?: { number: number; state: string } }
-  ports?: number[]
+  status: StatusPill[];                    // set-status
+  progress?: { value: number; label?: string };
+  logs: LogEntry[];
+  notifications: Notif[];
+  unread: boolean; attention: boolean;     // drives the ring/flash
+  git?: { branch?: string; pr?: { number: number; state: string } };
+  ports?: number[];
 }
-interface Window {
-  id: string
-  workspaces: Workspace[]
-  activeWorkspaceId: string
-}
+interface Window { id: string; workspaces: Workspace[]; activeWorkspaceId: string; }
 ```
 
 > **Scope call for v1:** implement `Panel = 'terminal'` only. Keep the `type`
@@ -94,7 +72,6 @@ cmux exposes a unix-socket JSON API; the `cmux` CLI is just a thin client to it.
 This is how agents drive the sidebar AND how automation works. We mirror it.
 
 **cmux's actual wire format** (we copy this):
-
 - Socket path: `/tmp/cmux.sock` (release) — we'll use `/tmp/cmux-linux.sock`
 - Override via `CMUX_SOCKET_PATH`
 - Messages: **newline-terminated JSON**, `{ id, method, params }` → `{ id, result }` / `{ id, error }`
@@ -102,20 +79,20 @@ This is how agents drive the sidebar AND how automation works. We mirror it.
 
 **cmux's method surface** (what we'll implement, grouped):
 
-| Group              | Methods                                                                                | CLI examples                                              |
-| ------------------ | -------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Workspaces         | `workspace.list` / `.create` / `.select` / `.current` / `.close`                       | `cmux list-workspaces --json`, `cmux new-workspace`       |
-| Panes/Surfaces     | `surface.split` (left/right/up/down), `surface.list`, `pane.surfaces`, `surface.focus` | `cmux new-split right`, `cmux focus-panel --panel <id>`   |
-| Input              | `surface.send_text`, `surface.send_key`                                                | `cmux send "npm test"`, `cmux send-key enter`             |
-| **Sidebar status** | `set-status`, `clear-status`, `list-status`, `set-progress`, `clear-progress`          | `cmux set-status build passing --color green`             |
-| **Logs**           | `log`, `clear-log`, `list-log`                                                         | `cmux log "tests started" --level progress`               |
-| **Notifications**  | `notification.create` / `.list` / `.clear`                                             | `cmux notify --title "Claude" --body "waiting for input"` |
-| Utility            | `ping`, `capabilities`, `identify`                                                     | `cmux identify`                                           |
+| Group | Methods | CLI examples |
+|---|---|---|
+| Workspaces | `workspace.list` / `.create` / `.select` / `.current` / `.close` | `cmux list-workspaces --json`, `cmux new-workspace` |
+| Panes/Surfaces | `surface.split` (left/right/up/down), `surface.list`, `pane.surfaces`, `surface.focus` | `cmux new-split right`, `cmux focus-panel --panel <id>` |
+| Input | `surface.send_text`, `surface.send_key` | `cmux send "npm test"`, `cmux send-key enter` |
+| **Sidebar status** | `set-status`, `clear-status`, `list-status`, `set-progress`, `clear-progress` | `cmux set-status build passing --color green` |
+| **Logs** | `log`, `clear-log`, `list-log` | `cmux log "tests started" --level progress` |
+| **Notifications** | `notification.create` / `.list` / `.clear` | `cmux notify --title "Claude" --body "waiting for input"` |
+| Utility | `ping`, `capabilities`, `identify` | `cmux identify` |
 
 Global flags: `--socket PATH`, `--json`, `--window/--workspace/--surface <id>`,
 `--id-format refs|uuids|both`.
 
-**Why this matters for us:** the sidebar line _"Claude is waiting for your input"_
+**Why this matters for us:** the sidebar line *"Claude is waiting for your input"*
 is literally a `notify` / `set-status` call an agent makes. So our build order is:
 
 ```
@@ -128,14 +105,13 @@ Agent (Claude Code hook)
 ```
 
 ### Our implementation (Node)
-
 - **Main process:** `net.createServer` on `/tmp/cmux-linux.sock`; parse
   newline-delimited JSON; dispatch by `method`; mutate the Window/Workspace store;
   broadcast changes to the renderer via `webContents.send`.
 - **CLI client:** a tiny `cmux` bin (Node script) that connects, writes one JSON
   line, prints the response. This is what agents/scripts call.
 - **Every terminal pane** gets `CMUX_WORKSPACE_ID`, `CMUX_SURFACE_ID`, and
-  `CMUX_SOCKET_PATH` injected into its env (via node-pty) so a command run _inside_
+  `CMUX_SOCKET_PATH` injected into its env (via node-pty) so a command run *inside*
   a pane knows which workspace to update by default.
 
 ---
@@ -145,40 +121,40 @@ Agent (Claude Code hook)
 Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth) ·
 **🔵 Stretch** (later) · **⚪ Skip** (not worth it on Linux).
 
-| #   | cmux feature                                                           | How we build it (Electron stack)                                                                                                                                                     | Tier                                                        |
-| --- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| 1   | **Object model** (Window→Workspace→Pane→Surface→Panel)                 | the TS data model in Part 1; terminal panels only for v1                                                                                                                             | 🟢                                                          |
-| 2   | **Vertical workspace sidebar**                                         | custom-name/project identity, positional context, live branch/usage/status/agent rollup, accessible SVG actions, and restrained active state                                         | 🟢                                                          |
-| 3   | **Notification rings / tab flash / unread badge**                      | React state + CSS animation, toggled by socket notify + OSC parse                                                                                                                    | 🟢                                                          |
-| 4   | **Multiple terminals**                                                 | node-pty per terminal panel, map `ptyId → process` in main                                                                                                                           | 🟢                                                          |
-| 5   | **Split panes** (h/v)                                                  | pure split tree + percentage tiling, live dividers, explicit active-pane chrome, and accessible SVG pane actions                                                                     | 🟢                                                          |
-| 6   | **Surfaces** (tabs within a pane)                                      | mounted xterm panel per surface, semantic tablist/tabpanel links, roving keyboard navigation, and capability-aware close controls                                                    | 🟢                                                          |
-| 7   | **Socket API + `cmux` CLI**                                            | `net` server in main + tiny Node CLI client (Part 2)                                                                                                                                 | 🟢                                                          |
-| 8   | **Sidebar status API** (`set-status`, `set-progress`, `log`)           | socket methods → workspace metadata → React status pills / progress bar                                                                                                              | 🟢 (status/notify) · 🟡 (pills+progress polish)             |
-| 9   | **OSC 9/99/777 detection** (auto notifications from terminal output)   | scan pty output stream in main for these escape codes → fire notification                                                                                                            | 🟢                                                          |
-| 10  | **Automatic + semantic agent runtime**                                 | zero-setup PTY process discovery, enriched lifecycle reports, urgency-grouped sidebar with persistent empty state, bounded queries/inspection, focus/wait controls, and integrations | 🟢                                                          |
-| 11  | **Single-workspace session restoration**                               | serialize the active workspace layout/cwd; relaunch with exactly that workspace and re-spawn its shells                                                                              | 🟢 (active layout+cwd) · 🟡 (scrollback/resume-all setting) |
-| 12  | **Live project + Git branch in sidebar**                               | active shell cwd comes from `/proc`; main resolves/caches the worktree root and reads Git `HEAD`, then React renders separate project/branch rows                                    | 🟢                                                          |
-| 13  | **Keyboard shortcuts** (new/close/split/focus/nav)                     | React keymap plus Left/Right/Home/End tab navigation; Linux Ctrl/Super equivalents                                                                                                   | 🟢                                                          |
-| 14  | **Semantic dark theme**                                                | shared CSS tokens for surfaces, content, focus, state, spacing, and motion across sidebar and terminal chrome; optionally map validated Ghostty colors (#20)                         | 🟢                                                          |
-| 15  | **PR status/number in sidebar**                                        | `gh pr view --json` (or GitHub API) per workspace branch                                                                                                                             | 🟡                                                          |
-| 16  | **Listening ports in sidebar**                                         | main scans `/proc/net` or `ss -tlnp` for the pane's process tree                                                                                                                     | 🟡                                                          |
-| 17  | **Status pills w/ icon/color/priority + progress bars**                | extend the sidebar renderer; the socket already carries these params                                                                                                                 | 🟡                                                          |
-| 18  | **Notification panel + jump-to-unread**                                | a React panel listing notifications; keybind to focus latest unread workspace                                                                                                        | 🟡                                                          |
-| 19  | **Command palette + project `cmux.json` actions**                      | a React command palette; read a repo-local `cmux.json` for custom launch actions                                                                                                     | 🟡                                                          |
-| 20  | **Read Ghostty config** for theme/font/colors                          | parse `~/.config/ghostty/config` → apply to xterm theme (compat nicety)                                                                                                              | 🟡                                                          |
-| 21  | **Settings UI** (font, theme, shell, keybinds)                         | a React settings pane persisting to `~/.config/cmux-linux/config.json`                                                                                                               | 🟡                                                          |
-| 22  | **In-app browser panels** + browser automation API                     | `Panel='browser'` via a `<webview>`/`BrowserView`; automation over the socket                                                                                                        | 🔵                                                          |
-| 23  | **Remote SSH workspaces** (`cmux ssh`, remote tmux, localhost routing) | spawn `ssh`/attach `tmux` in a pane; network routing is hard — defer                                                                                                                 | 🔵                                                          |
-| 24  | **Claude Code Teams mode** (`claude-teams` → teammates as splits)      | orchestrate multiple agent panes via the socket API                                                                                                                                  | 🔵                                                          |
-| 25  | **Skills system** (reusable agent workflows)                           | ship prompt/workflow snippets invokable from the palette                                                                                                                             | 🔵                                                          |
-| 26  | **Git worktree-per-workspace**                                         | validated `new-worktree` socket/CLI flow creates or attaches a branch, then opens the canonical path as workspace cwd                                                                | 🟢                                                          |
-| 27  | **GPU rendering**                                                      | xterm.js **WebGL addon** (our closest equivalent to libghostty)                                                                                                                      | 🟢-ish                                                      |
-| 28  | **iOS companion / realtime sync**                                      | out of scope for a Linux desktop app                                                                                                                                                 | ⚪                                                          |
-| 29  | **libghostty rendering**                                               | we use xterm.js instead (see the decisions log)                                                                                                                                      | ⚪                                                          |
-| 30  | **Sparkle auto-update**                                                | use AppImage self-update or GitHub Releases instead                                                                                                                                  | ⚪                                                          |
-| 31  | **Reproducible performance diagnostics**                               | production harness, opt-in lifecycle traces, and readiness-driven deferred discovery; rendered/interaction suites follow                                                             | 🟢 foundation · 🟡 expanded suites                          |
-| 32  | **Bounded terminal output flow**                                       | 32 KiB/4 ms main-process batching, xterm write acknowledgements, interactive bypass, and PTY high/low-water backpressure                                                             | 🟢                                                          |
+| # | cmux feature | How we build it (Electron stack) | Tier |
+|---|---|---|---|
+| 1 | **Object model** (Window→Workspace→Pane→Surface→Panel) | the TS data model in Part 1; terminal panels only for v1 | 🟢 |
+| 2 | **Vertical workspace sidebar** | custom-name/project identity, positional context, live branch/usage/status/agent rollup, accessible SVG actions, and restrained active state | 🟢 |
+| 3 | **Notification rings / tab flash / unread badge** | React state + CSS animation, toggled by socket notify + OSC parse | 🟢 |
+| 4 | **Multiple terminals** | node-pty per terminal panel, map `ptyId → process` in main | 🟢 |
+| 5 | **Split panes** (h/v) | pure split tree + percentage tiling, live dividers, explicit active-pane chrome, and accessible SVG pane actions | 🟢 |
+| 6 | **Surfaces** (tabs within a pane) | mounted xterm panel per surface, semantic tablist/tabpanel links, roving keyboard navigation, and capability-aware close controls | 🟢 |
+| 7 | **Socket API + `cmux` CLI** | `net` server in main + tiny Node CLI client (Part 2) | 🟢 |
+| 8 | **Sidebar status API** (`set-status`, `set-progress`, `log`) | socket methods → workspace metadata → React status pills / progress bar | 🟢 (status/notify) · 🟡 (pills+progress polish) |
+| 9 | **OSC 9/99/777 detection** (auto notifications from terminal output) | scan pty output stream in main for these escape codes → fire notification | 🟢 |
+| 10 | **Automatic + semantic agent runtime** | zero-setup PTY process discovery, enriched lifecycle reports, urgency-grouped sidebar with persistent empty state, bounded queries/inspection, focus/wait controls, and integrations | 🟢 |
+| 11 | **Single-workspace session restoration** | serialize the active workspace layout/cwd; relaunch with exactly that workspace and re-spawn its shells | 🟢 (active layout+cwd) · 🟡 (scrollback/resume-all setting) |
+| 12 | **Live project + Git branch in sidebar** | active shell cwd comes from `/proc`; main resolves/caches the worktree root and reads Git `HEAD`, then React renders separate project/branch rows | 🟢 |
+| 13 | **Keyboard shortcuts** (new/close/split/focus/nav) | React keymap plus Left/Right/Home/End tab navigation; Linux Ctrl/Super equivalents | 🟢 |
+| 14 | **Semantic dark theme** | shared CSS tokens for surfaces, content, focus, state, spacing, and motion across sidebar and terminal chrome; optionally map validated Ghostty colors (#20) | 🟢 |
+| 15 | **PR status/number in sidebar** | `gh pr view --json` (or GitHub API) per workspace branch | 🟡 |
+| 16 | **Listening ports in sidebar** | main scans `/proc/net` or `ss -tlnp` for the pane's process tree | 🟡 |
+| 17 | **Status pills w/ icon/color/priority + progress bars** | extend the sidebar renderer; the socket already carries these params | 🟡 |
+| 18 | **Notification panel + jump-to-unread** | a React panel listing notifications; keybind to focus latest unread workspace | 🟡 |
+| 19 | **Command palette + project `cmux.json` actions** | a React command palette; read a repo-local `cmux.json` for custom launch actions | 🟡 |
+| 20 | **Read Ghostty config** for theme/font/colors | parse `~/.config/ghostty/config` → apply to xterm theme (compat nicety) | 🟡 |
+| 21 | **Settings UI** (font, theme, shell, keybinds) | a React settings pane persisting to `~/.config/cmux-linux/config.json` | 🟡 |
+| 22 | **In-app browser panels** + browser automation API | `Panel='browser'` via a `<webview>`/`BrowserView`; automation over the socket | 🔵 |
+| 23 | **Remote SSH workspaces** (`cmux ssh`, remote tmux, localhost routing) | spawn `ssh`/attach `tmux` in a pane; network routing is hard — defer | 🔵 |
+| 24 | **Claude Code Teams mode** (`claude-teams` → teammates as splits) | orchestrate multiple agent panes via the socket API | 🔵 |
+| 25 | **Skills system** (reusable agent workflows) | ship prompt/workflow snippets invokable from the palette | 🔵 |
+| 26 | **Git worktree-per-workspace** | validated `new-worktree` socket/CLI flow creates or attaches a branch, then opens the canonical path as workspace cwd | 🟢 |
+| 27 | **GPU rendering** | xterm.js **WebGL addon** (our closest equivalent to libghostty) | 🟢-ish |
+| 28 | **iOS companion / realtime sync** | out of scope for a Linux desktop app | ⚪ |
+| 29 | **libghostty rendering** | we use xterm.js instead (see the decisions log) | ⚪ |
+| 30 | **Sparkle auto-update** | use AppImage self-update or GitHub Releases instead | ⚪ |
+| 31 | **Reproducible performance diagnostics** | production harness, opt-in lifecycle traces, and readiness-driven deferred discovery; rendered/interaction suites follow | 🟢 foundation · 🟡 expanded suites |
+| 32 | **Bounded terminal output flow** | 32 KiB/4 ms main-process batching, xterm write acknowledgements, interactive bypass, and PTY high/low-water backpressure | 🟢 |
 
 ---
 
@@ -200,7 +176,6 @@ channels** that converge on visible workspace and agent state:
    agents. A structured lifecycle source replaces that baseline when available.
 
 **Visual result (what we replicate):**
-
 - The pane gets a **ring**; the workspace row in the sidebar **lights up / flashes**;
   an **unread badge** appears.
 - A **notification panel** lists pending items; a shortcut **jumps to the latest unread**.
@@ -209,7 +184,6 @@ channels** that converge on visible workspace and agent state:
   and ship those as the default convention.
 
 **Our pipeline (single source of truth):**
-
 ```
 [OSC parser on pty stream]  ─┐
                              ├─► main: markWorkspaceAttention(wsId, payload)
@@ -260,7 +234,7 @@ cmux watch-agents + query filters
   fancy routing is Stretch.
 - **iOS companion (#28)** — irrelevant to a Linux desktop target.
 - **libghostty (#29)** — the authentic renderer, but unstable C API + Zig; xterm.js
-  - WebGL is the pragmatic call (see `ROADMAP.md` decisions log).
+  + WebGL is the pragmatic call (see `ROADMAP.md` decisions log).
 
 Cutting these keeps v1 focused on the **look + multitasking + agent-status** loop,
 which is 90% of why the screenshot looks the way it does.
@@ -297,7 +271,6 @@ which is 90% of why the screenshot looks the way it does.
 ---
 
 ## Sources
-
 - cmux landing — https://cmux.com/
 - cmux docs: API/CLI — https://cmux.com/docs/api · Concepts — https://cmux.com/docs/concepts · Getting Started — https://cmux.com/docs/getting-started
 - GitHub — https://github.com/manaflow-ai/cmux (README, CHANGELOG)
