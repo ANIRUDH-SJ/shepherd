@@ -113,7 +113,11 @@ export class TerminalOutputBatcher {
     this.inFlightBytes = 0
     if (this.paused) {
       this.paused = false
-      this.options.resume?.()
+      try {
+        this.options.resume?.()
+      } catch {
+        // The owner may dispose the batcher after its PTY has already exited.
+      }
     }
   }
 
@@ -165,10 +169,19 @@ export class TerminalOutputBatcher {
     const queuedBytes = this.pendingBytes + this.inFlightBytes
     if (!this.paused && queuedBytes >= this.pauseAtBytes) {
       this.paused = true
-      this.options.pause?.()
+      try {
+        this.options.pause?.()
+      } catch {
+        // A PTY may exit between its last data event and backpressure.
+        this.paused = false
+      }
     } else if (this.paused && queuedBytes <= this.resumeAtBytes) {
       this.paused = false
-      this.options.resume?.()
+      try {
+        this.options.resume?.()
+      } catch {
+        // Resuming an already-exited PTY is harmless to the output lifecycle.
+      }
     }
   }
 

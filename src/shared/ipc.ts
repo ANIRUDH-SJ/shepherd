@@ -70,6 +70,19 @@ export interface TermDataAck {
   sequence: number
 }
 
+export function isTermDataAck(value: unknown): value is TermDataAck {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Partial<TermDataAck>
+  return (
+    typeof candidate.id === 'string' &&
+    candidate.id.length > 0 &&
+    candidate.id.length <= 256 &&
+    typeof candidate.sequence === 'number' &&
+    Number.isSafeInteger(candidate.sequence) &&
+    candidate.sequence > 0
+  )
+}
+
 /** A shell exited. */
 export interface TermExit {
   id: string

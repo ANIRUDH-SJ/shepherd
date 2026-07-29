@@ -12,7 +12,14 @@ import {
   removeTerminalInspection,
   resizeTerminalInspection
 } from './terminalInspection'
-import { IPC, type TermCreateOptions, type TermInput, type TermResize } from '../shared/ipc'
+import { TerminalOutputBatcher } from './terminalOutputBatcher'
+import {
+  IPC,
+  isTermDataAck,
+  type TermCreateOptions,
+  type TermInput,
+  type TermResize
+} from '../shared/ipc'
 import type { RuntimePerformanceMarkName } from '../shared/runtimePerformance'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -26,8 +33,12 @@ import type { RuntimePerformanceMarkName } from '../shared/runtimePerformance'
  *  split across reads. */
 interface TerminalRec {
   proc: pty.IPty
+  sender: WebContents
   workspaceId?: string
   oscBuffer: string
+  output: TerminalOutputBatcher
+  dataSubscription?: pty.IDisposable
+  exitSubscription?: pty.IDisposable
 }
 const terminals = new Map<string, TerminalRec>()
 
@@ -60,8 +71,8 @@ function createTerminal(
   markPerformance?: (name: RuntimePerformanceMarkName) => void
 ): void {
   // Defensive: if this id already has a shell, kill the old one first.
-  terminals.get(opts.id)?.proc.kill()
-  removeTerminalInspection(opts.id)
+  const previous = terminals.get(opts.id)
+  if (previous) disposeTerminal(opts.id, previous, true)
 
   // Inject cmux env so a `cmux …` command run INSIDE this pane targets the right
   // workspace by default and can reach the socket. (textbook/11 §env injection)
@@ -88,7 +99,32 @@ function createTerminal(
     env
   })
   if (opts.startupPerformanceCandidate) markPerformance?.('pty-spawned')
-  terminals.set(opts.id, { proc, workspaceId: opts.workspaceId, oscBuffer: '' })
+  const output = new TerminalOutputBatcher({
+    send: (data, sequence) => {
+      appendTerminalInspectionOutput(opts.id, data)
+      let expectsAcknowledgement = false
+      if (!sender.isDestroyed()) {
+        try {
+          sender.send(IPC.TERM_DATA, { id: opts.id, data, sequence })
+          expectsAcknowledgement = true
+        } catch {
+          // The window can close between isDestroyed() and send().
+        }
+      }
+      sniffOsc(opts.id, sender, data)
+      return expectsAcknowledgement
+    },
+    pause: () => proc.pause(),
+    resume: () => proc.resume()
+  })
+  const terminal: TerminalRec = {
+    proc,
+    sender,
+    workspaceId: opts.workspaceId,
+    oscBuffer: '',
+    output
+  }
+  terminals.set(opts.id, terminal)
   registerTerminalInspection({
     surfaceId: opts.id,
     ...(opts.workspaceId ? { workspaceId: opts.workspaceId } : {}),
@@ -98,34 +134,52 @@ function createTerminal(
     cwd
   })
 
-  // Shell output → renderer (guard against a closed window), then sniff for OSC
-  // notification codes (a copy — the raw data still goes to xterm untouched).
-  const forwardData = (data: string): void => {
-    appendTerminalInspectionOutput(opts.id, data)
-    if (!sender.isDestroyed()) sender.send(IPC.TERM_DATA, { id: opts.id, data })
-    sniffOsc(opts.id, sender, data)
-  }
+  // Shell output is coalesced into bounded, acknowledged renderer batches. The
+  // first chunk bypasses the timer so startup and prompt latency stay direct.
   if (markPerformance && opts.startupPerformanceCandidate) {
     let waitingForFirstOutput = true
-    proc.onData((data) => {
+    terminal.dataSubscription = proc.onData((data) => {
       if (waitingForFirstOutput) {
         waitingForFirstOutput = false
         markPerformance('pty-first-output')
       }
-      forwardData(data)
+      output.push(data)
     })
   } else {
-    proc.onData(forwardData)
+    terminal.dataSubscription = proc.onData((data) => output.push(data))
   }
 
   // Shell exited → tell the renderer, then forget it.
-  proc.onExit(({ exitCode }) => {
-    if (!sender.isDestroyed()) sender.send(IPC.TERM_EXIT, { id: opts.id, exitCode })
-    if (terminals.get(opts.id)?.proc === proc) {
-      terminals.delete(opts.id)
-      removeTerminalInspection(opts.id)
+  terminal.exitSubscription = proc.onExit(({ exitCode }) => {
+    if (terminals.get(opts.id) !== terminal) return
+    terminal.dataSubscription?.dispose()
+    terminal.exitSubscription?.dispose()
+    output.drain()
+    if (!sender.isDestroyed()) {
+      try {
+        sender.send(IPC.TERM_EXIT, { id: opts.id, exitCode })
+      } catch {
+        // Cleanup still has to run if the window closes during process exit.
+      }
     }
+    output.dispose()
+    terminals.delete(opts.id)
+    removeTerminalInspection(opts.id)
   })
+}
+
+function disposeTerminal(id: string, terminal: TerminalRec, flushPendingOutput: boolean): void {
+  terminal.dataSubscription?.dispose()
+  terminal.exitSubscription?.dispose()
+  if (flushPendingOutput) terminal.output.drain()
+  terminal.output.dispose()
+  try {
+    terminal.proc.kill()
+  } catch {
+    // The PTY may have exited between lookup and explicit disposal.
+  }
+  if (terminals.get(id) === terminal) terminals.delete(id)
+  removeTerminalInspection(id)
 }
 
 /** Sniff a chunk of output for OSC notifications and route each one to the sidebar
@@ -158,7 +212,17 @@ export function registerPtyIpc(markPerformance?: (name: RuntimePerformanceMarkNa
   // fire-and-forget: keystrokes in
   ipcMain.on(IPC.TERM_INPUT, (_event, msg: TermInput) => {
     recordTerminalInspectionInput(msg.id)
-    terminals.get(msg.id)?.proc.write(msg.data)
+    const terminal = terminals.get(msg.id)
+    terminal?.output.markInteractive()
+    terminal?.proc.write(msg.data)
+  })
+
+  // Renderer confirms xterm consumed a sequenced batch. Unknown, duplicate, or
+  // cross-window acknowledgements cannot release another terminal's queue.
+  ipcMain.on(IPC.TERM_DATA_ACK, (event, msg: unknown) => {
+    if (!isTermDataAck(msg)) return
+    const terminal = terminals.get(msg.id)
+    if (terminal?.sender === event.sender) terminal.output.acknowledge(msg.sequence)
   })
 
   // fire-and-forget: resize
@@ -171,15 +235,14 @@ export function registerPtyIpc(markPerformance?: (name: RuntimePerformanceMarkNa
 
   // fire-and-forget: kill one shell
   ipcMain.on(IPC.TERM_DISPOSE, (_event, id: string) => {
-    terminals.get(id)?.proc.kill()
-    terminals.delete(id)
-    removeTerminalInspection(id)
+    const terminal = terminals.get(id)
+    if (terminal) disposeTerminal(id, terminal, true)
   })
 }
 
 /** Kill every shell — called on quit so we never leave zombie processes. */
 export function killAllTerminals(): void {
-  for (const rec of terminals.values()) rec.proc.kill()
+  for (const [id, terminal] of terminals) disposeTerminal(id, terminal, false)
   terminals.clear()
   clearTerminalInspections()
 }
