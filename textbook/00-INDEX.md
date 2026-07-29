@@ -109,6 +109,9 @@ Think of the book in five "acts":
 - `29-runtime-performance-observability.md` — cross-process startup milestones,
   monotonic timing, opt-in overhead, bounded IPC, readiness semantics, and
   optimization workflow.
+- `30-startup-critical-path-scheduling.md` — semantic terminal readiness,
+  deferred observer scheduling, latest-state replay, failure isolation, and
+  cleanup.
 
 **Reference**
 
@@ -153,6 +156,7 @@ Think of the book in five "acts":
 | `27-terminal-interaction-design.md`       | Semantic tabs, roving focus, pane activation, xterm visibility, context strips, and capability controls   | 07, 08, 10, 25 |
 | `28-terminal-performance-measurement.md`  | Production benchmarks, workload/end-point design, PSS/CPU, robust statistics, process ownership, and safety | 02, 06, 07, 15 |
 | `29-runtime-performance-observability.md` | Cross-process startup traces, semantic boundaries, monotonic clocks, disabled overhead, security, and optimization | 03, 04, 07, 28 |
+| `30-startup-critical-path-scheduling.md` | Critical-path classification, readiness handshakes, late consumers, event-loop turns, and failure handling | 03, 04, 29 |
 
 ---
 
@@ -225,3 +229,5 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `26-sidebar-information-architecture.md` — project-first identity and explicit agent urgency groups
 - `27-terminal-interaction-design.md` — accessible nested pane/tab focus and terminal chrome
 - `28-terminal-performance-measurement.md` — reproducible terminal measurement and safe process accounting
+- `29-runtime-performance-observability.md` — bounded cross-process startup phase traces
+- `30-startup-critical-path-scheduling.md` — readiness-driven background service activation

@@ -35,6 +35,10 @@ assert(
   'rejects a main-owned milestone from renderer IPC'
 )
 assert(
+  !isRendererRuntimePerformanceMarkName('first-terminal-ready'),
+  'keeps the readiness handshake on its dedicated IPC channel'
+)
+assert(
   new Set(RUNTIME_PERFORMANCE_MARK_NAMES).size === RUNTIME_PERFORMANCE_MARK_NAMES.length,
   'uses unique milestone names'
 )

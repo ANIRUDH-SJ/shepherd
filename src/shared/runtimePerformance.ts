@@ -17,8 +17,12 @@ export const RUNTIME_PERFORMANCE_MARK_NAMES = [
   'pty-spawned',
   'pty-first-output',
   'terminal-first-output-written',
+  'first-terminal-ready',
   'window-visible',
-  'startup-ready'
+  'startup-ready',
+  'agent-discovery-started',
+  'workspace-metadata-started',
+  'background-services-started'
 ] as const
 
 export type RuntimePerformanceMarkName = (typeof RUNTIME_PERFORMANCE_MARK_NAMES)[number]

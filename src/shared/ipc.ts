@@ -25,6 +25,8 @@ export const IPC = {
   // session persistence
   SESSION_LOAD_SYNC: 'session:load', // renderer → main (synchronous, once at startup)
   SESSION_SAVE: 'session:save', // renderer → main (debounced)
+  // one-shot startup lifecycle
+  STARTUP_FIRST_TERMINAL_READY: 'startup:first-terminal-ready', // renderer → main
   // opt-in startup diagnostics
   PERFORMANCE_MARK: 'performance:mark' // renderer → main
 } as const
@@ -108,6 +110,10 @@ export interface CmuxApi {
     loadSync(): unknown
     /** Persist the current app state (called debounced on change). */
     save(state: unknown): void
+  }
+  startup: {
+    /** Report that the first focused xterm and PTY are ready for interaction. */
+    firstTerminalReady(): void
   }
   performance: {
     /** True only when CMUX_PERF_DIAGNOSTICS=1 was set before launch. */

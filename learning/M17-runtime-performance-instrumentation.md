@@ -7,9 +7,9 @@ of time, but it cannot explain where that time went. This first M17 increment
 adds an opt-in startup trace across Electron main, preload, React, xterm.js,
 WebGL fallback, node-pty, and the first terminal frame.
 
-The feature does not optimize startup by itself. It creates the causal evidence
-needed for the next PR, which will move noncritical services out of the
-first-terminal critical path.
+The feature did not optimize startup by itself. It created the causal evidence
+used by M18 to move noncritical services out of the first-terminal critical
+path.
 
 ## What changed
 
@@ -66,10 +66,11 @@ therefore includes Electron/Node initialization and static module evaluation
 before the entry module reaches the recorder.
 
 `snapshot()` sorts events by elapsed time and rounds to microsecond-shaped
-millisecond precision. The recorder declares completion only after it sees the
+millisecond precision. The recorder timestamps `startup-ready` after the
 required main, window, renderer, terminal, PTY, and visible-output stages plus
-either WebGL success or software fallback. It then adds `startup-ready` and emits
-one line:
+either WebGL success or software fallback. After M18 it waits for
+`background-services-started` before emitting, so one record retains both the
+user-facing readiness boundary and the observer lifecycle:
 
 ```text
 [cmux:perf] {"schemaVersion":1,"kind":"startup","complete":true,"events":[...]}
@@ -84,12 +85,12 @@ silently disappearing.
 `src/main/index.ts` creates the recorder once at module evaluation and marks:
 
 - Electron's `whenReady()` resolution;
-- completion of socket, discovery, metadata, PTY, and session handler startup;
+- completion of socket, PTY, session, and workspace-mirror handler startup;
 - `BrowserWindow` construction; and
 - the window becoming visible after `ready-to-show`.
 
-The existing behavior is unchanged. These calls only observe boundaries; they
-do not delay window creation or reorder services.
+M18 later moved discovery and metadata construction behind terminal readiness.
+The early `backend-services-started` mark now describes only critical handlers.
 
 The same file receives `performance:mark` IPC. It validates the unknown payload
 through the shared allowlist before calling the recorder.
@@ -134,6 +135,10 @@ As with PTY output, `TerminalHost` chooses the callback once. Disabled diagnosti
 keep the direct `term.write(data)` path. The per-chunk first-write branch exists
 only during an opted-in startup trace.
 
+M18 adds a separate always-on lifecycle signal after successful PTY creation and
+one animation frame. That signal schedules background observers without adding
+a diagnostic branch to the normal terminal output path.
+
 ## 6. Tests and live proof
 
 The shared contract test proves exact opt-in behavior, unique names, and rejection
@@ -142,15 +147,15 @@ deduplication, deterministic rounding, readiness completion, single emission,
 and partial shutdown output.
 
 An isolated production-preview smoke test used a private socket, private session
-path, and Xvfb display. The app opened one visible window, its socket answered,
-and the trace completed with all expected stages. Xvfb could not provide WebGL,
-so the trace correctly recorded `terminal-renderer-fallback`. The single
-`startup-ready` observation was 1398.773 ms and is smoke evidence only, not a
-performance baseline.
+path, and Xvfb display. The original instrumentation-only run completed through
+software fallback at 1398.773 ms. After M18, another isolated run recorded
+first-terminal readiness at 778.733 ms, both background runtimes active by
+780.791 ms, and first-output `startup-ready` at 1094.692 ms. These are individual
+smoke observations under different conditions, not a before/after baseline.
 
 ## What remains
 
-This instrumentation identifies phase boundaries; it does not yet capture a
-controlled distribution or change startup ordering. Next work should collect a
-valid baseline, then use these events to evaluate deferred background-service
-startup without weakening discovery, metadata freshness, or session restore.
+This instrumentation identifies phase boundaries but does not yet capture a
+controlled distribution. M18 changed startup ordering and verified discovery and
+metadata correctness. Next work should use the same measurement discipline for
+bounded PTY output batching and the expanded render/interaction suites.

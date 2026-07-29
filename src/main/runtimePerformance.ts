@@ -7,7 +7,7 @@ import {
 
 export const RUNTIME_PERFORMANCE_LOG_PREFIX = '[cmux:perf] '
 
-const STARTUP_REQUIRED_MARKS: ReadonlySet<RuntimePerformanceMarkName> = new Set([
+const STARTUP_READY_REQUIRED_MARKS: ReadonlySet<RuntimePerformanceMarkName> = new Set([
   'main-process-start',
   'main-module-loaded',
   'electron-ready',
@@ -50,7 +50,7 @@ export class RuntimePerformanceRecorder {
   mark(name: RuntimePerformanceMarkName, elapsedMs = this.now()): void {
     if (!this.enabled || this.events.has(name) || !Number.isFinite(elapsedMs)) return
     this.events.set(name, { name, elapsedMs: roundedMilliseconds(elapsedMs) })
-    this.completeIfReady()
+    this.advance()
   }
 
   snapshot(complete = this.isComplete()): RuntimePerformanceSummary {
@@ -68,18 +68,27 @@ export class RuntimePerformanceRecorder {
   }
 
   private isComplete(): boolean {
-    const hasRenderer =
-      this.events.has('terminal-renderer-webgl') || this.events.has('terminal-renderer-fallback')
-    return hasRenderer && [...STARTUP_REQUIRED_MARKS].every((name) => this.events.has(name))
+    return (
+      this.events.has('startup-ready') &&
+      this.events.has('first-terminal-ready') &&
+      this.events.has('background-services-started')
+    )
   }
 
-  private completeIfReady(): void {
-    if (this.emitted || !this.isComplete()) return
-    this.events.set('startup-ready', {
-      name: 'startup-ready',
-      elapsedMs: roundedMilliseconds(this.now())
-    })
-    this.emit(true)
+  private isStartupReady(): boolean {
+    const hasRenderer =
+      this.events.has('terminal-renderer-webgl') || this.events.has('terminal-renderer-fallback')
+    return hasRenderer && [...STARTUP_READY_REQUIRED_MARKS].every((name) => this.events.has(name))
+  }
+
+  private advance(): void {
+    if (!this.events.has('startup-ready') && this.isStartupReady()) {
+      this.events.set('startup-ready', {
+        name: 'startup-ready',
+        elapsedMs: roundedMilliseconds(this.now())
+      })
+    }
+    if (!this.emitted && this.isComplete()) this.emit(true)
   }
 
   private emit(complete: boolean): void {

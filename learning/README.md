@@ -38,6 +38,7 @@ code as we write it.
 | **M15**   | `M15-terminal-chrome.md` | ARIA tabs, roving focus, pane activation, context strip, SVG actions, capability states, and split proof |
 | **M16**   | `M16-terminal-benchmark-harness.md` | Production artifact proof, deterministic fixtures, process accounting, pressure gates, safe cleanup, and pilot validation |
 | **M17**   | `M17-runtime-performance-instrumentation.md` | Opt-in main/renderer/xterm/PTY startup milestones, bounded summaries, disabled hot paths, and live proof |
+| **M18**   | `M18-deferred-background-startup.md` | First-terminal readiness handshake, delayed discovery services, latest-state replay, cleanup, and live proof |
 
 ## How to read a milestone file
 

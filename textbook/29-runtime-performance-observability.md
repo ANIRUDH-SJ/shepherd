@@ -282,10 +282,10 @@ that never outputs should leave the trace partial rather than invent readiness.
 Unknown IPC names should disappear at validation. Diagnostic output failure must
 never crash or block the terminal.
 
-## 12. Using instrumentation for the next optimization
+## 12. Using instrumentation for startup scheduling
 
-The next PR can defer agent discovery, Git metadata, and other noncritical work
-until the first terminal is usable. Runtime traces should answer:
+The next implementation moved agent discovery and Git metadata until after the
+first terminal became usable. Runtime traces were extended to answer:
 
 1. Did `terminal-first-output-written` move earlier?
 2. Did `window-visible` or the renderer stages regress?
@@ -293,9 +293,15 @@ until the first terminal is usable. Runtime traces should answer:
 4. Did the external process-to-worker-ready distribution improve?
 5. Did discovery and metadata freshness remain within their product bounds?
 
-A winning optimization improves the targeted distribution beyond normal
+The completed design keeps `startup-ready` as the first-output boundary and adds
+`first-terminal-ready` plus background-service activation marks. See
+`30-startup-critical-path-scheduling.md` for the coordinator, state replay,
+failure handling, and live verification.
+
+A winning optimization still requires a controlled distribution beyond normal
 variance without making input latency, correctness, CPU, memory, or feature
-freshness worse.
+freshness worse. The isolated M18 trace is behavioral proof, not that
+distribution.
 
 ## Checkpoint
 

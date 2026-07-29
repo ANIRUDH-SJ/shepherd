@@ -64,9 +64,10 @@ CMUX_PERF_DIAGNOSTICS=1 npm run start
 The app writes one `[cmux:perf]` JSON line to its process output. It timestamps a
 fixed, content-free sequence across Electron main, backend registration, window
 creation, React, xterm, WebGL or fallback, node-pty, and first written terminal
-output. It records no terminal text, commands, arguments, paths, prompts, or
-environment contents. Diagnostics are disabled for every other environment
-value and do not write a file.
+output. The same record separates first-terminal readiness from the later
+activation of agent and workspace metadata observers. It records no terminal
+text, commands, arguments, paths, prompts, or environment contents. Diagnostics
+are disabled for every other environment value and do not write a file.
 
 Use the trace to locate a cmux-linux phase, not to compare different terminals.
 External harness results remain the independent before/after acceptance measure.

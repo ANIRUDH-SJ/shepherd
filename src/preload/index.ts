@@ -9,6 +9,7 @@ import { runtimePerformanceDiagnosticsEnabled } from '../shared/runtimePerforman
 // ─────────────────────────────────────────────────────────────────────────────
 
 const performanceDiagnosticsEnabled = runtimePerformanceDiagnosticsEnabled(process.env)
+let firstTerminalReadyReported = false
 
 const api: CmuxApi = {
   version: '0.0.1',
@@ -55,6 +56,14 @@ const api: CmuxApi = {
   session: {
     loadSync: () => ipcRenderer.sendSync(IPC.SESSION_LOAD_SYNC),
     save: (state) => ipcRenderer.send(IPC.SESSION_SAVE, state)
+  },
+
+  startup: {
+    firstTerminalReady: () => {
+      if (firstTerminalReadyReported) return
+      firstTerminalReadyReported = true
+      ipcRenderer.send(IPC.STARTUP_FIRST_TERMINAL_READY)
+    }
   },
 
   performance: {
