@@ -93,7 +93,7 @@ export default function TerminalHost({
         new CustomEvent('cmux:terminal-exit', { detail: { surfaceId, exitCode: code } })
       )
     })
-    window.api.terminal.create({
+    const terminalCreation = window.api.terminal.create({
       id: surfaceId,
       workspaceId,
       cwd,
@@ -101,6 +101,20 @@ export default function TerminalHost({
       rows: term.rows,
       ...(measuresStartup ? { startupPerformanceCandidate: true } : {})
     })
+    let disposed = false
+    let startupReadyFrame: number | null = null
+    if (focused) {
+      void terminalCreation.then(
+        () => {
+          if (disposed) return
+          startupReadyFrame = window.requestAnimationFrame(() => {
+            startupReadyFrame = null
+            window.api.startup.firstTerminalReady()
+          })
+        },
+        () => undefined
+      )
+    }
     const onData = term.onData((data) => window.api.terminal.input({ id: surfaceId, data }))
 
     // Refit on resize — but skip while hidden (0×0) so we don't resize the shell to 1×1.
@@ -126,6 +140,8 @@ export default function TerminalHost({
     window.addEventListener('cmux:focus-surface', onFocusSurface)
 
     return () => {
+      disposed = true
+      if (startupReadyFrame !== null) window.cancelAnimationFrame(startupReadyFrame)
       observer.disconnect()
       window.removeEventListener('cmux:fontsize', onFontSize)
       window.removeEventListener('cmux:focus-surface', onFocusSurface)

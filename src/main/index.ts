@@ -3,8 +3,9 @@ import { performance } from 'node:perf_hooks'
 import { join } from 'path'
 import { registerPtyIpc, killAllTerminals } from './pty'
 import { startSocketServer, stopSocketServer, updateWorkspaceMirror } from './socket'
-import { startAutomaticAgentDiscovery, type AutomaticAgentDiscoveryRuntime } from './agentDiscovery'
-import { startWorkspaceMetadataDiscovery, type WorkspaceMetadataRuntime } from './workspaceMetadata'
+import { startAutomaticAgentDiscovery } from './agentDiscovery'
+import { DeferredBackgroundServices } from './deferredBackgroundServices'
+import { startWorkspaceMetadataDiscovery } from './workspaceMetadata'
 import { RuntimePerformanceRecorder } from './runtimePerformance'
 import { loadSession, saveSession } from './session'
 import { IPC, type SocketApply, type WorkspacesSync } from '../shared/ipc'
@@ -13,8 +14,7 @@ import {
   runtimePerformanceDiagnosticsEnabled
 } from '../shared/runtimePerformance'
 
-let automaticAgentDiscovery: AutomaticAgentDiscoveryRuntime | null = null
-let workspaceMetadataDiscovery: WorkspaceMetadataRuntime | null = null
+let deferredBackgroundServices: DeferredBackgroundServices | null = null
 const runtimePerformance = new RuntimePerformanceRecorder({
   enabled: runtimePerformanceDiagnosticsEnabled(process.env),
   now: () => performance.now()
@@ -85,13 +85,18 @@ app.whenReady().then(() => {
 
   // Socket server: route incoming commands to the renderer to update app state.
   startSocketServer(sendSocketCommand)
-  automaticAgentDiscovery = startAutomaticAgentDiscovery(sendSocketCommand)
-  workspaceMetadataDiscovery = startWorkspaceMetadataDiscovery(sendSocketCommand)
+  deferredBackgroundServices = new DeferredBackgroundServices({
+    startAgentDiscovery: () => startAutomaticAgentDiscovery(sendSocketCommand),
+    startWorkspaceMetadata: () => startWorkspaceMetadataDiscovery(sendSocketCommand),
+    onError: (service, error) => console.error(`[startup] ${service} failed to start:`, error)
+  })
+  ipcMain.on(IPC.STARTUP_FIRST_TERMINAL_READY, () => {
+    deferredBackgroundServices?.firstTerminalReady()
+  })
   // Renderer mirrors its workspace list here so the socket can resolve ids/names.
   ipcMain.on(IPC.WORKSPACES_SYNC, (_e, sync: WorkspacesSync) => {
     updateWorkspaceMirror(sync)
-    automaticAgentDiscovery?.updateAgents(sync.agents)
-    workspaceMetadataDiscovery?.updateWorkspaces(sync.workspaces)
+    deferredBackgroundServices?.update(sync)
   })
 
   // Session persistence: load synchronously at startup, save (debounced) on change.
@@ -120,10 +125,8 @@ app.on('window-all-closed', () => {
 // Extra safety: kill shells + close the socket if the app quits some other way too.
 app.on('before-quit', () => {
   runtimePerformance.flush()
-  automaticAgentDiscovery?.stop()
-  automaticAgentDiscovery = null
-  workspaceMetadataDiscovery?.stop()
-  workspaceMetadataDiscovery = null
+  deferredBackgroundServices?.stop()
+  deferredBackgroundServices = null
   killAllTerminals()
   stopSocketServer()
 })
