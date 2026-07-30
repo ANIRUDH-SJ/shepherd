@@ -86,6 +86,7 @@ interface LifecycleRun {
     privateKiB: number
     swapPssKiB: number
     processCount: number
+    composition: ProcessComposition[]
     resourceSnapshot: ReturnType<typeof latestTerminalMemorySnapshot>
   }>
   diagnosticSnapshotCount: number
@@ -637,6 +638,7 @@ async function runSubject(
         privateKiB: levels.find((sample) => sample.terminalCount === 1)!.privateKiB,
         swapPssKiB: levels.find((sample) => sample.terminalCount === 1)!.swapPssKiB,
         processCount: levels.find((sample) => sample.terminalCount === 1)!.processCount,
+        composition: levels.find((sample) => sample.terminalCount === 1)!.composition,
         resourceSnapshot: diagnosticsAvailable
           ? latestTerminalMemorySnapshot(readFileSync(logPath, 'utf8'), 1)
           : null
@@ -664,6 +666,7 @@ async function runSubject(
         privateKiB: observation.privateKiB,
         swapPssKiB: observation.swapPssKiB,
         processCount: observation.processCount,
+        composition: observation.composition,
         resourceSnapshot
       })
     }
