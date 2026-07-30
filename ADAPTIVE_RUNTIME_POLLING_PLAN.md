@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-Status: implementation and documentation complete; PR delivery in progress.
+Status: implementation complete; PR #42 reviewed and ready to merge.
 
 This feature is phase 4 of `PERFORMANCE_ENHANCEMENT_PLAN.md`. It reduces
 steady-state timer wakeups without removing the bounded fallback scans that make
@@ -77,7 +77,7 @@ but they still read `/proc` and Git `HEAD` on every interval.
       relevant indexes after behavior settles.
 - [x] Run `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, and
       `git diff --check`.
-- [ ] Open and review a dedicated PR.
+- [x] Open and review a dedicated PR.
 
 ## Guardrails
 
