@@ -55,6 +55,10 @@ assert.equal(
   classifyLifecycleProcess(10, 13, 'cmux-linux', 'cmux-linux', ['cmux-linux']),
   'electron:helper'
 )
+assert.equal(
+  classifyLifecycleProcess(10, 14, 'cmux-linux', 'prompt\nfragment', []),
+  'child:unknown'
+)
 
 const sample = (
   terminalCount: number,

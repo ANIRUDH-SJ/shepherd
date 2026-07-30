@@ -18,6 +18,7 @@ const SNAPSHOT_REASONS = new Set<TerminalMemorySnapshotReason>([
   'replaced',
   'shutdown'
 ])
+const SAFE_PROCESS_ROLE_COMMAND = /^[a-zA-Z0-9._+:-]{1,64}$/
 
 const SNAPSHOT_COUNTS = [
   'timestamp',
@@ -74,7 +75,7 @@ export function classifyLifecycleProcess(
     .find((value) => value !== undefined)
   if (type) return `electron:${type}`
   if (command === rootCommand) return 'electron:helper'
-  return `child:${command}`
+  return `child:${SAFE_PROCESS_ROLE_COMMAND.test(command) ? command : 'unknown'}`
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
