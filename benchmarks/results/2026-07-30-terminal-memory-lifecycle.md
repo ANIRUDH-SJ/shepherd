@@ -18,7 +18,7 @@ application processes had 0 KiB SwapPss during the runs.
 - Baseline runtime: `5b89aacea306d0ac053495e0267f2c095b0df1cc`
 - Candidate runtime: `7d083b838c8b330410021555b0b5d53db6669559`
 - Final harness: `0ebc9f5` (the role-attributed long run used `3062b29`)
-- Final runtime smoke: `1ff190790fbfc78a0aa59296b71cd8018b5bb468`
+- Final reviewed smoke: `eeadbdd383ce574664d5e1817ff991673404663b`
 - Production unpacked builds, `--no-sandbox`, Xvfb 1280×800×24
 - Private XDG profile, Unix socket, logs, and Bash shell per subject
 - Three alternating fresh runs per subject, three samples at 1/2/4/8 terminals
@@ -49,10 +49,11 @@ is measurement noise, not evidence of a memory improvement or regression.
 Process counts were deterministic: six Electron processes plus 1/2/4/8 shells,
 for totals of 7/8/10/14.
 
-The final runtime revision adds a cross-renderer creation/replacement rejection
-after the long comparison. A rebuilt production smoke at that revision repeated
-the 1/2/4/8 process counts, completed two 8→1 cycles with no failures, and
-returned the managed resource counts exactly each time. The conditional
+The final reviewed revision adds a cross-renderer creation/replacement rejection
+and hardens lifecycle acceptance and owned-process cleanup after the long
+comparison. A rebuilt production smoke at that revision repeated the 1/2/4/8
+process counts, completed three 8→1 cycles with no failures, and returned the
+managed resource counts exactly at all four checkpoints. The conditional
 authorization guard does not run in the accepted-owner measurement path, so the
 longer matched run remains the statistical memory comparison.
 

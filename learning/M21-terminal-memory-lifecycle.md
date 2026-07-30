@@ -214,10 +214,10 @@ Electron pages from retained PTYs.
 The host had 74.9% swap use, so absolute numbers remain pilot evidence. See the
 benchmark report for the full caveat and tables.
 
-After the final cross-renderer creation guard was added, the production bundle
-was rebuilt at `1ff1907` and exercised in one short 1/2/4/8-terminal smoke. It
-reported no failures, process counts of 7/8/10/14, and exact managed-resource
-recovery in both close cycles. That smoke validates the shipped revision; the
+After final code review, the production bundle was rebuilt at `eeadbdd` and
+exercised in one short 1/2/4/8-terminal smoke. It reported no failures, process
+counts of 7/8/10/14, and exact managed-resource recovery at the cold checkpoint
+and after all three close cycles. That smoke validates the shipped revision; the
 longer matched run remains the statistical comparison.
 
 ## 9. Checkpoint
