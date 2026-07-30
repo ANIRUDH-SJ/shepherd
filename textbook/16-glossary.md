@@ -4,7 +4,7 @@
 > alphabetized, each defined in plain English and tied back to cmux-linux where it
 > helps. Skim it anytime; when you want the full story, follow the
 > `(see NN-...md)` pointer to the chapter that covers the term in depth.
-> Cross-reference stubs (e.g. *TTY — see teletype*) just send you to the primary
+> Cross-reference stubs (e.g. _TTY — see teletype_) just send you to the primary
 > entry.
 
 ---
@@ -17,6 +17,10 @@
   activity and visibility. Events accelerate observation, quiet or hidden state
   backs it off, and a slow fallback still repairs missed signals. (see
   32-adaptive-event-driven-observation.md)
+- **allocator high-water mark** — Resident pages an allocator keeps after a peak
+  workload so future allocations can reuse them. Live objects may return to
+  baseline while process PSS remains above its cold-start value. (see
+  33-terminal-memory-and-ownership.md)
 - **agent activity** — Optional detail that refines a `working` semantic state,
   such as reading, editing, testing, or web search. Activity improves display but
   is not a stable automation state. (see 19-semantic-agent-runtime.md)
@@ -29,9 +33,9 @@
 - **agent semantic state** — The small provider-neutral lifecycle vocabulary
   `working`, `blocked`, `done`, `idle`, and `unknown`. Scripts depend on this
   layer; the UI may refine it with activity or block reason. (see 19-semantic-agent-runtime.md)
-- **ANSI escape code** — A short byte sequence starting with the ESC character (`0x1B`) that a program embeds in its output to *control* the terminal — move the cursor, set colors, clear the screen — instead of printing literal text. Named after the ANSI X3.64 standard. (see 02-how-terminals-work.md)
+- **ANSI escape code** — A short byte sequence starting with the ESC character (`0x1B`) that a program embeds in its output to _control_ the terminal — move the cursor, set colors, clear the screen — instead of printing literal text. Named after the ANSI X3.64 standard. (see 02-how-terminals-work.md)
 - **AppImage** — A single self-contained executable that bundles the app and its dependencies and runs on most Linux distros with no install step. Our primary distribution format. (see 15-packaging-and-distribution.md)
-- **attention state** — see *unread / attention state*.
+- **attention state** — see _unread / attention state_.
 
 ## B
 
@@ -40,9 +44,9 @@
 
 ## C
 
-- **canonical vs raw mode** — Two modes of the terminal line discipline. In *canonical* ("cooked") mode the kernel buffers a whole line and handles editing (backspace) before your program sees it; in *raw* mode every keystroke is delivered instantly with no processing — which is what shells and full-screen apps (and our terminals) need. (see 02-how-terminals-work.md)
+- **canonical vs raw mode** — Two modes of the terminal line discipline. In _canonical_ ("cooked") mode the kernel buffers a whole line and handles editing (backspace) before your program sees it; in _raw_ mode every keystroke is delivered instantly with no processing — which is what shells and full-screen apps (and our terminals) need. (see 02-how-terminals-work.md)
 - **Chromium** — The open-source browser engine behind Google Chrome. Electron embeds it to run the renderer process, so your UI is literally a web page with full HTML/CSS/JS — our React app — running inside it. (see 03-electron-architecture.md)
-- **cmux** — The macOS-only "terminal built for multitasking" we are recreating on Linux: a named-workspace sidebar, per-workspace agent-status lines, notification rings, split panes, and a socket API. We copy its *experience*, not its Swift code. (see 01-the-big-picture.md)
+- **cmux** — The macOS-only "terminal built for multitasking" we are recreating on Linux: a named-workspace sidebar, per-workspace agent-status lines, notification rings, split panes, and a socket API. We copy its _experience_, not its Swift code. (see 01-the-big-picture.md)
 - **cmux CLI** — The small `cmux` command agents and scripts run (e.g. `cmux notify ...`). It's a thin client that opens the unix socket, sends one JSON-RPC line, and prints the reply. (see 11-the-socket-api.md)
 - **contextBridge** — The Electron API used inside a preload script to safely expose a chosen set of functions onto the renderer's `window` (as `window.api`), without leaking Node.js or Electron internals into the web page. (see 05-preload-and-context-isolation.md)
 - **contextIsolation** — An Electron security setting (on by default) that runs the preload script and the web page in separate JavaScript contexts, so the page can't reach into Node/Electron. The only crossing is what contextBridge explicitly exposes. (see 05-preload-and-context-isolation.md)
@@ -64,11 +68,11 @@
 
 ## E
 
-- **Electron** — A framework for building desktop apps with web tech; it bundles Chromium (for the UI) and Node.js (for OS access) into one app. cmux-linux *is* an Electron app. (see 03-electron-architecture.md)
+- **Electron** — A framework for building desktop apps with web tech; it bundles Chromium (for the UI) and Node.js (for OS access) into one app. cmux-linux _is_ an Electron app. (see 03-electron-architecture.md)
 - **electron-builder** — The tool that packages our built app into installable artifacts (AppImage, `.deb`, Flatpak), handling icons, metadata, and native-module bundling. (see 15-packaging-and-distribution.md)
 - **electron-vite** — A thin integration of Vite tailored for Electron; it understands the three build targets (main, preload, renderer) and bundles each correctly, with HMR in dev. (see 14-build-tooling-and-vite.md)
 - **env injection** — Passing custom environment variables into a child process when you spawn it. We inject `CMUX_WORKSPACE_ID`, `CMUX_SURFACE_ID`, and `CMUX_SOCKET_PATH` into each terminal's shell via node-pty so commands run inside a pane know which workspace to talk to. (see 06-node-pty.md)
-- **escape sequence / escape code** — see *ANSI escape code* (and *CSI sequence*, *OSC*).
+- **escape sequence / escape code** — see _ANSI escape code_ (and _CSI sequence_, _OSC_).
 
 ## F
 
@@ -103,15 +107,15 @@
 
 ## L
 
-- **layout tree (PaneNode)** — The recursive tree describing a workspace's splits: each node is either a *leaf* (one pane) or a *split* (a direction, child nodes, and sizes). Rendering it produces the tiled layout. (see 10-tiling-and-layout.md)
-- **libghostty** — The C library extracted from the Ghostty terminal that powers cmux's GPU renderer. We deliberately *don't* use it — its C/Zig API is unstable and awkward to bind from Electron — and use xterm.js (+ WebGL addon) instead. (see 07-xtermjs.md)
+- **layout tree (PaneNode)** — The recursive tree describing a workspace's splits: each node is either a _leaf_ (one pane) or a _split_ (a direction, child nodes, and sizes). Rendering it produces the tiled layout. (see 10-tiling-and-layout.md)
+- **libghostty** — The C library extracted from the Ghostty terminal that powers cmux's GPU renderer. We deliberately _don't_ use it — its C/Zig API is unstable and awkward to bind from Electron — and use xterm.js (+ WebGL addon) instead. (see 07-xtermjs.md)
 - **line discipline** — The kernel layer sitting between a pty and the program on it that processes bytes — echoing typed characters, handling backspace and Ctrl-C, and switching between canonical and raw mode. (see 02-how-terminals-work.md)
 
 ## M
 
 - **main process** — Electron's single Node.js process — the app's entry point and "backend." It has full OS access, spawns the shells, runs the socket server, and creates windows. (see 03-electron-architecture.md)
 - **Map (pty registry)** — A JavaScript `Map` we keep in the main process from `ptyId` → the live node-pty process, so incoming IPC (e.g. "write to pane X") can find the right shell. It's just our lookup table of open terminals. (see 06-node-pty.md)
-- **master / slave** — see *primary / subordinate*.
+- **master / slave** — see _primary / subordinate_.
 - **message framing** — The rule for where one message ends and the next begins in a byte stream. Our socket uses newline-delimited JSON: one message per line, so the receiver splits on `\n`. (see 11-the-socket-api.md)
 - **MAD (median absolute deviation)** — A robust spread statistic: take the
   median distance of samples from their median. It is less dominated by one
@@ -124,6 +128,13 @@
 
 ## O
 
+- **owner loss** — The lifecycle event produced when a renderer is destroyed or
+  its process fails. Main must release that renderer's PTYs because renderer-side
+  React cleanup can no longer run. (see 33-terminal-memory-and-ownership.md)
+- **ownership registry** — A two-index map from resource ID to exact owner/value
+  and from owner to its resources. It authorizes control, supports bulk owner
+  cleanup, and uses expected-value removal to reject stale callbacks. (see
+  33-terminal-memory-and-ownership.md)
 - **OSC (Operating System Command)** — A family of escape sequences beginning `ESC ]` used to talk to the terminal/OS itself — set the window title, define hyperlinks, or fire desktop notifications — rather than draw on the screen. (see 02-how-terminals-work.md; the notification codes: 12-notifications-and-osc.md)
 - **OSC 9 / 99 / 777** — Specific OSC sequences a program emits to request a desktop notification. We scan each terminal's output for them and, when one appears, light up the sidebar automatically — no setup required. (see 12-notifications-and-osc.md)
 
@@ -131,17 +142,17 @@
 
 - **Pane** — In our object model, a resizable split region inside a workspace (⌘D / Ctrl-D splits it). Panes are the rectangles you tile. (see 09-typescript-and-the-data-model.md; how they tile: 10-tiling-and-layout.md)
 - **Panel** — The actual content rendered in a surface — a Terminal (v1) or, later, a Browser. It's the leaf of the object model. (see 09-typescript-and-the-data-model.md)
-- **preload script** — A special script Electron runs in the renderer *before* the web page loads, with access to a limited bridge API. It's where we use contextBridge to build `window.api`. (see 05-preload-and-context-isolation.md)
-- **primary / subordinate (master / slave)** — The two ends of a pty pair. The controlling program (our app, via node-pty) holds the *primary* end; the shell runs attached to the *subordinate* end, which looks like a real terminal to it. (Older docs call these master/slave.) (see 02-how-terminals-work.md)
+- **preload script** — A special script Electron runs in the renderer _before_ the web page loads, with access to a limited bridge API. It's where we use contextBridge to build `window.api`. (see 05-preload-and-context-isolation.md)
+- **primary / subordinate (master / slave)** — The two ends of a pty pair. The controlling program (our app, via node-pty) holds the _primary_ end; the shell runs attached to the _subordinate_ end, which looks like a real terminal to it. (Older docs call these master/slave.) (see 02-how-terminals-work.md)
 - **pseudo-terminal (PTY)** — A software emulation of a physical terminal: a kernel-provided pair of endpoints that lets one program feed input to, and read output from, another program (a shell) as if a human were sitting at a terminal. (see 02-how-terminals-work.md; the library that spawns them: 06-node-pty.md)
 - **PSS (proportional set size)** — Resident memory with each shared page divided
   among the processes mapping it. Summing PSS gives a fairer multi-process total
   than summing RSS for Electron. (see 28-terminal-performance-measurement.md)
-- **PTY** — see *pseudo-terminal*.
+- **PTY** — see _pseudo-terminal_.
 
 ## R
 
-- **raw mode** — see *canonical vs raw mode*.
+- **raw mode** — see _canonical vs raw mode_.
 - **ref (useRef)** — A React hook that holds a mutable value across renders without triggering a re-render. We use it to hold the imperative xterm.js `Terminal` instance and the DOM node it mounts into. (see 08-react-in-this-app.md)
 - **renderer process** — An Electron process running a Chromium window — our React UI. It has no direct OS access; it asks main to do OS things over IPC. Think "the frontend." (see 03-electron-architecture.md)
 - **revision (agent report)** — An optional monotonic producer sequence number.
@@ -169,13 +180,13 @@
 
 ## T
 
-- **Tauri** — An alternative to Electron that pairs a Rust backend with the OS's *native* webview (no bundled Chromium), yielding smaller apps. We chose Electron for its mature Node ecosystem (node-pty) and one consistent Chromium everywhere. (see 03-electron-architecture.md)
+- **Tauri** — An alternative to Electron that pairs a Rust backend with the OS's _native_ webview (no bundled Chromium), yielding smaller apps. We chose Electron for its mature Node ecosystem (node-pty) and one consistent Chromium everywhere. (see 03-electron-architecture.md)
 - **teletype (TTY)** — The original electromechanical terminal (a printing keyboard); its abbreviation survives as "TTY," the kernel's word for a terminal device. A pty is a software stand-in for one. (see 02-how-terminals-work.md)
 - **tiling** — Automatically arranging panes to fill the available space without overlapping (as opposed to floating windows). Splitting a pane subdivides its rectangle; our layout tree drives the arrangement. (see 10-tiling-and-layout.md)
 - **TTL (time to live)** — A bounded lifetime attached to an agent report. Main
   converts it to a local expiry time so a missing provider cleanup event cannot
   leave the sidebar stale forever. (see 19-semantic-agent-runtime.md)
-- **TTY** — see *teletype*.
+- **TTY** — see _teletype_.
 - **TypeScript** — JavaScript plus a static type system checked at build time. We use it to model the Window→Workspace→Pane→Surface→Panel data and catch shape errors before they run. (see 09-typescript-and-the-data-model.md)
 
 ## U
@@ -191,7 +202,7 @@
 
 - **webContents** — The Electron object representing a window's rendered web page. Its `.send(channel, payload)` is how main pushes IPC messages to the renderer. (see 04-ipc-inter-process-communication.md; it's a property of BrowserWindow, 03-electron-architecture.md)
 - **WebGL addon** — An xterm.js addon that renders the terminal on the GPU (via WebGL) for smooth, fast drawing of lots of text — our pragmatic stand-in for cmux's GPU (Ghostty) renderer. (see 07-xtermjs.md)
-- **Window** — In our object model, an OS window with its own sidebar and independent set of workspaces. (Distinct from Electron's BrowserWindow, which *implements* it.) (see 09-typescript-and-the-data-model.md)
+- **Window** — In our object model, an OS window with its own sidebar and independent set of workspaces. (Distinct from Electron's BrowserWindow, which _implements_ it.) (see 09-typescript-and-the-data-model.md)
 - **window.api** — The object our preload script exposes (via contextBridge) onto the renderer's global `window`, bundling the safe functions the React UI calls to reach main — e.g. `window.api.sendInput(...)`. (see 05-preload-and-context-isolation.md)
 - **Workspace** — In our object model, one row in the sidebar: a named context (a project or agent) with its own layout, cwd, git branch, status, and notification state. (see 09-typescript-and-the-data-model.md)
 

@@ -2,7 +2,8 @@
 
 ## Status and scope
 
-Status: planned; baseline inventory complete.
+Status: implementation, measurement, and documentation complete; PR review
+pending.
 
 This feature is phase 5 of `PERFORMANCE_ENHANCEMENT_PLAN.md`. It measures the
 fixed Electron cost separately from per-terminal growth, makes retention bounds
@@ -69,34 +70,39 @@ The harness must use bounded waits, marker-owned cleanup, private state
 directories, machine-readable JSON, and no terminal-content capture. A
 redirected non-terminal control remains part of the later cumulative suite.
 
-## Proposed commit sequence
+## Delivered commit sequence
 
 1. `docs: plan terminal memory lifecycle`
 2. `terminal: model renderer terminal ownership`
 3. `terminal: release resources when renderers disappear`
-4. `renderer: make terminal retention bounds explicit`
-5. `benchmarks: add terminal lifecycle measurements`
-6. `benchmarks: record terminal lifecycle comparison`
-7. `docs: explain terminal memory lifecycle`
+4. `renderer: make terminal scrollback bounds explicit`
+5. `terminal: report bounded lifecycle resources`
+6. `benchmarks: add terminal lifecycle measurements`
+7. focused benchmark-safety and process-composition commits
+8. `benchmarks: record terminal lifecycle comparison`
+9. `terminal: reject cross-renderer replacement`
+10. `docs: explain terminal memory lifecycle`
 
 ## Delivery checklist
 
-- [ ] Add a deterministic owner/terminal registry with idempotent removal.
-- [ ] Bind input, resize, acknowledgement, and disposal to creator ownership.
-- [ ] Clean every owned terminal on renderer destruction or renderer-process
+- [x] Add a deterministic owner/terminal registry with idempotent removal.
+- [x] Bind creation/replacement, input, resize, acknowledgement, and disposal to
+      creator ownership.
+- [x] Clean every owned terminal on renderer destruction or renderer-process
       failure.
-- [ ] Preserve replacement and natural-exit ordering.
-- [ ] Make xterm scrollback and other retained limits explicit.
-- [ ] Add regression coverage for cross-owner messages, stale cleanup,
+- [x] Preserve replacement and natural-exit ordering.
+- [x] Make xterm scrollback and other retained limits explicit.
+- [x] Add regression coverage for cross-owner messages, stale cleanup,
       replacement, owner loss, repeated cleanup, and listener release.
-- [ ] Add a safe 1/2/4/8-terminal and open/close measurement workflow.
-- [ ] Measure the exact pre-feature merge and settled candidate.
-- [ ] Verify real terminal creation, output, close, and replacement in Electron.
-- [ ] Add the code walkthrough to `learning/`.
-- [ ] Add architecture, alternatives, security, and tradeoffs to `textbook/`.
-- [ ] Update the performance plan, roadmap, feature matrix, glossary, benchmark
+- [x] Add a safe 1/2/4/8-terminal and open/close measurement workflow.
+- [x] Measure the exact pre-feature merge and settled candidate.
+- [x] Verify real terminal creation, prompt output, and close in production
+      Electron; verify replacement and stale cleanup ordering deterministically.
+- [x] Add the code walkthrough to `learning/`.
+- [x] Add architecture, alternatives, security, and tradeoffs to `textbook/`.
+- [x] Update the performance plan, roadmap, feature matrix, glossary, benchmark
       index, and learning/textbook indexes.
-- [ ] Run `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, and
+- [x] Run `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, and
       `git diff --check`.
 - [ ] Open and review a dedicated PR.
 
