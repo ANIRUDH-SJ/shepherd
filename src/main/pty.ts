@@ -13,6 +13,7 @@ import {
   resizeTerminalInspection
 } from './terminalInspection'
 import { TerminalOutputBatcher } from './terminalOutputBatcher'
+import { TerminalOwnershipRegistry } from './terminalOwnership'
 import {
   IPC,
   isTermDataAck,
@@ -40,7 +41,22 @@ interface TerminalRec {
   dataSubscription?: pty.IDisposable
   exitSubscription?: pty.IDisposable
 }
-const terminals = new Map<string, TerminalRec>()
+
+function subscribeTerminalOwnerLoss(owner: WebContents, listener: () => void): () => void {
+  const onDestroyed = (): void => listener()
+  const onRendererGone = (): void => listener()
+  owner.once('destroyed', onDestroyed)
+  owner.once('render-process-gone', onRendererGone)
+  return () => {
+    owner.removeListener('destroyed', onDestroyed)
+    owner.removeListener('render-process-gone', onRendererGone)
+  }
+}
+
+const terminals = new TerminalOwnershipRegistry<WebContents, TerminalRec>({
+  subscribeOwnerLoss: subscribeTerminalOwnerLoss,
+  onOwnerLost: (id, terminal) => disposeTerminal(id, terminal, false)
+})
 
 /** Pick a shell: the user's $SHELL, else a sensible platform default. */
 function defaultShell(): string {
@@ -124,7 +140,7 @@ function createTerminal(
     oscBuffer: '',
     output
   }
-  terminals.set(opts.id, terminal)
+  terminals.add(opts.id, sender, terminal)
   registerTerminalInspection({
     surfaceId: opts.id,
     ...(opts.workspaceId ? { workspaceId: opts.workspaceId } : {}),
@@ -163,7 +179,7 @@ function createTerminal(
       }
     }
     output.dispose()
-    terminals.delete(opts.id)
+    terminals.remove(opts.id, terminal)
     removeTerminalInspection(opts.id)
   })
 }
@@ -178,7 +194,7 @@ function disposeTerminal(id: string, terminal: TerminalRec, flushPendingOutput: 
   } catch {
     // The PTY may have exited between lookup and explicit disposal.
   }
-  if (terminals.get(id) === terminal) terminals.delete(id)
+  terminals.remove(id, terminal)
   removeTerminalInspection(id)
 }
 
@@ -210,39 +226,40 @@ export function registerPtyIpc(markPerformance?: (name: RuntimePerformanceMarkNa
   })
 
   // fire-and-forget: keystrokes in
-  ipcMain.on(IPC.TERM_INPUT, (_event, msg: TermInput) => {
+  ipcMain.on(IPC.TERM_INPUT, (event, msg: TermInput) => {
+    const terminal = terminals.getOwned(msg.id, event.sender)
+    if (!terminal) return
     recordTerminalInspectionInput(msg.id)
-    const terminal = terminals.get(msg.id)
-    terminal?.output.markInteractive()
-    terminal?.proc.write(msg.data)
+    terminal.output.markInteractive()
+    terminal.proc.write(msg.data)
   })
 
   // Renderer confirms xterm consumed a sequenced batch. Unknown, duplicate, or
   // cross-window acknowledgements cannot release another terminal's queue.
   ipcMain.on(IPC.TERM_DATA_ACK, (event, msg: unknown) => {
     if (!isTermDataAck(msg)) return
-    const terminal = terminals.get(msg.id)
-    if (terminal?.sender === event.sender) terminal.output.acknowledge(msg.sequence)
+    terminals.getOwned(msg.id, event.sender)?.output.acknowledge(msg.sequence)
   })
 
   // fire-and-forget: resize
-  ipcMain.on(IPC.TERM_RESIZE, (_event, msg: TermResize) => {
+  ipcMain.on(IPC.TERM_RESIZE, (event, msg: TermResize) => {
+    const terminal = terminals.getOwned(msg.id, event.sender)
+    if (!terminal) return
     const cols = Math.max(1, msg.cols)
     const rows = Math.max(1, msg.rows)
-    terminals.get(msg.id)?.proc.resize(cols, rows)
+    terminal.proc.resize(cols, rows)
     resizeTerminalInspection(msg.id, cols, rows)
   })
 
   // fire-and-forget: kill one shell
-  ipcMain.on(IPC.TERM_DISPOSE, (_event, id: string) => {
-    const terminal = terminals.get(id)
+  ipcMain.on(IPC.TERM_DISPOSE, (event, id: string) => {
+    const terminal = terminals.getOwned(id, event.sender)
     if (terminal) disposeTerminal(id, terminal, true)
   })
 }
 
 /** Kill every shell — called on quit so we never leave zombie processes. */
 export function killAllTerminals(): void {
-  for (const [id, terminal] of terminals) disposeTerminal(id, terminal, false)
-  terminals.clear()
+  for (const [id, terminal] of terminals.clear()) disposeTerminal(id, terminal, false)
   clearTerminalInspections()
 }

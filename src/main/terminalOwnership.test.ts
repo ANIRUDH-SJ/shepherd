@@ -66,6 +66,10 @@ assert(unsubscribeCounts.get(ownerA) === 1, 'unsubscribes owner loss exactly onc
 
 registry.add('term-a', ownerB, terminalC)
 assert(registry.getOwned('term-a', ownerB) === terminalC, 'allows a released id to be replaced')
+assert(
+  registry.getOwned('term-a', ownerA) === undefined,
+  'rejects stale cleanup after another renderer replaces the id'
+)
 const cleared = registry.clear()
 assert(cleared[0]?.[1] === terminalC, 'returns terminal records for explicit shutdown cleanup')
 assert(
