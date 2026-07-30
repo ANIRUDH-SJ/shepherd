@@ -15,12 +15,23 @@ function assert(condition: boolean, message: string): void {
 }
 
 assert(
-  runtimePerformanceDiagnosticsEnabled({ CMUX_PERF_DIAGNOSTICS: '1' }),
+  runtimePerformanceDiagnosticsEnabled({ SHEPHERD_PERF_DIAGNOSTICS: '1' }),
   'enables diagnostics with the exact opt-in value'
 )
 assert(
-  !runtimePerformanceDiagnosticsEnabled({ CMUX_PERF_DIAGNOSTICS: 'true' }),
+  !runtimePerformanceDiagnosticsEnabled({ SHEPHERD_PERF_DIAGNOSTICS: 'true' }),
   'rejects ambiguous opt-in values'
+)
+assert(
+  runtimePerformanceDiagnosticsEnabled({ CMUX_PERF_DIAGNOSTICS: '1' }),
+  'accepts the legacy opt-in variable'
+)
+assert(
+  !runtimePerformanceDiagnosticsEnabled({
+    SHEPHERD_PERF_DIAGNOSTICS: '0',
+    CMUX_PERF_DIAGNOSTICS: '1'
+  }),
+  'lets an explicit Shepherd value override the legacy variable'
 )
 assert(!runtimePerformanceDiagnosticsEnabled({}), 'keeps diagnostics disabled by default')
 assert(isRuntimePerformanceMarkName('renderer-mounted'), 'accepts a published milestone')

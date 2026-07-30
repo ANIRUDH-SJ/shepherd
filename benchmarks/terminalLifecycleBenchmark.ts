@@ -411,8 +411,8 @@ function childEnvironment(
     ...subject.env,
     DISPLAY: config.display,
     CMUX_BENCH_RUN_ID: runId,
-    CMUX_MEMORY_DIAGNOSTICS: '1',
-    CMUX_SOCKET_PATH: socketPath,
+    SHEPHERD_MEMORY_DIAGNOSTICS: '1',
+    SHEPHERD_SOCKET_PATH: socketPath,
     XDG_CONFIG_HOME: join(runDir, 'config'),
     XDG_CACHE_HOME: join(runDir, 'cache'),
     XDG_DATA_HOME: join(runDir, 'data')
@@ -686,9 +686,7 @@ async function runSubject(
       ? latestTerminalMemorySnapshot(logText, 1)
       : null
     const resourceCountsReturnedToBaseline = diagnosticsAvailable
-      ? recoveries.every((recovery) =>
-          terminalMemoryReturnedToBaseline(recovery.resourceSnapshot)
-        )
+      ? recoveries.every((recovery) => terminalMemoryReturnedToBaseline(recovery.resourceSnapshot))
       : null
     return {
       subjectId: subject.id,

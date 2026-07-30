@@ -10,12 +10,12 @@ import {
 } from './terminalLifecycleBenchmarkLib'
 
 const diagnostic =
-  'noise\n[cmux:memory] {"schemaVersion":1,"reason":"created","timestamp":1,' +
+  'noise\n[shepherd:memory] {"schemaVersion":1,"reason":"created","timestamp":1,' +
   '"terminalCount":2,"ownerCount":1,"inspectionTerminalCount":2,' +
   '"inspectionRetainedBytes":10,"inspectionDroppedBytes":3,"pendingOutputBytes":4,' +
   '"inFlightOutputBytes":5,"pausedTerminalCount":0}\n'
 const snapshots = parseTerminalMemorySnapshots(
-  `${diagnostic}[cmux:memory] not-json\n[cmux:memory] {"schemaVersion":2}\n`
+  `${diagnostic}[shepherd:memory] not-json\n[shepherd:memory] {"schemaVersion":2}\n`
 )
 assert.equal(snapshots.length, 1)
 assert.equal(snapshots[0]?.terminalCount, 2)

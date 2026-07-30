@@ -5,7 +5,7 @@ import {
   type RuntimePerformanceSummary
 } from '../shared/runtimePerformance'
 
-export const RUNTIME_PERFORMANCE_LOG_PREFIX = '[cmux:perf] '
+export const RUNTIME_PERFORMANCE_LOG_PREFIX = '[shepherd:perf] '
 
 const STARTUP_READY_REQUIRED_MARKS: ReadonlySet<RuntimePerformanceMarkName> = new Set([
   'main-process-start',
