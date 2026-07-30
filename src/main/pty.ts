@@ -29,6 +29,7 @@ import {
   type TerminalMemorySnapshot,
   type TerminalMemorySnapshotReason
 } from '../shared/terminalMemory'
+import { PRODUCT_ENV } from '../shared/product'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PTY MANAGER  (main process — the "real shell" half of the terminal)
@@ -105,7 +106,7 @@ function defaultShell(): string {
   return platform() === 'win32' ? 'powershell.exe' : 'bash'
 }
 
-/** Where the bundled `cmux` CLI lives: the unpacked resources dir once packaged,
+/** Where the bundled Shepherd CLI lives: the unpacked resources dir once packaged,
  *  the repo's bin/ in dev. `process.cwd()` is useless here — a packaged app
  *  inherits whatever directory the user launched it from. */
 function cliBinDir(): string {
@@ -134,19 +135,26 @@ function createTerminal(
   }
   if (previous) disposeTerminal(opts.id, previous, true, 'replaced')
 
-  // Inject cmux env so a `cmux …` command run INSIDE this pane targets the right
-  // workspace by default and can reach the socket. (textbook/11 §env injection)
+  // Inject the new Shepherd environment and its compatibility aliases so CLI
+  // commands inside a pane target that pane without breaking existing hooks.
   const env = currentEnv()
-  env.CMUX_SURFACE_ID = opts.id
-  if (opts.workspaceId) env.CMUX_WORKSPACE_ID = opts.workspaceId
-  env.CMUX_SOCKET_PATH = socketPath()
-  // Make the `cmux` CLI resolvable inside panes, and hand it our Electron binary
-  // so it runs without a system Node (see bin/cmux). Never append to an empty
+  env[PRODUCT_ENV.surfaceId] = opts.id
+  env[PRODUCT_ENV.legacySurfaceId] = opts.id
+  if (opts.workspaceId) {
+    env[PRODUCT_ENV.workspaceId] = opts.workspaceId
+    env[PRODUCT_ENV.legacyWorkspaceId] = opts.workspaceId
+  }
+  const activeSocketPath = socketPath()
+  env[PRODUCT_ENV.socketPath] = activeSocketPath
+  env[PRODUCT_ENV.legacySocketPath] = activeSocketPath
+  // Make the CLI resolvable inside panes, and hand it our Electron binary so it
+  // runs without a system Node. Never append to an empty
   // PATH: the trailing colon would leave an empty element, which POSIX reads as
   // the current directory — so the shell would search cwd for commands.
   const parentPath = env.PATH
   env.PATH = parentPath ? `${cliBinDir()}:${parentPath}` : cliBinDir()
-  env.CMUX_ELECTRON = process.execPath
+  env[PRODUCT_ENV.electron] = process.execPath
+  env[PRODUCT_ENV.legacyElectron] = process.execPath
 
   const cols = opts.cols || 80
   const rows = opts.rows || 24
