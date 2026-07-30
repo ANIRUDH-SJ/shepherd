@@ -1,5 +1,5 @@
-appId: dev.anirudhsj.cmux-linux
-productName: cmux-linux
+appId: dev.anirudhsj.shepherd
+productName: Shepherd
 copyright: Copyright © 2026 Anirudh S J
 
 directories:
@@ -24,13 +24,14 @@ files:
 asarUnpack:
   - '**/node_modules/node-pty/**'
 
-# The `cmux` CLI is prepended to every pane's PATH at runtime (src/main/pty.ts
-# resolves it from resourcesPath once packaged).
+# The primary `shepherd` CLI and deprecated `cmux` alias are prepended to every
+# pane's PATH at runtime (src/main/pty.ts resolves them from resourcesPath).
 extraResources:
   - from: bin
     to: bin
 
 linux:
+  executableName: shepherd
   target:
     - AppImage
     - deb
@@ -47,9 +48,9 @@ linux:
   syncDesktopName: true
   desktop:
     entry:
-      Name: cmux-linux
-      Keywords: terminal;multiplexer;tiling;agents;claude;
-      StartupWMClass: cmux-linux
+      Name: Shepherd
+      Keywords: terminal;multiplexer;tiling;agents;codex;claude;
+      StartupWMClass: shepherd
 
 appImage:
   artifactName: ${productName}-${version}-${arch}.AppImage

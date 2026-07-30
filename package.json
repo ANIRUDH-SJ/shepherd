@@ -1,9 +1,17 @@
 {
-  "name": "cmux-linux",
+  "name": "shepherd",
   "version": "0.0.1",
-  "description": "A Linux desktop recreation of cmux — the terminal built for multitasking with AI agents.",
+  "description": "An AI-native terminal workspace for Linux.",
   "author": "Anirudh S J",
   "license": "MIT",
+  "homepage": "https://github.com/ANIRUDH-SJ/shepherd",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ANIRUDH-SJ/shepherd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ANIRUDH-SJ/shepherd/issues"
+  },
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
