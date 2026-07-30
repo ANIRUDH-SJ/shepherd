@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import {
   latestTerminalMemorySnapshot,
+  markDirectChildOwnership,
   parseTerminalMemorySnapshots,
   summarizeLifecycleRun,
   type LifecycleLevelSample
@@ -18,6 +19,16 @@ assert.equal(snapshots.length, 1)
 assert.equal(snapshots[0]?.terminalCount, 2)
 assert.equal(latestTerminalMemorySnapshot(diagnostic, 2)?.inspectionRetainedBytes, 10)
 assert.equal(latestTerminalMemorySnapshot(diagnostic, 1), null)
+
+const ownership = markDirectChildOwnership(
+  [
+    { pid: 10, ppid: 1, command: 'runner', marked: false },
+    { pid: 11, ppid: 10, command: 'helper', marked: false }
+  ],
+  10
+)
+assert.equal(ownership[0]?.marked, true)
+assert.equal(ownership[1]?.marked, false)
 
 const sample = (
   terminalCount: number,

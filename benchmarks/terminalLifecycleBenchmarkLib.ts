@@ -3,7 +3,12 @@ import {
   type TerminalMemorySnapshot,
   type TerminalMemorySnapshotReason
 } from '../src/shared/terminalMemory'
-import { summarizeSamples, type MemoryUsage, type SampleSummary } from './terminalBenchmarkLib'
+import {
+  summarizeSamples,
+  type MemoryUsage,
+  type ProcessIdentity,
+  type SampleSummary
+} from './terminalBenchmarkLib'
 
 const SNAPSHOT_REASONS = new Set<TerminalMemorySnapshotReason>([
   'created',
@@ -45,6 +50,15 @@ export interface LifecycleRunSummary {
   incrementalPssKiBPerTerminal: number
   finalRecoveryDeltaKiB: number
   recoveryStrictlyIncreasing: boolean
+}
+
+export function markDirectChildOwnership<T extends ProcessIdentity>(
+  processes: T[],
+  rootPid: number
+): T[] {
+  return processes.map((process) =>
+    process.pid === rootPid ? { ...process, marked: true } : process
+  )
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -32,6 +32,7 @@ import {
 } from './terminalBenchmarkLib'
 import {
   latestTerminalMemorySnapshot,
+  markDirectChildOwnership,
   parseTerminalMemorySnapshots,
   summarizeLifecycleRun,
   type LifecycleLevelSample
@@ -264,15 +265,31 @@ function processIdentities(runId: string): Array<{
   ppid: number
   command: string
   marked: boolean
+  startTicks: number
 }> {
   assertRunId(runId)
   const marker = `CMUX_BENCH_RUN_ID=${runId}`
-  const identities: Array<{ pid: number; ppid: number; command: string; marked: boolean }> = []
+  const identities: Array<{
+    pid: number
+    ppid: number
+    command: string
+    marked: boolean
+    startTicks: number
+  }> = []
   for (const entry of readdirSync('/proc')) {
     if (!/^\d+$/.test(entry)) continue
     const pid = Number(entry)
     try {
-      const stat = parseProcStat(readFileSync(`/proc/${pid}/stat`, 'utf8'))
+      const rawStat = readFileSync(`/proc/${pid}/stat`, 'utf8')
+      const stat = parseProcStat(rawStat)
+      const close = rawStat.lastIndexOf(') ')
+      const startTicks = Number(
+        rawStat
+          .slice(close + 2)
+          .trim()
+          .split(/\s+/)[19]
+      )
+      if (!Number.isSafeInteger(startTicks) || startTicks < 0) continue
       let marked = false
       try {
         const environment = readFileSync(`/proc/${pid}/environ`)
@@ -281,7 +298,7 @@ function processIdentities(runId: string): Array<{
       } catch {
         // Descendant ancestry still proves ownership when environ is restricted.
       }
-      identities.push({ pid, ppid: stat.ppid, command: stat.command, marked })
+      identities.push({ pid, ppid: stat.ppid, command: stat.command, marked, startTicks })
     } catch {
       // Processes can exit between /proc enumeration and inspection.
     }
@@ -326,10 +343,23 @@ function processComposition(processes: ProcessUsage[]): ProcessComposition[] {
 }
 
 async function terminateOwnedProcesses(runId: string, child: ChildProcess): Promise<void> {
-  const terminate = (signal: NodeJS.Signals): void => {
-    const identities = processIdentities(runId)
-    const ids = child.pid ? selectCleanupProcessIds(identities, child.pid) : new Set<number>()
-    for (const pid of [...ids].sort((a, b) => b - a)) {
+  if (!child.pid) return
+  const rootStillOwned = child.exitCode === null && child.signalCode === null
+  const identities = rootStillOwned
+    ? markDirectChildOwnership(processIdentities(runId), child.pid)
+    : processIdentities(runId)
+  const ids = selectCleanupProcessIds(identities, child.pid)
+  const ownedStartTicks = new Map(
+    identities
+      .filter((identity) => ids.has(identity.pid))
+      .map((identity) => [identity.pid, identity.startTicks])
+  )
+  const terminate = (signal: NodeJS.Signals, verifyIdentity: boolean): void => {
+    const current = verifyIdentity
+      ? new Map(processIdentities(runId).map((identity) => [identity.pid, identity]))
+      : null
+    for (const [pid, startTicks] of [...ownedStartTicks].sort((a, b) => b[0] - a[0])) {
+      if (current?.get(pid)?.startTicks !== startTicks) continue
       try {
         process.kill(pid, signal)
       } catch {
@@ -337,9 +367,22 @@ async function terminateOwnedProcesses(runId: string, child: ChildProcess): Prom
       }
     }
   }
-  terminate('SIGTERM')
+  terminate('SIGTERM', false)
   await delay(300)
-  terminate('SIGKILL')
+  terminate('SIGKILL', true)
+  if (child.exitCode === null && child.signalCode === null) {
+    await Promise.race([
+      new Promise<void>((resolveExit) => child.once('exit', () => resolveExit())),
+      delay(1000)
+    ])
+  }
+  child.unref()
+  const remaining = processIdentities(runId).filter(
+    (identity) => ownedStartTicks.get(identity.pid) === identity.startTicks
+  )
+  if (remaining.length > 0) {
+    throw new Error(`cleanup retained ${remaining.length} owned process(es)`)
+  }
 }
 
 function childEnvironment(
