@@ -2,8 +2,7 @@
 
 ## Status and scope
 
-Status: implementation, measurement, and documentation complete; PR review
-pending.
+Status: complete. Delivered and reviewed in PR #43.
 
 This feature is phase 5 of `PERFORMANCE_ENHANCEMENT_PLAN.md`. It measures the
 fixed Electron cost separately from per-terminal growth, makes retention bounds
@@ -104,7 +103,7 @@ redirected non-terminal control remains part of the later cumulative suite.
       index, and learning/textbook indexes.
 - [x] Run `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, and
       `git diff --check`.
-- [ ] Open and review a dedicated PR.
+- [x] Open and review a dedicated PR.
 
 ## Guardrails
 
