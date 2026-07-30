@@ -81,6 +81,15 @@ async function main(): Promise<void> {
   assert(runs === 2, 'runs the activity poll')
   assert(scheduler.pending()[0]?.delayMs === 1_000, 'uses the active interval after activity')
 
+  now = 200
+  const scheduledActivePoll = scheduler.pending()[0]
+  loop.trigger()
+  loop.trigger()
+  assert(
+    scheduler.pending()[0] === scheduledActivePoll,
+    'sustained activity cannot preempt the active cadence'
+  )
+
   now = 1_100
   scheduler.runNext()
   await settle()
@@ -120,6 +129,14 @@ async function main(): Promise<void> {
   resolveRun?.()
   await settle()
   assert(asyncScheduler.pending()[0]?.delayMs === 0, 'runs once more after in-flight activity')
+
+  asyncScheduler.runNext()
+  await Promise.resolve()
+  asyncLoop.setVisible(false)
+  asyncLoop.setVisible(true)
+  resolveRun?.()
+  await settle()
+  assert(asyncScheduler.pending()[0]?.delayMs === 0, 'restoring during a poll queues one catch-up')
 
   let reportedErrors = 0
   const errorScheduler = manualScheduler()

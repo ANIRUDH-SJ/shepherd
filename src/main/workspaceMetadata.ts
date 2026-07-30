@@ -240,7 +240,7 @@ export function startWorkspaceMetadataDiscovery(
   loop.start()
   return {
     updateWorkspaces: (workspaces) => {
-      if (discovery.updateWorkspaces(workspaces)) loop.trigger()
+      if (discovery.updateWorkspaces(workspaces)) loop.triggerNow()
     },
     setVisible: (visible) => loop.setVisible(visible),
     stop: () => {

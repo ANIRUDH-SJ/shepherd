@@ -246,7 +246,7 @@ export function startAutomaticAgentDiscovery(
   loop.start()
   return {
     updateAgents: (agents) => {
-      if (discovery.updateAgents(agents)) loop.trigger()
+      if (discovery.updateAgents(agents)) loop.triggerNow()
     },
     setVisible: (visible) => loop.setVisible(visible),
     stop: () => {

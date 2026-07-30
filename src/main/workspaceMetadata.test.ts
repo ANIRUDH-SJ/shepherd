@@ -149,7 +149,10 @@ async function main(): Promise<void> {
   activityListener?.({ surfaceId: 'term-1', kind: 'output', timestamp: runtimeNow })
   assert(pending()[0] === scheduledBeforeOutput, 'does not reschedule metadata for output-only churn')
   activityListener?.({ surfaceId: 'term-1', kind: 'input', timestamp: runtimeNow })
-  assert(pending()[0]?.delayMs === 0, 'terminal input requests metadata immediately')
+  assert(
+    pending()[0]?.delayMs === WORKSPACE_METADATA_ACTIVE_POLL_MS,
+    'terminal input stays coalesced to the active metadata cadence'
+  )
 
   runtime.setVisible(false)
   assert(

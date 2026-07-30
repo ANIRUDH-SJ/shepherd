@@ -36,6 +36,7 @@ export class AdaptivePollingLoop {
   private cancelScheduled: CancelPollingTask | null = null
   private scheduledAt: number | null = null
   private activeUntil = 0
+  private lastRunAt: number | null = null
   private visible = true
   private started = false
   private stopped = false
@@ -58,23 +59,38 @@ export class AdaptivePollingLoop {
   }
 
   trigger(): void {
+    this.requestActivity(false)
+  }
+
+  triggerNow(): void {
+    this.requestActivity(true)
+  }
+
+  private requestActivity(immediate: boolean): void {
     if (this.stopped) return
-    this.activeUntil = Math.max(this.activeUntil, this.now() + this.activeForMs)
+    const now = this.now()
+    const wasActive = now < this.activeUntil
+    this.activeUntil = Math.max(this.activeUntil, now + this.activeForMs)
     if (!this.started || !this.visible) return
     if (this.running) {
-      this.rerun = true
+      if (immediate || !wasActive) this.rerun = true
       return
     }
-    this.scheduleIn(0)
+    const delay =
+      immediate || !wasActive || this.lastRunAt === null
+        ? 0
+        : Math.max(0, this.lastRunAt + this.activeIntervalMs - now)
+    this.scheduleIn(delay)
   }
 
   setVisible(visible: boolean): void {
     if (this.stopped || this.visible === visible) return
     this.visible = visible
-    if (!this.started || this.running) return
     if (visible) {
-      this.trigger()
+      this.triggerNow()
     } else {
+      this.rerun = false
+      if (!this.started || this.running) return
       this.replaceSchedule(this.hiddenIntervalMs)
     }
   }
@@ -108,6 +124,7 @@ export class AdaptivePollingLoop {
   private async execute(): Promise<void> {
     if (this.stopped || this.running) return
     this.running = true
+    this.lastRunAt = this.now()
     try {
       await this.options.run()
     } catch (error) {
