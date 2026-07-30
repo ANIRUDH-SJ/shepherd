@@ -13,6 +13,7 @@ import { bumpFontSize, resetFontSize } from './settings'
 import type { AgentReport } from '../../shared/agent'
 import type { UsageReport } from '../../shared/usage'
 import { isWorkspaceMetadata } from '../../shared/workspaceMetadata'
+import { nextAgentLifecycleDeadline } from './agentTiming'
 import Sidebar from './components/Sidebar'
 import WorkspaceView from './components/WorkspaceView'
 
@@ -47,6 +48,10 @@ export default function App(): React.JSX.Element {
   // Keep the latest state in a ref so the (once-installed) key handler sees it.
   const stateRef = useRef(state)
   stateRef.current = state
+  const agentLifecycleDeadline = useMemo(
+    () => nextAgentLifecycleDeadline(state.agents),
+    [state.agents]
+  )
 
   // Global keyboard shortcuts. Ctrl+Shift so we never steal a terminal's Ctrl keys.
   useEffect(() => {
@@ -115,15 +120,17 @@ export default function App(): React.JSX.Element {
     })
   }, [state.workspaces, state.activeWorkspaceId, state.agents])
 
-  // Expiry is reducer-driven so records from integrations without a clean exit
-  // cannot leave the sidebar stale forever.
+  // Schedule only the next lifecycle boundary. This keeps provider records
+  // self-healing without waking and dispatching every second when nothing is due.
   useEffect(() => {
-    const timer = window.setInterval(
-      () => dispatch({ type: 'expireAgents', now: Date.now() }),
-      1000
+    const deadline = agentLifecycleDeadline
+    if (deadline === null) return
+    const timer = window.setTimeout(
+      () => dispatch({ type: 'expireAgents', now: Math.max(Date.now(), deadline) }),
+      Math.max(0, deadline - Date.now())
     )
-    return () => window.clearInterval(timer)
-  }, [])
+    return () => window.clearTimeout(timer)
+  }, [agentLifecycleDeadline])
 
   // A shell can exit while its surface remains open. Remove every agent bound to
   // that terminal immediately instead of leaving a live-looking sidebar record.

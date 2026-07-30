@@ -19,9 +19,26 @@ interface Props {
 export default function AgentList({ agents, workspaces, dispatch }: Props): React.JSX.Element {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 10_000)
-    return () => window.clearInterval(timer)
-  }, [])
+    if (agents.length === 0) return
+    let timer: number | null = null
+    const stop = (): void => {
+      if (timer !== null) window.clearInterval(timer)
+      timer = null
+    }
+    const start = (): void => {
+      stop()
+      if (document.hidden) return
+      setNow(Date.now())
+      timer = window.setInterval(() => setNow(Date.now()), 10_000)
+    }
+    const onVisibility = (): void => start()
+    document.addEventListener('visibilitychange', onVisibility)
+    start()
+    return () => {
+      stop()
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [agents.length])
 
   const workspaceNames = new Map(
     workspaces.map((workspace, index) => [
