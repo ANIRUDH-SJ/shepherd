@@ -59,6 +59,8 @@ const scheduler = manualScheduler()
 const started: DeferredBackgroundServiceName[] = []
 const agentUpdates: AgentRecord[][] = []
 const workspaceUpdates: WorkspacesSync['workspaces'][] = []
+const agentVisibility: boolean[] = []
+const metadataVisibility: boolean[] = []
 let agentStops = 0
 let metadataStops = 0
 let readyCount = 0
@@ -67,12 +69,12 @@ const services = new DeferredBackgroundServices({
   schedule: scheduler.schedule,
   startAgentDiscovery: () => ({
     updateAgents: (agents) => agentUpdates.push(agents),
-    setVisible: () => undefined,
+    setVisible: (visible) => agentVisibility.push(visible),
     stop: () => agentStops++
   }),
   startWorkspaceMetadata: () => ({
     updateWorkspaces: (workspaces) => workspaceUpdates.push(workspaces),
-    setVisible: () => undefined,
+    setVisible: (visible) => metadataVisibility.push(visible),
     stop: () => metadataStops++
   }),
   onServiceStarted: (service) => started.push(service),
@@ -80,6 +82,7 @@ const services = new DeferredBackgroundServices({
 })
 
 services.update(sync(1))
+services.setVisible(false)
 services.firstTerminalReady()
 services.firstTerminalReady()
 assert(started.length === 0, 'does not start background services in the readiness turn')
@@ -87,17 +90,21 @@ assert(scheduler.tasks.length === 1, 'schedules readiness only once')
 
 scheduler.runNext()
 assert(started.join(',') === 'agent-discovery', 'starts agent discovery on the next turn')
+assert(agentVisibility[0] === false, 'replays hidden state to delayed agent discovery')
 assert(agentUpdates[0]?.[0]?.agentId === 'agent-1', 'replays agents mirrored before readiness')
 assert(workspaceUpdates.length === 0, 'spreads metadata startup across another turn')
 
 services.update(sync(2))
 assert(agentUpdates.at(-1)?.[0]?.agentId === 'agent-2', 'updates a service that is already live')
+services.setVisible(true)
+assert(agentVisibility.at(-1) === true, 'forwards visibility to a live service')
 
 scheduler.runNext()
 assert(
   started.join(',') === 'agent-discovery,workspace-metadata',
   'starts workspace metadata on the following turn'
 )
+assert(metadataVisibility[0] === true, 'starts later metadata with the latest visibility')
 assert(
   workspaceUpdates[0]?.[0]?.id === 'ws-2',
   'starts the later service with the newest mirrored workspace state'
@@ -107,6 +114,11 @@ assert(readyCount === 1, 'reports readiness after both services start')
 services.update(sync(3))
 assert(agentUpdates.at(-1)?.[0]?.agentId === 'agent-3', 'keeps agent discovery synchronized')
 assert(workspaceUpdates.at(-1)?.[0]?.id === 'ws-3', 'keeps metadata discovery synchronized')
+services.setVisible(false)
+assert(
+  agentVisibility.at(-1) === false && metadataVisibility.at(-1) === false,
+  'forwards hidden state to both live services'
+)
 services.stop()
 services.stop()
 assert(agentStops === 1 && metadataStops === 1, 'stops each live service exactly once')

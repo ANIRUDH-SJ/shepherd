@@ -89,6 +89,8 @@ async function main(): Promise<void> {
 
   loop.setVisible(false)
   assert(scheduler.pending()[0]?.delayMs === 15_000, 'backs off a hidden window')
+  loop.trigger()
+  assert(scheduler.pending()[0]?.delayMs === 15_000, 'does not accelerate hidden activity')
   loop.setVisible(true)
   assert(scheduler.pending()[0]?.delayMs === 0, 'restoring visibility requests an immediate poll')
 

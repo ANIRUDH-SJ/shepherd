@@ -60,7 +60,7 @@ export class AdaptivePollingLoop {
   trigger(): void {
     if (this.stopped) return
     this.activeUntil = Math.max(this.activeUntil, this.now() + this.activeForMs)
-    if (!this.started) return
+    if (!this.started || !this.visible) return
     if (this.running) {
       this.rerun = true
       return
