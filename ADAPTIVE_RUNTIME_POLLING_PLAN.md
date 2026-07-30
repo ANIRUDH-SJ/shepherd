@@ -75,7 +75,7 @@ but they still read `/proc` and Git `HEAD` on every interval.
 - [x] Add architecture, alternatives, security, and tradeoffs to `textbook/`.
 - [x] Update `PERFORMANCE_ENHANCEMENT_PLAN.md`, `ROADMAP.md`, `FEATURES.md`, and
       relevant indexes after behavior settles.
-- [ ] Run `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, and
+- [x] Run `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, and
       `git diff --check`.
 - [ ] Open and review a dedicated PR.
 
