@@ -154,6 +154,12 @@ qualification.
 
 ### 5. Control terminal memory and lifecycle
 
+Status: implemented. See `learning/M21-terminal-memory-lifecycle.md` for the code
+walkthrough, `textbook/33-terminal-memory-and-ownership.md` for the engineering
+design, and
+`benchmarks/results/2026-07-30-terminal-memory-lifecycle.md` for the
+pressure-qualified comparison.
+
 Measure the fixed Electron cost separately from incremental cost per terminal.
 Use heap snapshots, process PSS, and terminal-count scaling to inspect:
 
@@ -173,6 +179,26 @@ have a user-facing rationale or configuration path.
 Acceptance gate: PSS growth from 1 to 2, 4, and 8 terminals becomes explainable,
 closed-terminal memory trends back toward baseline after garbage collection and
 settling, and repeated open/close cycles do not show monotonic growth.
+
+The accepted implementation binds each PTY to its creator `WebContents`.
+Creator-only checks cover replacement, input, resize, output acknowledgement, and
+disposal. Renderer destruction or failure releases all associated terminals
+through one owner subscription, and expected-value removal prevents delayed exit
+or cleanup callbacks from touching replacements.
+
+Retention limits are explicit: xterm keeps 1,000 scrollback lines, inspection
+keeps 256 KiB per terminal, OSC keeps an 8 KiB incomplete tail, and output keeps
+its existing acknowledged byte/watermark bounds. Exact opt-in diagnostics report
+only aggregate counts and bytes.
+
+Acceptance evidence: the full process tree used about 325 MiB PSS at one
+terminal and added roughly 4.7–5.0 MiB per terminal. Process counts were
+7/8/10/14 at 1/2/4/8 PTYs. All 64 checked candidate recovery points returned to
+one terminal, one owner, one inspection capture, zero queued output, and zero
+paused PTYs. A matched 30-cycle run showed the same Electron allocator high-water
+steps in baseline and candidate; candidate ended 1.5 MiB lower. Host swap use was
+74.9%, so these absolute values remain pilot evidence rather than a publishable
+hardware baseline.
 
 ### 6. Tune rendering and resize behavior
 
@@ -197,11 +223,11 @@ benchmarks show no new dropped or stale frames.
 |     2 | `perf/defer-background-services` | Move noncritical services after first-terminal readiness | Implemented | PR 1                      |
 |     3 | `perf/terminal-output-batching`  | Bounded batching, flow control, and hot-path tests       | Implemented | PR 1                      |
 |     4 | `perf/adaptive-runtime-polling`  | Activity-aware agent and metadata scheduling             | Implemented | PR 1                      |
-|     5 | `perf/terminal-memory-lifecycle` | Memory accounting, limits, and disposal fixes            | Planned     | expanded scaling suite    |
+|     5 | `perf/terminal-memory-lifecycle` | Memory accounting, limits, and disposal fixes            | Implemented | expanded scaling suite    |
 |     6 | `perf/render-resize-scheduling`  | WebGL visibility and coalesced fit/resize                | Planned     | rendered-output suite     |
 |     7 | `benchmarks/performance-rerun`   | Controlled before/after results and analysis             | Planned     | accepted optimization PRs |
 
-PRs 2–4 may be developed independently after instrumentation, but each must
+PRs 2–5 may be developed independently after instrumentation, but each must
 rebase on the latest accepted baseline and report its own effect. Documentation
 for implementation PRs must update `learning/`, `textbook/`, `ROADMAP.md`, and
 `FEATURES.md` after behavior settles.

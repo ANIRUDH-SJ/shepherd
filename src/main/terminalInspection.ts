@@ -63,6 +63,12 @@ export interface TerminalInspectionActivity {
   timestamp: number
 }
 
+export interface TerminalInspectionMemorySnapshot {
+  terminalCount: number
+  retainedBytes: number
+  droppedBytes: number
+}
+
 export interface TerminalInspection {
   surfaceId: string
   workspaceId?: string
@@ -198,6 +204,16 @@ export function clearTerminalInspections(): void {
     publishActivity({ surfaceId, kind: 'removed', timestamp })
   }
   captures.clear()
+}
+
+export function terminalInspectionMemorySnapshot(): TerminalInspectionMemorySnapshot {
+  let retainedBytes = 0
+  let droppedBytes = 0
+  for (const capture of captures.values()) {
+    retainedBytes += capture.output.length
+    droppedBytes += capture.droppedBytes
+  }
+  return { terminalCount: captures.size, retainedBytes, droppedBytes }
 }
 
 function parseStat(
@@ -338,17 +354,19 @@ export function listTerminalProcessContexts(
 }
 
 function plainTerminalText(raw: string): string {
-  return raw
-    // Terminal protocols are defined by these control-byte sequences.
-    // eslint-disable-next-line no-control-regex
-    .replace(/\x1b\](?:(?!\x07|\x1b\\)[\s\S])*(?:\x07|\x1b\\|$)/g, '')
-    // eslint-disable-next-line no-control-regex
-    .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '')
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    // eslint-disable-next-line no-control-regex
-    .replace(/[^\x09\x0a\x20-\x7e\u00a0-\uffff]/g, '')
-    .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
+  return (
+    raw
+      // Terminal protocols are defined by these control-byte sequences.
+      // eslint-disable-next-line no-control-regex
+      .replace(/\x1b\](?:(?!\x07|\x1b\\)[\s\S])*(?:\x07|\x1b\\|$)/g, '')
+      // eslint-disable-next-line no-control-regex
+      .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '')
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      // eslint-disable-next-line no-control-regex
+      .replace(/[^\x09\x0a\x20-\x7e\u00a0-\uffff]/g, '')
+      .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
+  )
 }
 
 function tailBytes(text: string, maxBytes: number): { text: string; truncated: boolean } {

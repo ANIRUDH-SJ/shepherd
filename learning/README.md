@@ -18,29 +18,30 @@ code as we write it.
 
 ## Index
 
-| Milestone | File                           | What it covers                                                                                       |
-| --------- | ------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| **M0**    | `M0-project-scaffold.md`       | The Electron + React + TypeScript skeleton: every file, the build pipeline, how to run it            |
-| **M1**    | `M1-terminal.md`               | One real terminal: node-pty (backend) + xterm.js (UI) + the IPC loop, function by function           |
-| **M2**    | `M2-panes-tabs-splits.md`      | Many terminals: the flat keyed pane layer, tabs, resizable splits, the pure layout engine + its test |
-| **M3**    | `M3-workspaces-and-socket.md`  | Multi-workspace sidebar (status, markers, resize, collapse) + the unix-socket server + `cmux` CLI    |
-| **M4**    | `M4-agents-and-persistence.md` | OSC auto-notifications, `cmux hooks setup`, and session restore (+ the review hardening)             |
-| **M5**    | `M5-socket-control.md`         | Full socket control API: workspace + surface control + queries, and the review hardening             |
-| **M6**    | `M6-usage-telemetry.md`        | Agent-reported token usage: validation, socket/CLI flow, reducer aggregation, sidebar UI, and tests  |
-| **M7**    | `M7-semantic-agent-runtime.md` | Semantic lifecycle state: contract, socket controls, reducer ownership, sidebar, focus, and adapters |
-| **M8**    | `M8-worktree-workspaces.md`    | Safe Git worktree creation: validated Git execution, socket orchestration, workspace cwd, and tests |
-| **M9**    | `M9-agent-event-subscriptions.md` | Filtered agent snapshots and ordered live upsert/removal events over the Unix socket               |
-| **M10**   | `M10-automatic-agent-discovery.md` | Zero-setup Linux process discovery, activity state, source precedence, cleanup, and live proof    |
-| **M11**   | `M11-live-workspace-metadata.md` | Active-terminal cwd, cached Git discovery, live project/branch UI, persistence, and visual proof    |
-| **M12**   | `M12-single-workspace-startup.md` | Deterministic one-workspace startup, active-layout persistence, compatibility, and regression tests |
-| **M13**   | `M13-ui-design-tokens.md` | Semantic palette, typography, geometry, interaction rules, and CSS boundary regression              |
-| **M14**   | `M14-sidebar-information-hierarchy.md` | Project-first workspace identity, agent urgency groups, accessible icons, empty states, and visual proof |
-| **M15**   | `M15-terminal-chrome.md` | ARIA tabs, roving focus, pane activation, context strip, SVG actions, capability states, and split proof |
-| **M16**   | `M16-terminal-benchmark-harness.md` | Production artifact proof, deterministic fixtures, process accounting, pressure gates, safe cleanup, and pilot validation |
-| **M17**   | `M17-runtime-performance-instrumentation.md` | Opt-in main/renderer/xterm/PTY startup milestones, bounded summaries, disabled hot paths, and live proof |
-| **M18**   | `M18-deferred-background-startup.md` | First-terminal readiness handshake, delayed discovery services, latest-state replay, cleanup, and live proof |
-| **M19**   | `M19-terminal-output-batching.md` | Bounded PTY batching, xterm acknowledgements, backpressure, lifecycle correctness, and matched benchmark proof |
-| **M20**   | `M20-adaptive-runtime-polling.md` | Activity-aware agent and metadata scans, visibility backoff, exact renderer deadlines, cleanup, and measured idle-CPU proof |
+| Milestone | File                                         | What it covers                                                                                                              |
+| --------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **M0**    | `M0-project-scaffold.md`                     | The Electron + React + TypeScript skeleton: every file, the build pipeline, how to run it                                   |
+| **M1**    | `M1-terminal.md`                             | One real terminal: node-pty (backend) + xterm.js (UI) + the IPC loop, function by function                                  |
+| **M2**    | `M2-panes-tabs-splits.md`                    | Many terminals: the flat keyed pane layer, tabs, resizable splits, the pure layout engine + its test                        |
+| **M3**    | `M3-workspaces-and-socket.md`                | Multi-workspace sidebar (status, markers, resize, collapse) + the unix-socket server + `cmux` CLI                           |
+| **M4**    | `M4-agents-and-persistence.md`               | OSC auto-notifications, `cmux hooks setup`, and session restore (+ the review hardening)                                    |
+| **M5**    | `M5-socket-control.md`                       | Full socket control API: workspace + surface control + queries, and the review hardening                                    |
+| **M6**    | `M6-usage-telemetry.md`                      | Agent-reported token usage: validation, socket/CLI flow, reducer aggregation, sidebar UI, and tests                         |
+| **M7**    | `M7-semantic-agent-runtime.md`               | Semantic lifecycle state: contract, socket controls, reducer ownership, sidebar, focus, and adapters                        |
+| **M8**    | `M8-worktree-workspaces.md`                  | Safe Git worktree creation: validated Git execution, socket orchestration, workspace cwd, and tests                         |
+| **M9**    | `M9-agent-event-subscriptions.md`            | Filtered agent snapshots and ordered live upsert/removal events over the Unix socket                                        |
+| **M10**   | `M10-automatic-agent-discovery.md`           | Zero-setup Linux process discovery, activity state, source precedence, cleanup, and live proof                              |
+| **M11**   | `M11-live-workspace-metadata.md`             | Active-terminal cwd, cached Git discovery, live project/branch UI, persistence, and visual proof                            |
+| **M12**   | `M12-single-workspace-startup.md`            | Deterministic one-workspace startup, active-layout persistence, compatibility, and regression tests                         |
+| **M13**   | `M13-ui-design-tokens.md`                    | Semantic palette, typography, geometry, interaction rules, and CSS boundary regression                                      |
+| **M14**   | `M14-sidebar-information-hierarchy.md`       | Project-first workspace identity, agent urgency groups, accessible icons, empty states, and visual proof                    |
+| **M15**   | `M15-terminal-chrome.md`                     | ARIA tabs, roving focus, pane activation, context strip, SVG actions, capability states, and split proof                    |
+| **M16**   | `M16-terminal-benchmark-harness.md`          | Production artifact proof, deterministic fixtures, process accounting, pressure gates, safe cleanup, and pilot validation   |
+| **M17**   | `M17-runtime-performance-instrumentation.md` | Opt-in main/renderer/xterm/PTY startup milestones, bounded summaries, disabled hot paths, and live proof                    |
+| **M18**   | `M18-deferred-background-startup.md`         | First-terminal readiness handshake, delayed discovery services, latest-state replay, cleanup, and live proof                |
+| **M19**   | `M19-terminal-output-batching.md`            | Bounded PTY batching, xterm acknowledgements, backpressure, lifecycle correctness, and matched benchmark proof              |
+| **M20**   | `M20-adaptive-runtime-polling.md`            | Activity-aware agent and metadata scans, visibility backoff, exact renderer deadlines, cleanup, and measured idle-CPU proof |
+| **M21**   | `M21-terminal-memory-lifecycle.md`           | Renderer-owned PTYs, crash cleanup, explicit retention bounds, aggregate diagnostics, and 1/2/4/8 lifecycle proof           |
 
 ## How to read a milestone file
 

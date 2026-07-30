@@ -21,6 +21,12 @@ interface TerminalOutputBatcherOptions {
   interactiveMs?: number
 }
 
+export interface TerminalOutputMemorySnapshot {
+  pendingBytes: number
+  inFlightBytes: number
+  paused: boolean
+}
+
 function scheduleFlush(task: () => void, delayMs: number): CancelScheduledFlush {
   const handle = setTimeout(task, delayMs)
   return () => clearTimeout(handle)
@@ -101,6 +107,14 @@ export class TerminalOutputBatcher {
   drain(): void {
     if (this.disposed) return
     this.flush(true)
+  }
+
+  memorySnapshot(): TerminalOutputMemorySnapshot {
+    return {
+      pendingBytes: this.pendingBytes,
+      inFlightBytes: this.inFlightBytes,
+      paused: this.paused
+    }
   }
 
   dispose(): void {

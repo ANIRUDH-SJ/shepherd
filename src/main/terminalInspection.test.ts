@@ -9,6 +9,7 @@ import {
   removeTerminalInspection,
   resizeTerminalInspection,
   subscribeTerminalInspectionActivity,
+  terminalInspectionMemorySnapshot,
   type TerminalInspectionActivity
 } from './terminalInspection'
 
@@ -96,10 +97,15 @@ const capped = inspectTerminal('term-cap', { lines: 1, maxBytes: 10 }, () => ({
   foreground: null
 }))
 assert(capped?.output.truncated === true, 'reports capture-ring truncation')
+const retained = terminalInspectionMemorySnapshot()
+assert(retained.terminalCount === 2, 'counts retained inspection terminals')
+assert(retained.retainedBytes <= 262_144 * 2, 'bounds aggregate retained inspection bytes')
+assert(retained.droppedBytes === 7, 'counts discarded inspection bytes without retaining content')
 
 removeTerminalInspection('term-1')
 removeTerminalInspection('term-cap')
 assert(inspectTerminal('term-1', { lines: 1, maxBytes: 1 }) === null, 'removes closed terminals')
+assert(terminalInspectionMemorySnapshot().retainedBytes === 0, 'releases retained inspection bytes')
 assert(
   activities.filter((activity) => activity.kind === 'removed').length === 2,
   'publishes removal only for registered terminals'
