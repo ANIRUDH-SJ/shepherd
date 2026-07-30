@@ -2,22 +2,25 @@
 const fs = require('fs')
 const { writeFileAtomic } = require('./common')
 
-const OPENCODE_MARKER = '// cmux-linux managed agent integration'
+const OPENCODE_MARKER = '// Shepherd managed agent integration'
+const LEGACY_OPENCODE_MARKER = '// cmux-linux managed agent integration'
 const OPENCODE_PLUGIN = `${OPENCODE_MARKER}
 const SOURCE = 'opencode:plugin'
 let revision = Date.now()
 
-async function cmux(...args) {
-  if (!process.env.CMUX_SOCKET_PATH || !process.env.CMUX_SURFACE_ID) return
+async function shepherd(...args) {
+  const socketPath = process.env.SHEPHERD_SOCKET_PATH || process.env.CMUX_SOCKET_PATH
+  const surfaceId = process.env.SHEPHERD_SURFACE_ID || process.env.CMUX_SURFACE_ID
+  if (!socketPath || !surfaceId) return
   try {
-    const child = Bun.spawn(['cmux', ...args], {
+    const child = Bun.spawn(['shepherd', ...args], {
       env: process.env,
       stdout: 'ignore',
       stderr: 'ignore'
     })
     await child.exited
   } catch {
-    // The terminal may be outside cmux-linux or the app may have exited.
+    // The terminal may be outside Shepherd or the app may have exited.
   }
 }
 
@@ -32,7 +35,7 @@ function activity(tool) {
 
 async function report(state, ...detail) {
   revision += 1
-  await cmux(
+  await shepherd(
     'agent-report',
     '--provider', 'opencode',
     '--source', SOURCE,
@@ -42,7 +45,7 @@ async function report(state, ...detail) {
   )
 }
 
-export const CmuxAgentPlugin = async () => ({
+export const ShepherdAgentPlugin = async () => ({
   'tool.execute.before': async (input) => {
     await report('working', '--activity', activity(input.tool))
   },
@@ -61,8 +64,9 @@ export const CmuxAgentPlugin = async () => ({
       const status = event.properties?.status?.type ?? event.properties?.status
       if (status === 'idle') await report('done')
       else if (status === 'busy' || status === 'retry') await report('working', '--activity', 'thinking')
-    } else if (event.type === 'session.deleted' && process.env.CMUX_SURFACE_ID) {
-      await cmux('agent-clear', SOURCE + ':' + process.env.CMUX_SURFACE_ID, '--source', SOURCE)
+    } else if (event.type === 'session.deleted') {
+      const surfaceId = process.env.SHEPHERD_SURFACE_ID || process.env.CMUX_SURFACE_ID
+      if (surfaceId) await shepherd('agent-clear', SOURCE + ':' + surfaceId, '--source', SOURCE)
     }
   }
 })
@@ -77,7 +81,11 @@ function installOpenCodePlugin(file) {
       return { ok: false, error: `cannot read ${file}: ${error.message || String(error)}` }
     }
   }
-  if (existing !== null && !existing.startsWith(OPENCODE_MARKER)) {
+  if (
+    existing !== null &&
+    !existing.startsWith(OPENCODE_MARKER) &&
+    !existing.startsWith(LEGACY_OPENCODE_MARKER)
+  ) {
     return { ok: false, error: `refusing to overwrite unmanaged plugin: ${file}` }
   }
   const changed = existing !== OPENCODE_PLUGIN
@@ -85,4 +93,9 @@ function installOpenCodePlugin(file) {
   return { ok: true, changed, file }
 }
 
-module.exports = { OPENCODE_MARKER, OPENCODE_PLUGIN, installOpenCodePlugin }
+module.exports = {
+  LEGACY_OPENCODE_MARKER,
+  OPENCODE_MARKER,
+  OPENCODE_PLUGIN,
+  installOpenCodePlugin
+}

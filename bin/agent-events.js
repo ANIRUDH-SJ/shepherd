@@ -116,7 +116,7 @@ function mapAgentEvent(provider, event, env = process.env) {
     case 'Stop':
       return report(provider, event, 'done')
     case 'SessionEnd': {
-      const surfaceId = env.CMUX_SURFACE_ID
+      const surfaceId = env.SHEPHERD_SURFACE_ID || env.CMUX_SURFACE_ID
       if (!surfaceId) return null
       return {
         method: 'agent-clear',
