@@ -61,6 +61,20 @@ export function markDirectChildOwnership<T extends ProcessIdentity>(
   )
 }
 
+export function classifyLifecycleProcess(
+  rootPid: number,
+  pid: number,
+  command: string,
+  argv: string[]
+): string {
+  if (pid === rootPid) return 'electron:main'
+  const type = argv
+    .map((argument) => /^--type=([a-z0-9-]{1,48})$/.exec(argument)?.[1])
+    .find((value) => value !== undefined)
+  if (type) return `electron:${type}`
+  return `child:${command}`
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
 }

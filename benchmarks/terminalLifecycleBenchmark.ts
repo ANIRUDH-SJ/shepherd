@@ -31,6 +31,7 @@ import {
   type SubjectDefinition
 } from './terminalBenchmarkLib'
 import {
+  classifyLifecycleProcess,
   latestTerminalMemorySnapshot,
   markDirectChildOwnership,
   parseTerminalMemorySnapshots,
@@ -63,7 +64,7 @@ interface MemoryPressure {
 }
 
 interface ProcessComposition {
-  command: string
+  role: string
   count: number
   rssKiB: number
   pssKiB: number
@@ -73,6 +74,10 @@ interface ProcessComposition {
 
 interface LevelObservation extends LifecycleLevelSample {
   composition: ProcessComposition[]
+}
+
+interface LifecycleProcessUsage extends ProcessUsage {
+  role: string
 }
 
 interface LifecycleRun {
@@ -307,18 +312,21 @@ function processIdentities(runId: string): Array<{
   return identities.sort((a, b) => a.pid - b.pid)
 }
 
-function measuredProcesses(runId: string, rootPid: number): ProcessUsage[] {
+function measuredProcesses(runId: string, rootPid: number): LifecycleProcessUsage[] {
   const identities = processIdentities(runId)
   const ids = selectMeasuredProcessIds(identities, rootPid)
   const byPid = new Map(identities.map((identity) => [identity.pid, identity]))
-  const processes: ProcessUsage[] = []
+  const processes: LifecycleProcessUsage[] = []
   for (const pid of ids) {
     const identity = byPid.get(pid)
     if (!identity) continue
     try {
       const stat = parseProcStat(readFileSync(`/proc/${pid}/stat`, 'utf8'))
       const memory = parseSmapsRollup(readFileSync(`/proc/${pid}/smaps_rollup`, 'utf8'))
-      processes.push({ pid, ...stat, ...memory })
+      const rawArgv = readFileSync(`/proc/${pid}/cmdline`)
+      const argv = rawArgv.length <= 64 * 1024 ? rawArgv.toString().split('\0').filter(Boolean) : []
+      const role = classifyLifecycleProcess(rootPid, pid, stat.command, argv)
+      processes.push({ pid, ...stat, ...memory, role })
     } catch {
       throw new Error(`could not inspect memory for owned pid ${pid}`)
     }
@@ -327,20 +335,20 @@ function measuredProcesses(runId: string, rootPid: number): ProcessUsage[] {
   return processes.sort((a, b) => a.pid - b.pid)
 }
 
-function processComposition(processes: ProcessUsage[]): ProcessComposition[] {
-  const groups = new Map<string, ProcessUsage[]>()
+function processComposition(processes: LifecycleProcessUsage[]): ProcessComposition[] {
+  const groups = new Map<string, LifecycleProcessUsage[]>()
   for (const process of processes) {
-    const group = groups.get(process.command) ?? []
+    const group = groups.get(process.role) ?? []
     group.push(process)
-    groups.set(process.command, group)
+    groups.set(process.role, group)
   }
   return [...groups]
-    .map(([command, group]) => ({
-      command,
+    .map(([role, group]) => ({
+      role,
       count: group.length,
       ...aggregateProcesses(group)
     }))
-    .sort((a, b) => b.pssKiB - a.pssKiB || a.command.localeCompare(b.command))
+    .sort((a, b) => b.pssKiB - a.pssKiB || a.role.localeCompare(b.role))
 }
 
 async function terminateOwnedProcesses(runId: string, child: ChildProcess): Promise<void> {
