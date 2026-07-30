@@ -3,6 +3,7 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
+import { TERMINAL_SCROLLBACK_LINES } from '../../../shared/terminalMemory'
 import { getFontSize } from '../settings'
 import { terminalPanelId, terminalTabId } from '../terminalChrome'
 
@@ -41,6 +42,7 @@ export default function TerminalHost({
     const term = new Terminal({
       fontFamily: '"JetBrains Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace',
       fontSize: getFontSize(),
+      scrollback: TERMINAL_SCROLLBACK_LINES,
       cursorBlink: true,
       theme: { background: '#0d0d0f', foreground: '#e6e6e6', cursor: '#8ab4ff' }
     })
