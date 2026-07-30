@@ -115,6 +115,8 @@ Think of the book in five "acts":
 - `31-bounded-terminal-output-flow.md` — byte/time batching, xterm
   acknowledgements, high/low-water backpressure, interactive latency, ordering,
   lifecycle, and measured tradeoffs.
+- `32-adaptive-event-driven-observation.md` — activity hints, bounded recovery
+  polling, visibility backoff, exact deadlines, safety, and measurement.
 
 **Reference**
 
@@ -161,6 +163,7 @@ Think of the book in five "acts":
 | `29-runtime-performance-observability.md` | Cross-process startup traces, semantic boundaries, monotonic clocks, disabled overhead, security, and optimization | 03, 04, 07, 28 |
 | `30-startup-critical-path-scheduling.md` | Critical-path classification, readiness handshakes, late consumers, event-loop turns, and failure handling | 03, 04, 29 |
 | `31-bounded-terminal-output-flow.md` | Producer/consumer batching, acknowledgement windows, PTY backpressure, ordering, lifecycle, security, and measurement | 02, 04, 06, 07, 28 |
+| `32-adaptive-event-driven-observation.md` | Event acceleration, bounded recovery, visibility-aware scheduling, exact deadlines, safety, and idle-CPU measurement | 03, 08, 22, 23, 28 |
 
 ---
 
@@ -235,3 +238,5 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `28-terminal-performance-measurement.md` — reproducible terminal measurement and safe process accounting
 - `29-runtime-performance-observability.md` — bounded cross-process startup phase traces
 - `30-startup-critical-path-scheduling.md` — readiness-driven background service activation
+- `31-bounded-terminal-output-flow.md` — acknowledged terminal batching and backpressure
+- `32-adaptive-event-driven-observation.md` — activity-aware observation and deadline scheduling

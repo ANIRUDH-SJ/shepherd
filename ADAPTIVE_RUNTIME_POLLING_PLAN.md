@@ -2,11 +2,14 @@
 
 ## Status and scope
 
+Status: implementation and documentation complete; PR delivery in progress.
+
 This feature is phase 4 of `PERFORMANCE_ENHANCEMENT_PLAN.md`. It reduces
 steady-state timer wakeups without removing the bounded fallback scans that make
 automatic agent discovery and live workspace metadata self-healing.
 
 Branch: `perf/adaptive-runtime-polling`
+Baseline: `240fb9e70c7e0855c02a20d330af85fb646dcf07`
 
 ## Current baseline
 
@@ -22,8 +25,9 @@ but they still read `/proc` and Git `HEAD` on every interval.
 
 ### Automatic agents
 
-- Terminal registration, input, output, and removal request an immediate
-  coalesced scan.
+- The first terminal registration, input, output, or removal after quiet
+  requests an immediate scan; sustained activity is coalesced to the active
+  cadence.
 - After activity, scan every 1 second for 4 seconds.
 - Quiet visible terminals retain a 5-second fallback scan.
 - Hidden or minimized windows retain a 15-second fallback scan.
@@ -33,8 +37,9 @@ but they still read `/proc` and Git `HEAD` on every interval.
 
 ### Workspace metadata
 
-- Active-surface changes, terminal input, registration, and removal request an
-  immediate coalesced scan.
+- Active-surface changes request an immediate scan. The first terminal input,
+  registration, or removal after quiet runs immediately; sustained activity is
+  coalesced to the active cadence.
 - After a target change or input, scan every 750 ms for 5 seconds.
 - Quiet visible workspaces retain a 3-second fallback scan.
 - Hidden or minimized windows retain a 15-second fallback scan.
@@ -51,28 +56,28 @@ but they still read `/proc` and Git `HEAD` on every interval.
 
 ## Delivery checklist
 
-- [ ] Add a deterministic adaptive polling state machine with async-overlap
+- [x] Add a deterministic adaptive polling state machine with async-overlap
       protection, coalesced triggers, visibility backoff, and idempotent stop.
-- [ ] Publish content-free terminal activity signals without retaining terminal
+- [x] Publish content-free terminal activity signals without retaining terminal
       text, commands, arguments, or environment values.
-- [ ] Move automatic agent discovery to the adaptive schedule.
-- [ ] Move workspace metadata discovery to the adaptive schedule.
-- [ ] Forward main-window visibility to both background runtimes.
-- [ ] Replace renderer expiry polling with deadline scheduling.
-- [ ] Pause empty or hidden sidebar elapsed-label refreshes.
-- [ ] Preserve unchanged-state suppression and bounded fallback recovery.
-- [ ] Add unit and integration regression coverage for every timing contract.
-- [ ] Compare steady-state wakeups and production idle CPU against the exact
+- [x] Move automatic agent discovery to the adaptive schedule.
+- [x] Move workspace metadata discovery to the adaptive schedule.
+- [x] Forward main-window visibility to both background runtimes.
+- [x] Replace renderer expiry polling with deadline scheduling.
+- [x] Pause empty or hidden sidebar elapsed-label refreshes.
+- [x] Preserve unchanged-state suppression and bounded fallback recovery.
+- [x] Add unit and integration regression coverage for every timing contract.
+- [x] Compare steady-state wakeups and production idle CPU against the exact
       pre-feature merge.
-- [ ] Verify agent appearance/removal plus cwd and branch updates in live
+- [x] Verify agent appearance/removal plus cwd and branch updates in live
       Electron.
-- [ ] Add the code walkthrough to `learning/`.
-- [ ] Add architecture, alternatives, security, and tradeoffs to `textbook/`.
-- [ ] Update `PERFORMANCE_ENHANCEMENT_PLAN.md`, `ROADMAP.md`, `FEATURES.md`, and
+- [x] Add the code walkthrough to `learning/`.
+- [x] Add architecture, alternatives, security, and tradeoffs to `textbook/`.
+- [x] Update `PERFORMANCE_ENHANCEMENT_PLAN.md`, `ROADMAP.md`, `FEATURES.md`, and
       relevant indexes after behavior settles.
 - [ ] Run `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, and
       `git diff --check`.
-- [ ] Open, review, and merge a dedicated PR.
+- [ ] Open and review a dedicated PR.
 
 ## Guardrails
 

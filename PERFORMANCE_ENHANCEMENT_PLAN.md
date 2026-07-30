@@ -113,6 +113,12 @@ display, OSC handling, exit ordering, Unicode boundaries, and the bounded queue.
 
 ### 4. Reduce idle polling and duplicate work
 
+Status: implemented. See `learning/M20-adaptive-runtime-polling.md` for the code
+walkthrough, `textbook/32-adaptive-event-driven-observation.md` for the
+engineering design, and
+`benchmarks/results/2026-07-30-adaptive-runtime-polling.md` for the matched
+production comparison.
+
 Audit recurring work in `agentDiscovery.ts`, `workspaceMetadata.ts`, `App.tsx`,
 and sidebar age rendering. Consolidate timers where their wakeups can safely
 share a scheduler. Prefer event-triggered invalidation plus adaptive polling:
@@ -131,6 +137,20 @@ requirements should be stated before changing intervals.
 Acceptance gate: steady-state CPU and wakeups fall over a multi-second sample,
 while agent appearance/removal and cwd/branch changes remain within documented
 latency bounds.
+
+The accepted implementation uses content-free terminal activity to accelerate
+non-overlapping scans, then backs agents off to five seconds and metadata to
+three seconds while quiet. Hidden windows retain a 15-second recovery cadence,
+and restoration runs immediately. Renderer lifecycle transitions use exact
+deadlines, while empty or hidden elapsed-label timers stop.
+
+Acceptance evidence: configured quiet no-agent callbacks fell from 206 to 32 per
+minute. In a matched 20-sample production comparison after an eight-second
+settle, median idle CPU fell from 7.8% to 7.2%. The candidate was lower in 17
+paired rounds, tied three, and was never higher. Startup, memory, and parser
+throughput stayed neutral. Live Electron proof covered agent appearance/removal
+and cwd/branch refresh; the benchmark report records its end-of-run pressure
+qualification.
 
 ### 5. Control terminal memory and lifecycle
 
@@ -176,7 +196,7 @@ benchmarks show no new dropped or stale frames.
 |     1 | `perf/runtime-instrumentation`   | Startup milestones and opt-in diagnostics                | Implemented | benchmark foundation      |
 |     2 | `perf/defer-background-services` | Move noncritical services after first-terminal readiness | Implemented | PR 1                      |
 |     3 | `perf/terminal-output-batching`  | Bounded batching, flow control, and hot-path tests       | Implemented | PR 1                      |
-|     4 | `perf/adaptive-runtime-polling`  | Activity-aware agent and metadata scheduling             | Planned     | PR 1                      |
+|     4 | `perf/adaptive-runtime-polling`  | Activity-aware agent and metadata scheduling             | Implemented | PR 1                      |
 |     5 | `perf/terminal-memory-lifecycle` | Memory accounting, limits, and disposal fixes            | Planned     | expanded scaling suite    |
 |     6 | `perf/render-resize-scheduling`  | WebGL visibility and coalesced fit/resize                | Planned     | rendered-output suite     |
 |     7 | `benchmarks/performance-rerun`   | Controlled before/after results and analysis             | Planned     | accepted optimization PRs |
