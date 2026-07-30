@@ -8,10 +8,20 @@ import {
   workspaceProjectName,
   type WorkspaceMetadata
 } from '../shared/workspaceMetadata'
-import { listTerminalProcessContexts, type TerminalProcessContext } from './terminalInspection'
+import { AdaptivePollingLoop } from './adaptivePolling'
+import {
+  listTerminalProcessContexts,
+  subscribeTerminalInspectionActivity,
+  type TerminalInspectionActivity,
+  type TerminalProcessContext
+} from './terminalInspection'
 
 export const WORKSPACE_METADATA_SCAN_MS = 750
 export const NO_GIT_RETRY_MS = 5_000
+export const WORKSPACE_METADATA_ACTIVE_POLL_MS = 750
+export const WORKSPACE_METADATA_QUIET_POLL_MS = 3_000
+export const WORKSPACE_METADATA_HIDDEN_POLL_MS = 15_000
+export const WORKSPACE_METADATA_BURST_MS = 5_000
 
 interface GitLocation {
   root: string
@@ -28,7 +38,7 @@ interface CachedWorkspaceMetadata {
 
 type WorkspaceTarget = WorkspacesSync['workspaces'][number]
 
-interface WorkspaceMetadataDependencies {
+export interface WorkspaceMetadataDependencies {
   probeGit(cwd: string): Promise<GitLocation | null>
   readGitHead(gitDir: string): string | null
   home: string
@@ -114,7 +124,8 @@ export class WorkspaceMetadataDiscovery {
     }
   ) {}
 
-  updateWorkspaces(workspaces: WorkspaceTarget[]): void {
+  updateWorkspaces(workspaces: WorkspaceTarget[]): boolean {
+    const previousTargets = new Map(this.targets)
     const live = new Set<string>()
     for (const workspace of workspaces) {
       live.add(workspace.id)
@@ -127,6 +138,12 @@ export class WorkspaceMetadataDiscovery {
     for (const workspaceId of this.cache.keys()) {
       if (!live.has(workspaceId)) this.cache.delete(workspaceId)
     }
+    return (
+      previousTargets.size !== this.targets.size ||
+      [...this.targets].some(
+        ([workspaceId, surfaceId]) => previousTargets.get(workspaceId) !== surfaceId
+      )
+    )
   }
 
   async scan(contexts = listTerminalProcessContexts(), now = Date.now()): Promise<void> {
@@ -186,17 +203,49 @@ export class WorkspaceMetadataDiscovery {
 
 export interface WorkspaceMetadataRuntime {
   updateWorkspaces(workspaces: WorkspaceTarget[]): void
+  setVisible(visible: boolean): void
   stop(): void
+}
+
+interface WorkspaceMetadataRuntimeOptions {
+  listContexts?: () => TerminalProcessContext[]
+  subscribeActivity?: (
+    listener: (activity: TerminalInspectionActivity) => void
+  ) => () => void
+  dependencies?: WorkspaceMetadataDependencies
+  now?: () => number
+  schedule?: (task: () => void, delayMs: number) => () => void
 }
 
 export function startWorkspaceMetadataDiscovery(
   emit: (command: SocketApply) => void,
-  intervalMs = WORKSPACE_METADATA_SCAN_MS
+  options: WorkspaceMetadataRuntimeOptions = {}
 ): WorkspaceMetadataRuntime {
-  const discovery = new WorkspaceMetadataDiscovery(emit)
-  const timer = setInterval(() => void discovery.scan(), intervalMs)
+  const discovery = new WorkspaceMetadataDiscovery(emit, options.dependencies)
+  const now = options.now ?? Date.now
+  const loop = new AdaptivePollingLoop({
+    run: () => discovery.scan((options.listContexts ?? listTerminalProcessContexts)(), now()),
+    activeIntervalMs: WORKSPACE_METADATA_ACTIVE_POLL_MS,
+    idleIntervalMs: WORKSPACE_METADATA_QUIET_POLL_MS,
+    hiddenIntervalMs: WORKSPACE_METADATA_HIDDEN_POLL_MS,
+    activeForMs: WORKSPACE_METADATA_BURST_MS,
+    now,
+    ...(options.schedule ? { schedule: options.schedule } : {})
+  })
+  const unsubscribeActivity = (
+    options.subscribeActivity ?? subscribeTerminalInspectionActivity
+  )((activity) => {
+    if (activity.kind !== 'output') loop.trigger()
+  })
+  loop.start()
   return {
-    updateWorkspaces: (workspaces) => discovery.updateWorkspaces(workspaces),
-    stop: () => clearInterval(timer)
+    updateWorkspaces: (workspaces) => {
+      if (discovery.updateWorkspaces(workspaces)) loop.trigger()
+    },
+    setVisible: (visible) => loop.setVisible(visible),
+    stop: () => {
+      unsubscribeActivity()
+      loop.stop()
+    }
   }
 }

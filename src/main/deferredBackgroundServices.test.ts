@@ -72,6 +72,7 @@ const services = new DeferredBackgroundServices({
   }),
   startWorkspaceMetadata: () => ({
     updateWorkspaces: (workspaces) => workspaceUpdates.push(workspaces),
+    setVisible: () => undefined,
     stop: () => metadataStops++
   }),
   onServiceStarted: (service) => started.push(service),
@@ -124,6 +125,7 @@ const cancelled = new DeferredBackgroundServices({
   },
   startWorkspaceMetadata: () => ({
     updateWorkspaces: () => undefined,
+    setVisible: () => undefined,
     stop: () => undefined
   })
 })
@@ -143,7 +145,11 @@ const failure = new DeferredBackgroundServices({
   },
   startWorkspaceMetadata: () => {
     metadataStartedAfterFailure = true
-    return { updateWorkspaces: () => undefined, stop: () => undefined }
+    return {
+      updateWorkspaces: () => undefined,
+      setVisible: () => undefined,
+      stop: () => undefined
+    }
   },
   onError: (service) => errors.push(service),
   onReady: () => failureReadyCount++

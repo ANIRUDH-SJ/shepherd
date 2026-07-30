@@ -4,8 +4,12 @@ import type { TerminalProcessContext } from './terminalInspection'
 import {
   branchFromGitHead,
   parseGitLocation,
+  startWorkspaceMetadataDiscovery,
+  WORKSPACE_METADATA_ACTIVE_POLL_MS,
+  WORKSPACE_METADATA_HIDDEN_POLL_MS,
   WorkspaceMetadataDiscovery
 } from './workspaceMetadata'
+import type { TerminalInspectionActivity } from './terminalInspection'
 
 let failures = 0
 function assert(condition: boolean, message: string): void {
@@ -80,6 +84,92 @@ async function main(): Promise<void> {
   discovery.updateWorkspaces([{ id: 'ws-1', name: '', activeSurfaceId: 'term-2' }])
   await discovery.scan([context('term-1', '/projects/cmux-linux')], 3_000)
   assert(emitted.length === 3, 'ignores metadata from a non-active terminal')
+
+  interface ScheduledTask {
+    cancelled: boolean
+    delayMs: number
+    run: () => void
+  }
+  const tasks: ScheduledTask[] = []
+  let activityListener: ((activity: TerminalInspectionActivity) => void) | undefined
+  let unsubscribed = false
+  let runtimeNow = 10_000
+  let runtimeHead = 'ref: refs/heads/main'
+  const runtimeEmitted: SocketApply[] = []
+  const runtime = startWorkspaceMetadataDiscovery(
+    (command) => runtimeEmitted.push(command),
+    {
+      listContexts: () => [context('term-1', '/projects/cmux-linux')],
+      subscribeActivity: (listener) => {
+        activityListener = listener
+        return () => {
+          unsubscribed = true
+        }
+      },
+      dependencies: {
+        probeGit: async () => ({
+          root: '/projects/cmux-linux',
+          gitDir: '/projects/cmux-linux/.git'
+        }),
+        readGitHead: () => runtimeHead,
+        home: '/home/dev'
+      },
+      now: () => runtimeNow,
+      schedule: (task, delayMs) => {
+        const scheduled = { cancelled: false, delayMs, run: task }
+        tasks.push(scheduled)
+        return () => {
+          scheduled.cancelled = true
+        }
+      }
+    }
+  )
+  const runNext = (): ScheduledTask | undefined => {
+    let task = tasks.shift()
+    while (task?.cancelled) task = tasks.shift()
+    task?.run()
+    return task
+  }
+  const pending = (): ScheduledTask[] => tasks.filter((task) => !task.cancelled)
+  const settle = async (): Promise<void> => {
+    await new Promise<void>((resolve) => setImmediate(resolve))
+  }
+
+  runtime.updateWorkspaces([{ id: 'ws-1', name: '', activeSurfaceId: 'term-1' }])
+  assert(pending()[0]?.delayMs === 0, 'target changes request metadata immediately')
+  runNext()
+  await settle()
+  assert(runtimeEmitted[0]?.method === 'workspace-metadata', 'reports initial adaptive metadata')
+  assert(
+    pending()[0]?.delayMs === WORKSPACE_METADATA_ACTIVE_POLL_MS,
+    'keeps a short active metadata cadence after a target change'
+  )
+
+  const scheduledBeforeOutput = pending()[0]
+  activityListener?.({ surfaceId: 'term-1', kind: 'output', timestamp: runtimeNow })
+  assert(pending()[0] === scheduledBeforeOutput, 'does not reschedule metadata for output-only churn')
+  activityListener?.({ surfaceId: 'term-1', kind: 'input', timestamp: runtimeNow })
+  assert(pending()[0]?.delayMs === 0, 'terminal input requests metadata immediately')
+
+  runtime.setVisible(false)
+  assert(
+    pending()[0]?.delayMs === WORKSPACE_METADATA_HIDDEN_POLL_MS,
+    'uses the hidden metadata fallback'
+  )
+  runtime.setVisible(true)
+  assert(pending()[0]?.delayMs === 0, 'restoring the window requests metadata immediately')
+
+  runtimeHead = 'ref: refs/heads/feat/adaptive'
+  runtimeNow += 1_000
+  runNext()
+  await settle()
+  const restored = runtimeEmitted.at(-1)?.params.metadata as WorkspaceMetadata
+  assert(restored?.gitBranch === 'feat/adaptive', 'refreshes the branch immediately on restore')
+
+  runtime.stop()
+  runtime.stop()
+  assert(unsubscribed, 'unsubscribes metadata activity on stop')
+  assert(pending().length === 0, 'cancels the metadata timer on stop')
 
   if (failures > 0) throw new Error(`${failures} live workspace metadata test(s) failed`)
   console.log('\n✅ ALL LIVE WORKSPACE METADATA TESTS PASS')
