@@ -64,6 +64,7 @@ export function markDirectChildOwnership<T extends ProcessIdentity>(
 export function classifyLifecycleProcess(
   rootPid: number,
   pid: number,
+  rootCommand: string,
   command: string,
   argv: string[]
 ): string {
@@ -72,6 +73,7 @@ export function classifyLifecycleProcess(
     .map((argument) => /^--type=([a-z0-9-]{1,48})$/.exec(argument)?.[1])
     .find((value) => value !== undefined)
   if (type) return `electron:${type}`
+  if (command === rootCommand) return 'electron:helper'
   return `child:${command}`
 }
 

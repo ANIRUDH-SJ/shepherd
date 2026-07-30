@@ -316,6 +316,8 @@ function measuredProcesses(runId: string, rootPid: number): LifecycleProcessUsag
   const identities = processIdentities(runId)
   const ids = selectMeasuredProcessIds(identities, rootPid)
   const byPid = new Map(identities.map((identity) => [identity.pid, identity]))
+  const rootCommand = byPid.get(rootPid)?.command
+  if (!rootCommand) throw new Error('application root process is not running')
   const processes: LifecycleProcessUsage[] = []
   for (const pid of ids) {
     const identity = byPid.get(pid)
@@ -325,7 +327,7 @@ function measuredProcesses(runId: string, rootPid: number): LifecycleProcessUsag
       const memory = parseSmapsRollup(readFileSync(`/proc/${pid}/smaps_rollup`, 'utf8'))
       const rawArgv = readFileSync(`/proc/${pid}/cmdline`)
       const argv = rawArgv.length <= 64 * 1024 ? rawArgv.toString().split('\0').filter(Boolean) : []
-      const role = classifyLifecycleProcess(rootPid, pid, stat.command, argv)
+      const role = classifyLifecycleProcess(rootPid, pid, rootCommand, stat.command, argv)
       processes.push({ pid, ...stat, ...memory, role })
     } catch {
       throw new Error(`could not inspect memory for owned pid ${pid}`)

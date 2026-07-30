@@ -30,12 +30,19 @@ const ownership = markDirectChildOwnership(
 )
 assert.equal(ownership[0]?.marked, true)
 assert.equal(ownership[1]?.marked, false)
-assert.equal(classifyLifecycleProcess(10, 10, 'cmux-linux', []), 'electron:main')
+assert.equal(classifyLifecycleProcess(10, 10, 'cmux-linux', 'cmux-linux', []), 'electron:main')
 assert.equal(
-  classifyLifecycleProcess(10, 11, 'cmux-linux', ['cmux-linux', '--type=renderer']),
+  classifyLifecycleProcess(10, 11, 'cmux-linux', 'cmux-linux', ['cmux-linux', '--type=renderer']),
   'electron:renderer'
 )
-assert.equal(classifyLifecycleProcess(10, 12, 'bash', ['bash', '--type=not_valid']), 'child:bash')
+assert.equal(
+  classifyLifecycleProcess(10, 12, 'cmux-linux', 'bash', ['bash', '--type=not_valid']),
+  'child:bash'
+)
+assert.equal(
+  classifyLifecycleProcess(10, 13, 'cmux-linux', 'cmux-linux', ['cmux-linux']),
+  'electron:helper'
+)
 
 const sample = (
   terminalCount: number,
