@@ -40,6 +40,10 @@ export class TerminalOwnershipRegistry<Owner extends object, Terminal> {
     return this.terminals.get(id)?.terminal
   }
 
+  has(id: string): boolean {
+    return this.terminals.has(id)
+  }
+
   getOwned(id: string, owner: Owner): Terminal | undefined {
     const record = this.terminals.get(id)
     return record?.owner === owner ? record.terminal : undefined

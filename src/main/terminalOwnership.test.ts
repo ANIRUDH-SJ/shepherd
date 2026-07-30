@@ -44,6 +44,7 @@ const registry = new TerminalOwnershipRegistry<Owner, Terminal>({
 registry.add('term-a', ownerA, terminalA)
 registry.add('term-b', ownerA, terminalB)
 registry.add('term-c', ownerB, terminalC)
+assert(registry.has('term-a'), 'reports registered terminal ids')
 assert(
   registry.snapshot().terminalCount === 3 && registry.snapshot().ownerCount === 2,
   'tracks terminal and owner counts'
@@ -55,6 +56,7 @@ assert(!registry.remove('term-a', terminalC), 'rejects stale terminal removal')
 assert(registry.get('term-a') === terminalA, 'preserves a terminal after stale removal')
 
 registry.remove('term-c', terminalC)
+assert(!registry.has('term-c'), 'drops removed terminal ids')
 assert(unsubscribeCounts.get(ownerB) === 1, 'unsubscribes when an owner loses its last terminal')
 assert(registry.snapshot().ownerCount === 1, 'removes an empty owner group')
 

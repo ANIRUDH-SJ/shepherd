@@ -128,7 +128,10 @@ function createTerminal(
   markPerformance?: (name: RuntimePerformanceMarkName) => void
 ): void {
   // Defensive: if this id already has a shell, kill the old one first.
-  const previous = terminals.get(opts.id)
+  const previous = terminals.getOwned(opts.id, sender)
+  if (terminals.has(opts.id) && !previous) {
+    throw new Error('terminal id belongs to another renderer')
+  }
   if (previous) disposeTerminal(opts.id, previous, true, 'replaced')
 
   // Inject cmux env so a `cmux …` command run INSIDE this pane targets the right
