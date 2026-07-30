@@ -366,12 +366,10 @@ async function terminateOwnedProcesses(runId: string, child: ChildProcess): Prom
       .filter((identity) => ids.has(identity.pid))
       .map((identity) => [identity.pid, identity.startTicks])
   )
-  const terminate = (signal: NodeJS.Signals, verifyIdentity: boolean): void => {
-    const current = verifyIdentity
-      ? new Map(processIdentities(runId).map((identity) => [identity.pid, identity]))
-      : null
+  const terminate = (signal: NodeJS.Signals): void => {
+    const current = new Map(processIdentities(runId).map((identity) => [identity.pid, identity]))
     for (const [pid, startTicks] of [...ownedStartTicks].sort((a, b) => b[0] - a[0])) {
-      if (current?.get(pid)?.startTicks !== startTicks) continue
+      if (current.get(pid)?.startTicks !== startTicks) continue
       try {
         process.kill(pid, signal)
       } catch {
@@ -379,9 +377,9 @@ async function terminateOwnedProcesses(runId: string, child: ChildProcess): Prom
       }
     }
   }
-  terminate('SIGTERM', false)
+  terminate('SIGTERM')
   await delay(300)
-  terminate('SIGKILL', true)
+  terminate('SIGKILL')
   if (child.exitCode === null && child.signalCode === null) {
     await Promise.race([
       new Promise<void>((resolveExit) => child.once('exit', () => resolveExit())),
