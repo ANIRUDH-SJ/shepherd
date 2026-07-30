@@ -82,7 +82,6 @@ export class TerminalOwnershipRegistry<Owner extends object, Terminal> {
     const group = this.owners.get(owner)
     if (!group) return
     this.owners.delete(owner)
-    this.unsubscribe(group)
     const released: Array<[string, Terminal]> = []
     for (const id of group.terminalIds) {
       const record = this.terminals.get(id)
@@ -91,6 +90,7 @@ export class TerminalOwnershipRegistry<Owner extends object, Terminal> {
       released.push([id, record.terminal])
     }
     group.terminalIds.clear()
+    this.unsubscribe(group)
     for (const [id, terminal] of released) {
       try {
         this.options.onOwnerLost(id, terminal)

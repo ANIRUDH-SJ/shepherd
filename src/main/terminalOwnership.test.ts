@@ -19,6 +19,7 @@ interface Terminal {
 
 const ownerListeners = new Map<Owner, () => void>()
 const unsubscribeCounts = new Map<Owner, number>()
+const ownedAtUnsubscribe = new Map<Owner, number>()
 const released: string[] = []
 const ownerA = { name: 'renderer-a' }
 const ownerB = { name: 'renderer-b' }
@@ -31,6 +32,12 @@ const registry = new TerminalOwnershipRegistry<Owner, Terminal>({
     ownerListeners.set(owner, listener)
     return () => {
       unsubscribeCounts.set(owner, (unsubscribeCounts.get(owner) ?? 0) + 1)
+      ownedAtUnsubscribe.set(
+        owner,
+        ['term-a', 'term-b', 'term-c'].filter(
+          (id) => registry.getOwned(id, owner) !== undefined
+        ).length
+      )
       ownerListeners.delete(owner)
     }
   },
@@ -65,6 +72,7 @@ assert(registry.snapshot().terminalCount === 0, 'releases every terminal after o
 assert(registry.snapshot().ownerCount === 0, 'releases the lost owner group')
 assert(released.join(',') === 'term-a,term-b', 'continues cleanup after one callback fails')
 assert(unsubscribeCounts.get(ownerA) === 1, 'unsubscribes owner loss exactly once')
+assert(ownedAtUnsubscribe.get(ownerA) === 0, 'drops terminal records before listener teardown')
 
 registry.add('term-a', ownerB, terminalC)
 assert(registry.getOwned('term-a', ownerB) === terminalC, 'allows a released id to be replaced')
