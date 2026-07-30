@@ -1,6 +1,7 @@
 import { app } from 'electron'
 import { mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { dirname, join } from 'path'
+import { PRODUCT_ENV, productEnvironmentValue } from '../shared/product'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SESSION PERSISTENCE  (main process)
@@ -9,8 +10,18 @@ import { dirname, join } from 'path'
 // file. See textbook/13.
 // ─────────────────────────────────────────────────────────────────────────────
 
+export function resolveSessionPath(
+  env: Record<string, string | undefined>,
+  userDataPath: string
+): string {
+  return (
+    productEnvironmentValue(env, PRODUCT_ENV.sessionPath, PRODUCT_ENV.legacySessionPath) ||
+    join(userDataPath, 'session.json')
+  )
+}
+
 function sessionPath(): string {
-  return process.env.CMUX_SESSION_PATH || join(app.getPath('userData'), 'session.json')
+  return resolveSessionPath(process.env, app.getPath('userData'))
 }
 
 /** Read the saved session (or null if none / unreadable). */
