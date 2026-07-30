@@ -10,7 +10,8 @@ import {
   registerTerminalInspection,
   recordTerminalInspectionInput,
   removeTerminalInspection,
-  resizeTerminalInspection
+  resizeTerminalInspection,
+  terminalInspectionMemorySnapshot
 } from './terminalInspection'
 import { TerminalOutputBatcher } from './terminalOutputBatcher'
 import { TerminalOwnershipRegistry } from './terminalOwnership'
@@ -22,6 +23,12 @@ import {
   type TermResize
 } from '../shared/ipc'
 import type { RuntimePerformanceMarkName } from '../shared/runtimePerformance'
+import {
+  TERMINAL_MEMORY_LOG_PREFIX,
+  terminalMemoryDiagnosticsEnabled,
+  type TerminalMemorySnapshot,
+  type TerminalMemorySnapshotReason
+} from '../shared/terminalMemory'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PTY MANAGER  (main process — the "real shell" half of the terminal)
@@ -55,8 +62,42 @@ function subscribeTerminalOwnerLoss(owner: WebContents, listener: () => void): (
 
 const terminals = new TerminalOwnershipRegistry<WebContents, TerminalRec>({
   subscribeOwnerLoss: subscribeTerminalOwnerLoss,
-  onOwnerLost: (id, terminal) => disposeTerminal(id, terminal, false)
+  onOwnerLost: (id, terminal) => disposeTerminal(id, terminal, false, 'owner-lost')
 })
+const memoryDiagnosticsEnabled = terminalMemoryDiagnosticsEnabled(process.env)
+
+function reportTerminalMemory(reason: TerminalMemorySnapshotReason): void {
+  if (!memoryDiagnosticsEnabled) return
+  const ownership = terminals.snapshot()
+  const inspection = terminalInspectionMemorySnapshot()
+  let pendingOutputBytes = 0
+  let inFlightOutputBytes = 0
+  let pausedTerminalCount = 0
+  for (const [, terminal] of terminals.entries()) {
+    const output = terminal.output.memorySnapshot()
+    pendingOutputBytes += output.pendingBytes
+    inFlightOutputBytes += output.inFlightBytes
+    if (output.paused) pausedTerminalCount++
+  }
+  const snapshot: TerminalMemorySnapshot = {
+    schemaVersion: 1,
+    reason,
+    timestamp: Date.now(),
+    terminalCount: ownership.terminalCount,
+    ownerCount: ownership.ownerCount,
+    inspectionTerminalCount: inspection.terminalCount,
+    inspectionRetainedBytes: inspection.retainedBytes,
+    inspectionDroppedBytes: inspection.droppedBytes,
+    pendingOutputBytes,
+    inFlightOutputBytes,
+    pausedTerminalCount
+  }
+  try {
+    console.log(`${TERMINAL_MEMORY_LOG_PREFIX} ${JSON.stringify(snapshot)}`)
+  } catch {
+    // Diagnostics must not affect terminal creation or cleanup.
+  }
+}
 
 /** Pick a shell: the user's $SHELL, else a sensible platform default. */
 function defaultShell(): string {
@@ -88,7 +129,7 @@ function createTerminal(
 ): void {
   // Defensive: if this id already has a shell, kill the old one first.
   const previous = terminals.get(opts.id)
-  if (previous) disposeTerminal(opts.id, previous, true)
+  if (previous) disposeTerminal(opts.id, previous, true, 'replaced')
 
   // Inject cmux env so a `cmux …` command run INSIDE this pane targets the right
   // workspace by default and can reach the socket. (textbook/11 §env injection)
@@ -149,6 +190,7 @@ function createTerminal(
     rows,
     cwd
   })
+  reportTerminalMemory('created')
 
   // Shell output is coalesced into bounded, acknowledged renderer batches. The
   // first chunk bypasses the timer so startup and prompt latency stay direct.
@@ -181,10 +223,16 @@ function createTerminal(
     output.dispose()
     terminals.remove(opts.id, terminal)
     removeTerminalInspection(opts.id)
+    reportTerminalMemory('exited')
   })
 }
 
-function disposeTerminal(id: string, terminal: TerminalRec, flushPendingOutput: boolean): void {
+function disposeTerminal(
+  id: string,
+  terminal: TerminalRec,
+  flushPendingOutput: boolean,
+  reason: TerminalMemorySnapshotReason
+): void {
   terminal.dataSubscription?.dispose()
   terminal.exitSubscription?.dispose()
   if (flushPendingOutput) terminal.output.drain()
@@ -196,6 +244,7 @@ function disposeTerminal(id: string, terminal: TerminalRec, flushPendingOutput: 
   }
   terminals.remove(id, terminal)
   removeTerminalInspection(id)
+  reportTerminalMemory(reason)
 }
 
 /** Sniff a chunk of output for OSC notifications and route each one to the sidebar
@@ -254,12 +303,14 @@ export function registerPtyIpc(markPerformance?: (name: RuntimePerformanceMarkNa
   // fire-and-forget: kill one shell
   ipcMain.on(IPC.TERM_DISPOSE, (event, id: string) => {
     const terminal = terminals.getOwned(id, event.sender)
-    if (terminal) disposeTerminal(id, terminal, true)
+    if (terminal) disposeTerminal(id, terminal, true, 'disposed')
   })
 }
 
 /** Kill every shell — called on quit so we never leave zombie processes. */
 export function killAllTerminals(): void {
-  for (const [id, terminal] of terminals.clear()) disposeTerminal(id, terminal, false)
+  for (const [id, terminal] of terminals.clear()) {
+    disposeTerminal(id, terminal, false, 'shutdown')
+  }
   clearTerminalInspections()
 }

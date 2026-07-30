@@ -61,7 +61,9 @@ const batcher = new TerminalOutputBatcher({
 
 batcher.push('first')
 assert(sent[0]?.data === 'first', 'forwards the first output without a batching delay')
+assert(batcher.memorySnapshot().inFlightBytes === 5, 'accounts for unacknowledged output bytes')
 batcher.acknowledge(sent[0]!.sequence)
+assert(batcher.memorySnapshot().inFlightBytes === 0, 'releases acknowledged output bytes')
 
 batcher.push('a')
 batcher.push('b')
@@ -150,6 +152,12 @@ disposeScheduler.runNext()
 disposed.push('ignored')
 assert(disposedSends === 1, 'cancels delayed sends and ignores output after disposal')
 assert(balancedResume === 1, 'balances a paused PTY when the batcher is disposed')
+assert(
+  disposed.memorySnapshot().pendingBytes === 0 &&
+    disposed.memorySnapshot().inFlightBytes === 0 &&
+    !disposed.memorySnapshot().paused,
+  'releases every measured output resource on disposal'
+)
 
 const closedScheduler = manualScheduler()
 let closedRendererSends = 0
