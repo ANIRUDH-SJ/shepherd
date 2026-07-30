@@ -16,7 +16,6 @@ import {
   type TerminalProcessContext
 } from './terminalInspection'
 
-export const WORKSPACE_METADATA_SCAN_MS = 750
 export const NO_GIT_RETRY_MS = 5_000
 export const WORKSPACE_METADATA_ACTIVE_POLL_MS = 750
 export const WORKSPACE_METADATA_QUIET_POLL_MS = 3_000

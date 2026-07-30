@@ -11,7 +11,6 @@ import {
 import { AdaptivePollingLoop } from './adaptivePolling'
 
 export const AUTOMATIC_AGENT_SOURCE = 'process:auto'
-export const AUTOMATIC_AGENT_SCAN_MS = 1_000
 export const AUTOMATIC_AGENT_ACTIVE_MS = 3_000
 export const AUTOMATIC_AGENT_ACTIVE_POLL_MS = 1_000
 export const AUTOMATIC_AGENT_QUIET_POLL_MS = 5_000
