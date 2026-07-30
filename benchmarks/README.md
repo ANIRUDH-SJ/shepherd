@@ -7,6 +7,9 @@ claim input-to-photon latency or rendered-frame throughput.
 
 ## Recorded reports
 
+- [`results/2026-07-30-terminal-memory-lifecycle.md`](./results/2026-07-30-terminal-memory-lifecycle.md)
+  — pressure-qualified before/after production measurements at 1/2/4/8 PTYs,
+  repeated 8→1 recovery, and exact candidate resource-count evidence.
 - [`results/2026-07-30-adaptive-runtime-polling.md`](./results/2026-07-30-adaptive-runtime-polling.md)
   — matched before/after production comparison for activity-aware observation,
   exact renderer deadlines, idle CPU, and deterministic schedule counts.
@@ -57,6 +60,29 @@ npm run benchmark -- run --config /tmp/subjects.json \
 `--allow-pressure`, fewer than five warmups, or fewer than twenty samples marks
 the entire output as `pilot`. Without that override, high memory or swap pressure
 stops the run before a terminal is launched.
+
+## Terminal lifecycle measurements
+
+The separate lifecycle runner measures fixed Electron cost, incremental
+per-terminal PSS, process composition, and repeated open/close recovery:
+
+```bash
+npm run benchmark:lifecycle -- run \
+  --config /tmp/cmux-lifecycle-subjects.json \
+  --output /tmp/cmux-lifecycle-results.json
+```
+
+It expects cmux-mode production subjects using the same validated configuration
+schema. Defaults are five fresh runs, three samples at each of 1/2/4/8 live
+terminals, and ten 8→1 recovery cycles. Candidate builds may emit opt-in
+`[cmux:memory]` snapshots; the runner verifies terminal, owner, inspection,
+queued-output, and paused-PTY counts without storing terminal content.
+
+Each directly spawned application PID is the root ownership proof. Cleanup
+records process start ticks before signaling the root and descendants, then
+rechecks those ticks before escalation so PID reuse cannot target an unrelated
+process. Chromium helpers whose sanitized role is unavailable are reported as a
+combined `electron:helper` group.
 
 ## cmux-linux startup diagnostics
 
