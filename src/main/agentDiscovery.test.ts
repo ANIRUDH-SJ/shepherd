@@ -2,11 +2,18 @@ import type { AgentRecord } from '../shared/agent'
 import type { SocketApply } from '../shared/ipc'
 import {
   AUTOMATIC_AGENT_SOURCE,
+  AUTOMATIC_AGENT_HIDDEN_POLL_MS,
+  AUTOMATIC_AGENT_QUIET_POLL_MS,
   AutomaticAgentDiscovery,
   automaticAgentState,
-  classifyAgentProcesses
+  classifyAgentProcesses,
+  startAutomaticAgentDiscovery
 } from './agentDiscovery'
-import type { ForegroundProcess, TerminalProcessContext } from './terminalInspection'
+import type {
+  ForegroundProcess,
+  TerminalInspectionActivity,
+  TerminalProcessContext
+} from './terminalInspection'
 
 let failures = 0
 function assert(condition: boolean, message: string): void {
@@ -106,5 +113,86 @@ assert(kimiReport?.displayName === 'Kimi', 'rediscovers another agent on the sam
 discovery.scan([], 16_000)
 assert(emitted[4]?.method === 'agent-clear', 'clears an agent when its terminal disappears')
 
-if (failures > 0) throw new Error(`${failures} automatic agent discovery test(s) failed`)
-console.log('\n✅ ALL AUTOMATIC AGENT DISCOVERY TESTS PASS')
+interface ScheduledTask {
+  cancelled: boolean
+  delayMs: number
+  run: () => void
+}
+
+async function settle(): Promise<void> {
+  await Promise.resolve()
+  await Promise.resolve()
+}
+
+async function runtimeTest(): Promise<void> {
+  const tasks: ScheduledTask[] = []
+  let listener: ((activity: TerminalInspectionActivity) => void) | undefined
+  let unsubscribed = false
+  const runtimeNow = 20_000
+  let runtimeContexts = [context(runtimeNow, [process('codex')])]
+  const runtimeEmitted: SocketApply[] = []
+  const runtime = startAutomaticAgentDiscovery(
+    (command) => runtimeEmitted.push(command),
+    {
+      listContexts: () => runtimeContexts,
+      subscribeActivity: (nextListener) => {
+        listener = nextListener
+        return () => {
+          unsubscribed = true
+        }
+      },
+      now: () => runtimeNow,
+      schedule: (task, delayMs) => {
+        const scheduled = { cancelled: false, delayMs, run: task }
+        tasks.push(scheduled)
+        return () => {
+          scheduled.cancelled = true
+        }
+      }
+    }
+  )
+  const runNext = (): ScheduledTask | undefined => {
+    let task = tasks.shift()
+    while (task?.cancelled) task = tasks.shift()
+    task?.run()
+    return task
+  }
+  const pending = (): ScheduledTask[] => tasks.filter((task) => !task.cancelled)
+
+  assert(pending()[0]?.delayMs === 0, 'starts automatic discovery with a recovery scan')
+  runNext()
+  await settle()
+  assert(runtimeEmitted[0]?.method === 'agent-report', 'discovers an agent on the first scan')
+  assert(
+    pending()[0]?.delayMs === AUTOMATIC_AGENT_QUIET_POLL_MS,
+    'backs off automatic discovery when the terminal is quiet'
+  )
+
+  listener?.({ surfaceId: 'term-1', kind: 'output', timestamp: runtimeNow })
+  assert(pending()[0]?.delayMs === 0, 'terminal activity requests an immediate discovery scan')
+  runNext()
+  await settle()
+
+  runtime.setVisible(false)
+  assert(
+    pending()[0]?.delayMs === AUTOMATIC_AGENT_HIDDEN_POLL_MS,
+    'uses the hidden discovery fallback'
+  )
+  runtime.setVisible(true)
+  assert(pending()[0]?.delayMs === 0, 'restoring the window requests discovery immediately')
+
+  runtimeContexts = []
+  runNext()
+  await settle()
+  assert(runtimeEmitted.at(-1)?.method === 'agent-clear', 'clears a removed quiet agent on restore')
+
+  runtime.stop()
+  runtime.stop()
+  assert(unsubscribed, 'unsubscribes terminal activity on stop')
+  assert(pending().length === 0, 'cancels the discovery timer on stop')
+
+  if (failures > 0) throw new Error(`${failures} automatic agent discovery test(s) failed`)
+  console.log('\n✅ ALL AUTOMATIC AGENT DISCOVERY TESTS PASS')
+}
+
+void runtimeTest()

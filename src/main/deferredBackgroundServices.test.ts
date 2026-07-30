@@ -67,6 +67,7 @@ const services = new DeferredBackgroundServices({
   schedule: scheduler.schedule,
   startAgentDiscovery: () => ({
     updateAgents: (agents) => agentUpdates.push(agents),
+    setVisible: () => undefined,
     stop: () => agentStops++
   }),
   startWorkspaceMetadata: () => ({
@@ -115,7 +116,11 @@ const cancelled = new DeferredBackgroundServices({
   schedule: cancelledScheduler.schedule,
   startAgentDiscovery: () => {
     cancelledStarts++
-    return { updateAgents: () => undefined, stop: () => undefined }
+    return {
+      updateAgents: () => undefined,
+      setVisible: () => undefined,
+      stop: () => undefined
+    }
   },
   startWorkspaceMetadata: () => ({
     updateWorkspaces: () => undefined,
