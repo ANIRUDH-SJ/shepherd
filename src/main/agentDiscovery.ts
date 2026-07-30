@@ -3,13 +3,19 @@ import { normalizeAgentReport } from '../shared/agent'
 import type { SocketApply } from '../shared/ipc'
 import {
   listTerminalProcessContexts,
+  subscribeTerminalInspectionActivity,
   type ForegroundProcess,
+  type TerminalInspectionActivity,
   type TerminalProcessContext
 } from './terminalInspection'
+import { AdaptivePollingLoop } from './adaptivePolling'
 
 export const AUTOMATIC_AGENT_SOURCE = 'process:auto'
-export const AUTOMATIC_AGENT_SCAN_MS = 1_000
 export const AUTOMATIC_AGENT_ACTIVE_MS = 3_000
+export const AUTOMATIC_AGENT_ACTIVE_POLL_MS = 1_000
+export const AUTOMATIC_AGENT_QUIET_POLL_MS = 5_000
+export const AUTOMATIC_AGENT_HIDDEN_POLL_MS = 15_000
+export const AUTOMATIC_AGENT_BURST_MS = 4_000
 
 export interface AgentProcessMatch {
   provider: AgentProvider
@@ -101,11 +107,21 @@ interface ActiveDiscovery {
 export class AutomaticAgentDiscovery {
   private readonly active = new Map<string, ActiveDiscovery>()
   private agents: AgentRecord[] = []
+  private richAgentSignature = '[]'
 
   constructor(private readonly emit: (command: SocketApply) => void) {}
 
-  updateAgents(agents: AgentRecord[]): void {
+  updateAgents(agents: AgentRecord[]): boolean {
     this.agents = agents
+    const signature = JSON.stringify(
+      agents
+        .filter((agent) => agent.source !== AUTOMATIC_AGENT_SOURCE)
+        .map((agent) => [agent.agentId, agent.surfaceId, agent.source])
+        .sort(([left], [right]) => String(left).localeCompare(String(right)))
+    )
+    if (signature === this.richAgentSignature) return false
+    this.richAgentSignature = signature
+    return true
   }
 
   scan(contexts: TerminalProcessContext[], now = Date.now()): void {
@@ -195,19 +211,46 @@ export class AutomaticAgentDiscovery {
 
 export interface AutomaticAgentDiscoveryRuntime {
   updateAgents(agents: AgentRecord[]): void
+  setVisible(visible: boolean): void
   stop(): void
+}
+
+interface AutomaticAgentDiscoveryRuntimeOptions {
+  listContexts?: () => TerminalProcessContext[]
+  subscribeActivity?: (
+    listener: (activity: TerminalInspectionActivity) => void
+  ) => () => void
+  now?: () => number
+  schedule?: (task: () => void, delayMs: number) => () => void
 }
 
 export function startAutomaticAgentDiscovery(
   emit: (command: SocketApply) => void,
-  intervalMs = AUTOMATIC_AGENT_SCAN_MS
+  options: AutomaticAgentDiscoveryRuntimeOptions = {}
 ): AutomaticAgentDiscoveryRuntime {
   const discovery = new AutomaticAgentDiscovery(emit)
-  const timer = setInterval(() => discovery.scan(listTerminalProcessContexts()), intervalMs)
+  const now = options.now ?? Date.now
+  const loop = new AdaptivePollingLoop({
+    run: () => discovery.scan((options.listContexts ?? listTerminalProcessContexts)(), now()),
+    activeIntervalMs: AUTOMATIC_AGENT_ACTIVE_POLL_MS,
+    idleIntervalMs: AUTOMATIC_AGENT_QUIET_POLL_MS,
+    hiddenIntervalMs: AUTOMATIC_AGENT_HIDDEN_POLL_MS,
+    activeForMs: AUTOMATIC_AGENT_BURST_MS,
+    now,
+    ...(options.schedule ? { schedule: options.schedule } : {})
+  })
+  const unsubscribeActivity = (
+    options.subscribeActivity ?? subscribeTerminalInspectionActivity
+  )(() => loop.trigger())
+  loop.start()
   return {
-    updateAgents: (agents) => discovery.updateAgents(agents),
+    updateAgents: (agents) => {
+      if (discovery.updateAgents(agents)) loop.triggerNow()
+    },
+    setVisible: (visible) => loop.setVisible(visible),
     stop: () => {
-      clearInterval(timer)
+      unsubscribeActivity()
+      loop.stop()
       discovery.clearAll()
     }
   }

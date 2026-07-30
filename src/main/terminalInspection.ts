@@ -55,6 +55,14 @@ export interface TerminalProcessContext {
   lastActivityAt: number
 }
 
+export type TerminalInspectionActivityKind = 'registered' | 'input' | 'output' | 'removed'
+
+export interface TerminalInspectionActivity {
+  surfaceId: string
+  kind: TerminalInspectionActivityKind
+  timestamp: number
+}
+
 export interface TerminalInspection {
   surfaceId: string
   workspaceId?: string
@@ -79,6 +87,24 @@ interface ProcessContext {
 }
 
 const captures = new Map<string, TerminalCapture>()
+const activityListeners = new Set<(activity: TerminalInspectionActivity) => void>()
+
+function publishActivity(activity: TerminalInspectionActivity): void {
+  for (const listener of activityListeners) {
+    try {
+      listener(activity)
+    } catch {
+      // Scheduling observers must not break the PTY inspection hot path.
+    }
+  }
+}
+
+export function subscribeTerminalInspectionActivity(
+  listener: (activity: TerminalInspectionActivity) => void
+): () => void {
+  activityListeners.add(listener)
+  return () => activityListeners.delete(listener)
+}
 
 function boundedInteger(
   value: unknown,
@@ -125,6 +151,7 @@ export function registerTerminalInspection(registration: TerminalRegistration): 
     lastInputAt: createdAt,
     lastOutputAt: createdAt
   })
+  publishActivity({ surfaceId: registration.surfaceId, kind: 'registered', timestamp: createdAt })
 }
 
 export function appendTerminalInspectionOutput(
@@ -135,6 +162,7 @@ export function appendTerminalInspectionOutput(
   const capture = captures.get(surfaceId)
   if (!capture) return
   capture.lastOutputAt = timestamp
+  publishActivity({ surfaceId, kind: 'output', timestamp })
   const appended = Buffer.concat([capture.output, Buffer.from(data)])
   if (appended.length <= MAX_TERMINAL_CAPTURE_BYTES) {
     capture.output = appended
@@ -147,7 +175,9 @@ export function appendTerminalInspectionOutput(
 
 export function recordTerminalInspectionInput(surfaceId: string, timestamp = Date.now()): void {
   const capture = captures.get(surfaceId)
-  if (capture) capture.lastInputAt = timestamp
+  if (!capture) return
+  capture.lastInputAt = timestamp
+  publishActivity({ surfaceId, kind: 'input', timestamp })
 }
 
 export function resizeTerminalInspection(surfaceId: string, cols: number, rows: number): void {
@@ -158,10 +188,15 @@ export function resizeTerminalInspection(surfaceId: string, cols: number, rows: 
 }
 
 export function removeTerminalInspection(surfaceId: string): void {
-  captures.delete(surfaceId)
+  if (!captures.delete(surfaceId)) return
+  publishActivity({ surfaceId, kind: 'removed', timestamp: Date.now() })
 }
 
 export function clearTerminalInspections(): void {
+  const timestamp = Date.now()
+  for (const surfaceId of captures.keys()) {
+    publishActivity({ surfaceId, kind: 'removed', timestamp })
+  }
   captures.clear()
 }
 

@@ -26,6 +26,7 @@ export class DeferredBackgroundServices {
   private workspaceMetadata: WorkspaceMetadataRuntime | null = null
   private cancelPendingTask: CancelScheduledTask | null = null
   private state: 'waiting' | 'starting' | 'started' | 'stopped' = 'waiting'
+  private visible = true
 
   constructor(private readonly options: DeferredBackgroundServicesOptions) {}
 
@@ -34,6 +35,13 @@ export class DeferredBackgroundServices {
     this.latestSync = sync
     this.agentDiscovery?.updateAgents(sync.agents)
     this.workspaceMetadata?.updateWorkspaces(sync.workspaces)
+  }
+
+  setVisible(visible: boolean): void {
+    if (this.state === 'stopped' || this.visible === visible) return
+    this.visible = visible
+    this.agentDiscovery?.setVisible(visible)
+    this.workspaceMetadata?.setVisible(visible)
   }
 
   firstTerminalReady(): void {
@@ -64,9 +72,10 @@ export class DeferredBackgroundServices {
 
   private startAgentDiscovery(): void {
     this.agentDiscovery = this.startService('agent-discovery', this.options.startAgentDiscovery)
-    if (this.agentDiscovery && this.latestSync) {
+    if (this.agentDiscovery) {
       try {
-        this.agentDiscovery.updateAgents(this.latestSync.agents)
+        this.agentDiscovery.setVisible(this.visible)
+        if (this.latestSync) this.agentDiscovery.updateAgents(this.latestSync.agents)
       } catch (error) {
         this.reportError('agent-discovery', error)
       }
@@ -79,9 +88,10 @@ export class DeferredBackgroundServices {
       'workspace-metadata',
       this.options.startWorkspaceMetadata
     )
-    if (this.workspaceMetadata && this.latestSync) {
+    if (this.workspaceMetadata) {
       try {
-        this.workspaceMetadata.updateWorkspaces(this.latestSync.workspaces)
+        this.workspaceMetadata.setVisible(this.visible)
+        if (this.latestSync) this.workspaceMetadata.updateWorkspaces(this.latestSync.workspaces)
       } catch (error) {
         this.reportError('workspace-metadata', error)
       }

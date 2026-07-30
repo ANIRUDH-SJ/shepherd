@@ -7,7 +7,9 @@ import {
   recordTerminalInspectionInput,
   registerTerminalInspection,
   removeTerminalInspection,
-  resizeTerminalInspection
+  resizeTerminalInspection,
+  subscribeTerminalInspectionActivity,
+  type TerminalInspectionActivity
 } from './terminalInspection'
 
 let failures = 0
@@ -25,6 +27,14 @@ assert(defaults.ok && defaults.options.maxBytes === 16_384, 'supplies a bounded 
 assert(!normalizeTerminalInspection({ lines: 0 }).ok, 'rejects an invalid line limit')
 assert(!normalizeTerminalInspection({ maxBytes: 65_537 }).ok, 'rejects an invalid byte limit')
 
+const activities: TerminalInspectionActivity[] = []
+const unsubscribeActivity = subscribeTerminalInspectionActivity((activity) =>
+  activities.push(activity)
+)
+const unsubscribeThrowingActivity = subscribeTerminalInspectionActivity(() => {
+  throw new Error('observer failure')
+})
+
 registerTerminalInspection({
   surfaceId: 'term-1',
   workspaceId: 'ws-1',
@@ -37,6 +47,14 @@ registerTerminalInspection({
 appendTerminalInspectionOutput('term-1', '\x1b[31mfirst\x1b[0m\r\nsecond\nthird', 20)
 recordTerminalInspectionInput('term-1', 30)
 resizeTerminalInspection('term-1', 100, 30)
+assert(
+  activities
+    .filter((activity) => activity.surfaceId === 'term-1')
+    .map((activity) => activity.kind)
+    .join(',') === 'registered,output,input',
+  'publishes content-free terminal lifecycle and activity signals'
+)
+assert(activities[1]?.timestamp === 20, 'preserves the observed activity timestamp')
 
 const inspection = inspectTerminal('term-1', { lines: 2, maxBytes: 100 }, () => ({
   foreground: { pid: 50, name: 'node' },
@@ -82,6 +100,21 @@ assert(capped?.output.truncated === true, 'reports capture-ring truncation')
 removeTerminalInspection('term-1')
 removeTerminalInspection('term-cap')
 assert(inspectTerminal('term-1', { lines: 1, maxBytes: 1 }) === null, 'removes closed terminals')
+assert(
+  activities.filter((activity) => activity.kind === 'removed').length === 2,
+  'publishes removal only for registered terminals'
+)
+const activityCount = activities.length
+unsubscribeActivity()
+unsubscribeThrowingActivity()
+registerTerminalInspection({
+  surfaceId: 'term-unsubscribed',
+  pid: 44,
+  cols: 80,
+  rows: 24,
+  cwd: '/project'
+})
+assert(activities.length === activityCount, 'unsubscribes terminal activity observers')
 clearTerminalInspections()
 
 if (failures > 0) throw new Error(`${failures} terminal inspection test(s) failed`)

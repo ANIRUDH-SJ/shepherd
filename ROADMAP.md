@@ -41,6 +41,7 @@ frontend", IPC = "the API calls between them".
 - [ ] **M17** — Render, interaction, scalability, and agent-overhead benchmarks
 - [x] **M18** — Readiness-driven background startup ✓
 - [x] **M19** — Bounded, acknowledged terminal output batching ✓
+- [x] **M20** — Adaptive event-driven runtime observation ✓
 
 ---
 
@@ -369,6 +370,24 @@ interactive output or allowing an unbounded renderer queue.*
 - [x] Cover batching, flow control, failure, and lifecycle boundaries with tests
 - [x] Prove ANSI, Unicode, OSC, input, and exit ordering in live Electron
 - [x] Record a matched 20-sample production comparison and its limitations
+- [x] Document implementation, architecture, security, alternatives, and tradeoffs
+
+## M20 — Adaptive event-driven runtime observation
+*Goal: reduce quiet and hidden background work while preserving bounded,
+self-healing agent and workspace freshness.*
+
+- [x] Define active, quiet, hidden, and restore freshness contracts
+- [x] Add one deterministic, non-overlapping adaptive scheduler
+- [x] Publish content-free registration, input, output, and removal activity
+- [x] Accelerate process discovery on activity and rich-authority changes
+- [x] Ignore output-only churn for workspace metadata
+- [x] Back quiet visible scans off to five seconds for agents and three for metadata
+- [x] Retain 15-second hidden recovery and immediate restore reconciliation
+- [x] Replace renderer lifecycle polling with exact stale/expiry deadlines
+- [x] Stop empty or hidden elapsed-label refreshes
+- [x] Cover timing, visibility, async overlap, errors, and cleanup deterministically
+- [x] Prove agent appearance/removal and cwd/branch refresh in live Electron
+- [x] Record a matched 20-sample production idle-CPU comparison
 - [x] Document implementation, architecture, security, alternatives, and tradeoffs
 
 ---

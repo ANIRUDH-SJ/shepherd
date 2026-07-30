@@ -7,6 +7,9 @@ claim input-to-photon latency or rendered-frame throughput.
 
 ## Recorded reports
 
+- [`results/2026-07-30-adaptive-runtime-polling.md`](./results/2026-07-30-adaptive-runtime-polling.md)
+  — matched before/after production comparison for activity-aware observation,
+  exact renderer deadlines, idle CPU, and deterministic schedule counts.
 - [`results/2026-07-29-output-batching.md`](./results/2026-07-29-output-batching.md)
   — matched before/after production comparison for bounded, acknowledged PTY
   output batching, including counter-metrics and pressure qualifications.

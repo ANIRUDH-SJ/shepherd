@@ -28,6 +28,16 @@ function sendSocketCommand(cmd: SocketApply): void {
   }
 }
 
+function backgroundServicesVisible(): boolean {
+  return BrowserWindow.getAllWindows().some(
+    (window) => !window.isDestroyed() && window.isVisible() && !window.isMinimized()
+  )
+}
+
+function syncBackgroundServiceVisibility(): void {
+  deferredBackgroundServices?.setVisible(backgroundServicesVisible())
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN PROCESS  (the "backend" — full Node.js + OS access)
 // For M0 its only job is to open one window and load the React renderer into it.
@@ -59,6 +69,11 @@ function createWindow(): void {
     mainWindow.show()
     runtimePerformance.mark('window-visible')
   })
+  mainWindow.on('show', syncBackgroundServiceVisibility)
+  mainWindow.on('hide', syncBackgroundServiceVisibility)
+  mainWindow.on('minimize', syncBackgroundServiceVisibility)
+  mainWindow.on('restore', syncBackgroundServiceVisibility)
+  mainWindow.on('closed', syncBackgroundServiceVisibility)
 
   // Open target=_blank / external links in the user's browser, not a new window.
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -96,6 +111,7 @@ app.whenReady().then(() => {
     onReady: () => runtimePerformance.mark('background-services-started'),
     onError: (service, error) => console.error(`[startup] ${service} failed to start:`, error)
   })
+  deferredBackgroundServices.setVisible(false)
   ipcMain.on(IPC.STARTUP_FIRST_TERMINAL_READY, () => {
     runtimePerformance.mark('first-terminal-ready')
     deferredBackgroundServices?.firstTerminalReady()

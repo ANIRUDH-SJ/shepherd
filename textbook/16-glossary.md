@@ -13,6 +13,10 @@
 
 - **ABI (Application Binary Interface)** — The binary contract between compiled code and its host (Node's C++ internals, the OS). A native module like node-pty is compiled against one specific ABI, so it must be rebuilt or ship a prebuilt binary matching the exact Node/Electron version — a mismatch throws the classic "compiled against a different Node.js version" error. (see 06-node-pty.md)
 - **addon (xterm.js)** — An optional plug-in that extends the base xterm.js terminal: FitAddon (sizing), WebGL addon (GPU drawing), SearchAddon (find). You load only the ones you need. (see 07-xtermjs.md)
+- **adaptive polling** — A bounded recovery loop whose cadence changes with
+  activity and visibility. Events accelerate observation, quiet or hidden state
+  backs it off, and a slow fallback still repairs missed signals. (see
+  32-adaptive-event-driven-observation.md)
 - **agent activity** — Optional detail that refines a `working` semantic state,
   such as reading, editing, testing, or web search. Activity improves display but
   is not a stable automation state. (see 19-semantic-agent-runtime.md)

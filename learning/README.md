@@ -40,6 +40,7 @@ code as we write it.
 | **M17**   | `M17-runtime-performance-instrumentation.md` | Opt-in main/renderer/xterm/PTY startup milestones, bounded summaries, disabled hot paths, and live proof |
 | **M18**   | `M18-deferred-background-startup.md` | First-terminal readiness handshake, delayed discovery services, latest-state replay, cleanup, and live proof |
 | **M19**   | `M19-terminal-output-batching.md` | Bounded PTY batching, xterm acknowledgements, backpressure, lifecycle correctness, and matched benchmark proof |
+| **M20**   | `M20-adaptive-runtime-polling.md` | Activity-aware agent and metadata scans, visibility backoff, exact renderer deadlines, cleanup, and measured idle-CPU proof |
 
 ## How to read a milestone file
 
