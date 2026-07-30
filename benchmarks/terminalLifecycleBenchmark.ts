@@ -36,6 +36,7 @@ import {
   markDirectChildOwnership,
   parseTerminalMemorySnapshots,
   summarizeLifecycleRun,
+  terminalMemoryReturnedToBaseline,
   type LifecycleLevelSample
 } from './terminalLifecycleBenchmarkLib'
 
@@ -687,11 +688,9 @@ async function runSubject(
       ? latestTerminalMemorySnapshot(logText, 1)
       : null
     const resourceCountsReturnedToBaseline = diagnosticsAvailable
-      ? !!finalResourceSnapshot &&
-        finalResourceSnapshot.terminalCount === 1 &&
-        finalResourceSnapshot.ownerCount === 1 &&
-        finalResourceSnapshot.inspectionTerminalCount === 1 &&
-        finalResourceSnapshot.pausedTerminalCount === 0
+      ? recoveries.every((recovery) =>
+          terminalMemoryReturnedToBaseline(recovery.resourceSnapshot)
+        )
       : null
     return {
       subjectId: subject.id,

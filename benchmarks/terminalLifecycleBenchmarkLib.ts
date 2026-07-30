@@ -123,6 +123,20 @@ export function latestTerminalMemorySnapshot(
   return matching.at(-1) ?? null
 }
 
+export function terminalMemoryReturnedToBaseline(
+  snapshot: TerminalMemorySnapshot | null
+): boolean {
+  return (
+    snapshot !== null &&
+    snapshot.terminalCount === 1 &&
+    snapshot.ownerCount === 1 &&
+    snapshot.inspectionTerminalCount === 1 &&
+    snapshot.pendingOutputBytes === 0 &&
+    snapshot.inFlightOutputBytes === 0 &&
+    snapshot.pausedTerminalCount === 0
+  )
+}
+
 export function summarizeLifecycleRun(
   levels: LifecycleLevelSample[],
   recoveryPssKiB: number[]

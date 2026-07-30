@@ -5,6 +5,7 @@ import {
   markDirectChildOwnership,
   parseTerminalMemorySnapshots,
   summarizeLifecycleRun,
+  terminalMemoryReturnedToBaseline,
   type LifecycleLevelSample
 } from './terminalLifecycleBenchmarkLib'
 
@@ -20,6 +21,17 @@ assert.equal(snapshots.length, 1)
 assert.equal(snapshots[0]?.terminalCount, 2)
 assert.equal(latestTerminalMemorySnapshot(diagnostic, 2)?.inspectionRetainedBytes, 10)
 assert.equal(latestTerminalMemorySnapshot(diagnostic, 1), null)
+const recovered = {
+  ...snapshots[0]!,
+  terminalCount: 1,
+  ownerCount: 1,
+  inspectionTerminalCount: 1,
+  pendingOutputBytes: 0,
+  inFlightOutputBytes: 0
+}
+assert.equal(terminalMemoryReturnedToBaseline(recovered), true)
+assert.equal(terminalMemoryReturnedToBaseline({ ...recovered, inFlightOutputBytes: 1 }), false)
+assert.equal(terminalMemoryReturnedToBaseline(null), false)
 
 const ownership = markDirectChildOwnership(
   [
