@@ -6,6 +6,7 @@ import {
   agentStatusLabel,
   formatAgentElapsed
 } from '../agentView'
+import { RENDERER_EVENT } from '../events'
 import { workspaceIdentity } from '../sidebarView'
 import type { AppAction, Workspace } from '../state/appReducer'
 import Icon from './Icon'
@@ -93,7 +94,9 @@ export default function AgentList({ agents, workspaces, dispatch }: Props): Reac
                           dispatch({ type: 'focusAgent', id: agent.agentId })
                           window.requestAnimationFrame(() => {
                             window.dispatchEvent(
-                              new CustomEvent('cmux:focus-surface', { detail: agent.surfaceId })
+                              new CustomEvent(RENDERER_EVENT.focusSurface, {
+                                detail: agent.surfaceId
+                              })
                             )
                           })
                         }}

@@ -104,7 +104,7 @@ export interface WorkspacesSync {
 }
 
 // ── The bridge surface exposed as `window.api` (implemented in preload) ───────
-export interface CmuxApi {
+export interface ShepherdApi {
   version: string
   terminal: {
     /** Spawn a shell bound to `opts.id`. */
@@ -137,7 +137,7 @@ export interface CmuxApi {
     firstTerminalReady(): void
   }
   performance: {
-    /** True only when CMUX_PERF_DIAGNOSTICS=1 was set before launch. */
+    /** True only when product performance diagnostics were enabled before launch. */
     enabled: boolean
     /** Report one of the fixed, content-free startup milestones. */
     mark(name: RendererRuntimePerformanceMarkName): void

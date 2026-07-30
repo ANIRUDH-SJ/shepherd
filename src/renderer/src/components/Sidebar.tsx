@@ -8,7 +8,7 @@ import AgentList from './AgentList'
 import Icon from './Icon'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Sidebar — the vertical list of workspaces (cmux's signature). Each row shows a
+// Sidebar — the vertical list of workspaces. Each row shows a
 // name + a status subtitle, with an active highlight and unread/attention markers.
 // The status/attention come from the socket server (Stage 2) via the app reducer.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -74,7 +74,7 @@ export default function Sidebar({
   return (
     <div className="sidebar-inner">
       <div className="sidebar-head">
-        <span className="brand">cmux-linux</span>
+        <span className="brand">Shepherd</span>
         <div className="sidebar-head-actions">
           <button
             type="button"

@@ -5,6 +5,7 @@ import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { TERMINAL_SCROLLBACK_LINES } from '../../../shared/terminalMemory'
 import { getFontSize } from '../settings'
+import { RENDERER_EVENT } from '../events'
 import { terminalPanelId, terminalTabId } from '../terminalChrome'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -93,7 +94,7 @@ export default function TerminalHost({
     const offExit = window.api.terminal.onExit(surfaceId, (code) => {
       term.write(`\r\n\x1b[90m[process exited with code ${code}]\x1b[0m\r\n`)
       window.dispatchEvent(
-        new CustomEvent('cmux:terminal-exit', { detail: { surfaceId, exitCode: code } })
+        new CustomEvent(RENDERER_EVENT.terminalExit, { detail: { surfaceId, exitCode: code } })
       )
     })
     const terminalCreation = window.api.terminal.create({
@@ -139,15 +140,15 @@ export default function TerminalHost({
       resize()
       term.focus()
     }
-    window.addEventListener('cmux:fontsize', onFontSize)
-    window.addEventListener('cmux:focus-surface', onFocusSurface)
+    window.addEventListener(RENDERER_EVENT.fontSize, onFontSize)
+    window.addEventListener(RENDERER_EVENT.focusSurface, onFocusSurface)
 
     return () => {
       disposed = true
       if (startupReadyFrame !== null) window.cancelAnimationFrame(startupReadyFrame)
       observer.disconnect()
-      window.removeEventListener('cmux:fontsize', onFontSize)
-      window.removeEventListener('cmux:focus-surface', onFocusSurface)
+      window.removeEventListener(RENDERER_EVENT.fontSize, onFontSize)
+      window.removeEventListener(RENDERER_EVENT.focusSurface, onFocusSurface)
       onData.dispose()
       offData()
       offExit()

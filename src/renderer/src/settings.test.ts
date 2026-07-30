@@ -1,17 +1,25 @@
 // Headless tests for the renderer settings store (terminal font size).
 // Run via `npm test` (tsx). settings.ts reads `localStorage` and dispatches a
-// `cmux:fontsize` window event — neither exists in Node, so we stub them.
+// window event — neither exists in Node, so we stub them.
 // (The static import below is side-effect-free at module load; the stubs are in
 // place before any settings function is actually called.)
-import { getFontSize, setFontSize, bumpFontSize, resetFontSize, DEFAULT_FONT_SIZE } from './settings'
+import {
+  getFontSize,
+  setFontSize,
+  bumpFontSize,
+  resetFontSize,
+  DEFAULT_FONT_SIZE
+} from './settings'
+import { RENDERER_EVENT } from './events'
 
 // ── minimal browser-global stubs ────────────────────────────────────────────
 const store = new Map<string, string>()
 let lastDetail: number | null = null
+let lastType = ''
 const g = globalThis as unknown as {
   localStorage: { getItem(k: string): string | null; setItem(k: string, v: string): void }
   CustomEvent: new (type: string, init?: { detail?: unknown }) => { type: string; detail: unknown }
-  window: { dispatchEvent(e: { detail?: unknown }): boolean }
+  window: { dispatchEvent(e: { type?: string; detail?: unknown }): boolean }
 }
 g.localStorage = {
   getItem: (k) => (store.has(k) ? (store.get(k) as string) : null),
@@ -29,6 +37,7 @@ g.CustomEvent = class {
 }
 g.window = {
   dispatchEvent: (e) => {
+    lastType = typeof e.type === 'string' ? e.type : ''
     lastDetail = (e.detail as number) ?? null
     return true
   }
@@ -50,7 +59,8 @@ assert(getFontSize() === DEFAULT_FONT_SIZE, 'unset → default')
 
 // set persists, returns the clamped value, and broadcasts the detail
 assert(setFontSize(16) === 16 && getFontSize() === 16, 'set 16 → persisted')
-assert(lastDetail === 16, 'set broadcasts cmux:fontsize detail')
+assert(lastType === RENDERER_EVENT.fontSize, 'set broadcasts the Shepherd font event')
+assert(lastDetail === 16, 'set broadcasts font-size detail')
 
 // clamps to the [8, 28] range
 assert(setFontSize(999) === 28, 'clamp above MAX → 28')
@@ -60,12 +70,16 @@ assert(setFontSize(1) === 8, 'clamp below MIN → 8')
 assert(setFontSize(13.6) === 14, 'round fractional input')
 
 // getFontSize normalizes a fractional stored value to an integer (Copilot, PR #10)
+store.clear()
 store.set('cmux.fontSize', '17.8')
 assert(getFontSize() === 18, 'stored fractional → rounded on read')
+assert(store.get('shepherd.fontSize') === '18', 'migrates a valid legacy font size')
 
 // out-of-range / garbage stored values fall back to the default
+store.clear()
 store.set('cmux.fontSize', '500')
 assert(getFontSize() === DEFAULT_FONT_SIZE, 'stored out-of-range → default')
+store.clear()
 store.set('cmux.fontSize', 'nope')
 assert(getFontSize() === DEFAULT_FONT_SIZE, 'stored garbage → default')
 

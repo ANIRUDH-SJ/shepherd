@@ -19,7 +19,7 @@ assert(
   'labels the resolved home directory'
 )
 assert(
-  workspaceProjectName('/projects/cmux-linux/src', '/projects/cmux-linux') === 'cmux-linux',
+  workspaceProjectName('/projects/shepherd/src', '/projects/shepherd') === 'shepherd',
   'uses the Git root as the project name'
 )
 assert(
@@ -29,9 +29,9 @@ assert(
 
 const metadata = {
   surfaceId: 'term-1',
-  cwd: '/projects/cmux-linux',
-  projectName: 'cmux-linux',
-  gitRoot: '/projects/cmux-linux',
+  cwd: '/projects/shepherd',
+  projectName: 'shepherd',
+  gitRoot: '/projects/shepherd',
   gitBranch: 'main'
 }
 assert(sameWorkspaceMetadata(metadata, { ...metadata }), 'compares identical metadata')

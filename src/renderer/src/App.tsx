@@ -14,6 +14,7 @@ import type { AgentReport } from '../../shared/agent'
 import type { UsageReport } from '../../shared/usage'
 import { isWorkspaceMetadata } from '../../shared/workspaceMetadata'
 import { nextAgentLifecycleDeadline } from './agentTiming'
+import { RENDERER_EVENT } from './events'
 import Sidebar from './components/Sidebar'
 import WorkspaceView from './components/WorkspaceView'
 
@@ -25,7 +26,7 @@ const MIN_SIDEBAR = 170
 const MAX_SIDEBAR = 420
 const DEFAULT_SIDEBAR = 240
 
-// Key name → terminal escape sequence, for `cmux send-key`.
+// Key name → terminal escape sequence, for `shepherd send-key`.
 const KEY_SEQ: Record<string, string> = {
   enter: '\r',
   tab: '\t',
@@ -141,8 +142,8 @@ export default function App(): React.JSX.Element {
         dispatch({ type: 'clearAgentsForSurface', surfaceId: detail.surfaceId })
       }
     }
-    window.addEventListener('cmux:terminal-exit', onTerminalExit)
-    return () => window.removeEventListener('cmux:terminal-exit', onTerminalExit)
+    window.addEventListener(RENDERER_EVENT.terminalExit, onTerminalExit)
+    return () => window.removeEventListener(RENDERER_EVENT.terminalExit, onTerminalExit)
   }, [])
 
   // Apply incoming socket commands: set-status / log / notify, plus workspace

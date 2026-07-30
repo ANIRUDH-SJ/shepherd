@@ -82,8 +82,8 @@ const ariaAgent = agent('Codex', 'blocked', 1, {
   message: 'Choose an option'
 })
 assert(
-  agentAriaLabel(ariaAgent, 'cmux-linux', 61_001).includes(
-    'waiting input, cmux-linux, Choose an option, updated 1m ago'
+  agentAriaLabel(ariaAgent, 'shepherd', 61_001).includes(
+    'waiting input, shepherd, Choose an option, updated 1m ago'
   ),
   'accessible label includes state, workspace, and detail'
 )
