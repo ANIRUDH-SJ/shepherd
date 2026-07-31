@@ -225,8 +225,8 @@ function loadConfig(path: string): BenchmarkConfig {
     throw new Error('benchmark config must be a file no larger than 256 KiB')
   }
   const config = validateBenchmarkConfig(JSON.parse(readFileSync(path, 'utf8')))
-  if (config.subjects.some((subject) => subject.mode !== 'cmux')) {
-    throw new Error('lifecycle subjects must use cmux mode')
+  if (config.subjects.some((subject) => subject.mode !== 'shepherd')) {
+    throw new Error('lifecycle subjects must use shepherd mode')
   }
   return config
 }
@@ -275,7 +275,7 @@ function processIdentities(runId: string): Array<{
   startTicks: number
 }> {
   assertRunId(runId)
-  const marker = `CMUX_BENCH_RUN_ID=${runId}`
+  const marker = `SHEPHERD_BENCH_RUN_ID=${runId}`
   const identities: Array<{
     pid: number
     ppid: number
@@ -410,9 +410,9 @@ function childEnvironment(
     ...environment,
     ...subject.env,
     DISPLAY: config.display,
-    CMUX_BENCH_RUN_ID: runId,
-    CMUX_MEMORY_DIAGNOSTICS: '1',
-    CMUX_SOCKET_PATH: socketPath,
+    SHEPHERD_BENCH_RUN_ID: runId,
+    SHEPHERD_MEMORY_DIAGNOSTICS: '1',
+    SHEPHERD_SOCKET_PATH: socketPath,
     XDG_CONFIG_HOME: join(runDir, 'config'),
     XDG_CACHE_HOME: join(runDir, 'cache'),
     XDG_DATA_HOME: join(runDir, 'data')
@@ -587,8 +587,8 @@ async function runSubject(
 ): Promise<LifecycleRun> {
   const runId = `${subject.id}-${round}-${process.pid}-${Date.now()}`
   assertRunId(runId)
-  const runDir = mkdtempSync(join(tmpdir(), 'cmux-terminal-lifecycle-run-'))
-  const socketPath = join(runDir, 'cmux.sock')
+  const runDir = mkdtempSync(join(tmpdir(), 'shepherd-terminal-lifecycle-run-'))
+  const socketPath = join(runDir, 'shepherd.sock')
   const logPath = join(logRoot, `${subject.id}-round-${round}.log`)
   const log = openSync(logPath, 'w', 0o600)
   const child = spawn(subject.command, subject.args, {
@@ -686,9 +686,7 @@ async function runSubject(
       ? latestTerminalMemorySnapshot(logText, 1)
       : null
     const resourceCountsReturnedToBaseline = diagnosticsAvailable
-      ? recoveries.every((recovery) =>
-          terminalMemoryReturnedToBaseline(recovery.resourceSnapshot)
-        )
+      ? recoveries.every((recovery) => terminalMemoryReturnedToBaseline(recovery.resourceSnapshot))
       : null
     return {
       subjectId: subject.id,
@@ -759,7 +757,7 @@ async function main(): Promise<void> {
     options.samplesPerLevel < 3 ||
     options.cycles < 10 ||
     pressureBefore.reasons.length > 0
-  const workRoot = mkdtempSync(join(tmpdir(), 'cmux-terminal-lifecycle-suite-'))
+  const workRoot = mkdtempSync(join(tmpdir(), 'shepherd-terminal-lifecycle-suite-'))
   const logRoot = join(workRoot, 'logs')
   mkdirSync(logRoot, { mode: 0o700 })
   const runs: LifecycleRun[] = []

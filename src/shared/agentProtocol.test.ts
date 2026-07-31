@@ -16,6 +16,10 @@ function assert(condition: boolean, message: string): void {
 
 assert(AGENT_PROTOCOL_SCHEMA.version === AGENT_PROTOCOL_VERSION, 'versions the protocol schema')
 assert(
+  AGENT_PROTOCOL_SCHEMA.$id === 'urn:shepherd:agent-protocol:v1',
+  'publishes Shepherd identity'
+)
+assert(
   AGENT_PROTOCOL_SCHEMA.$defs.agentState.enum.includes('blocked'),
   'publishes semantic state values'
 )

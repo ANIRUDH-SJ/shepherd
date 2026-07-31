@@ -20,8 +20,10 @@ interface Response {
 }
 
 async function main(): Promise<void> {
-  const path = join(tmpdir(), `cmux-socket-test-${process.pid}.sock`)
-  process.env.CMUX_SOCKET_PATH = path
+  const path = join(tmpdir(), `shepherd-socket-test-${process.pid}.sock`)
+  const legacyPath = join(tmpdir(), `shepherd-legacy-socket-test-${process.pid}.sock`)
+  process.env.SHEPHERD_SOCKET_PATH = path
+  process.env.CMUX_SOCKET_PATH = legacyPath
   const { startSocketServer, stopSocketServer, updateWorkspaceMirror } = await import('./socket')
   const { appendTerminalInspectionOutput, registerTerminalInspection, removeTerminalInspection } =
     await import('./terminalInspection')
@@ -33,15 +35,23 @@ async function main(): Promise<void> {
     agents: []
   }
   updateWorkspaceMirror(mirror)
-  startSocketServer((command) => applied.push(command))
+  startSocketServer((command) => applied.push(command), [path, legacyPath])
 
-  for (let attempt = 0; attempt < 100 && !existsSync(path); attempt++) {
+  for (
+    let attempt = 0;
+    attempt < 100 && (!existsSync(path) || !existsSync(legacyPath));
+    attempt++
+  ) {
     await new Promise((resolve) => setTimeout(resolve, 5))
   }
 
-  async function request(method: string, params: Record<string, unknown>): Promise<Response> {
+  async function request(
+    method: string,
+    params: Record<string, unknown>,
+    connectionPath = path
+  ): Promise<Response> {
     return new Promise((resolve, reject) => {
-      const connection = net.createConnection(path, () => {
+      const connection = net.createConnection(connectionPath, () => {
         connection.write(`${JSON.stringify({ id: method, method, params })}\n`)
       })
       let buffer = ''
@@ -55,6 +65,9 @@ async function main(): Promise<void> {
       connection.once('error', reject)
     })
   }
+
+  const legacyPing = await request('ping', {}, legacyPath)
+  assert(legacyPing.result?.ok === true, 'serves the compatibility socket')
 
   const capabilities = await request('capabilities', {})
   assert(
@@ -298,6 +311,7 @@ async function main(): Promise<void> {
 }
 
 void main().finally(() => {
-  const path = process.env.CMUX_SOCKET_PATH
-  if (path && existsSync(path)) unlinkSync(path)
+  for (const path of [process.env.SHEPHERD_SOCKET_PATH, process.env.CMUX_SOCKET_PATH]) {
+    if (path && existsSync(path)) unlinkSync(path)
+  }
 })

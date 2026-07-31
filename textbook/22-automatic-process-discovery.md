@@ -4,7 +4,7 @@ Semantic agent integrations answer a valuable question: “what is this agent
 doing?” Before they can answer it, though, the application has to answer a more
 basic question reliably: “is an agent running in this terminal at all?”
 
-This chapter explains the zero-configuration discovery layer in cmux-linux: why
+This chapter explains the zero-configuration discovery layer in Shepherd: why
 it belongs in Electron main, how a PTY maps to a Linux process tree, how we
 extract identity without retaining prompts, how multiple state authorities
 coexist, and where automatic inference must stop.
@@ -13,7 +13,7 @@ coexist, and where automatic inference must stop.
 
 The discovery design has seven requirements:
 
-1. **No setup for presence.** Starting a recognizable agent in a cmux-linux
+1. **No setup for presence.** Starting a recognizable agent in a Shepherd
    terminal is enough to create a sidebar row.
 2. **Exact ownership.** Every row must point to the correct workspace and terminal
    surface.
@@ -57,10 +57,10 @@ That is different from scraping human-readable prose and remains separate.
 ### 2.3 Scan every process on the machine
 
 A global `/proc` scan can find agents launched anywhere, but it cannot safely map
-an external process to a cmux-linux workspace and surface. Guessing by cwd is
+an external process to a Shepherd workspace and surface. Guessing by cwd is
 ambiguous when several panes share a repository.
 
-cmux-linux instead starts from each PTY it owns. That gives exact UI ownership
+Shepherd instead starts from each PTY it owns. That gives exact UI ownership
 before inspecting a process.
 
 ### 2.4 Read provider configuration globally
@@ -303,7 +303,7 @@ a zero-setup fallback without showing duplicate authorities.
 The scanner runs in Electron main once per second. Its work is bounded by:
 
 ```text
-number of cmux-linux terminal surfaces
+number of Shepherd terminal surfaces
   x at most 16 process identities
   x a small fixed set of /proc reads
 ```

@@ -11,6 +11,7 @@ import {
 import { normalizeAgentQuery, queryAgents } from '../shared/agentQuery'
 import type { AgentQuery, AgentQueryResult } from '../shared/agentQuery'
 import type { AgentRecord } from '../shared/agent'
+import { PRODUCT_NAME, productSocketPaths } from '../shared/product'
 import { normalizeWorkspaceName } from '../shared/workspace'
 import { normalizeUsageReport } from '../shared/usage'
 import { normalizeAgentWait, waitForAgent } from './agentWait'
@@ -20,14 +21,19 @@ import { createGitWorktree, normalizeWorktreeRequest } from './worktree'
 // ─────────────────────────────────────────────────────────────────────────────
 // SOCKET SERVER  (main process — the programmable control channel)
 // A unix-domain socket speaking newline-terminated JSON `{id, method, params}`.
-// Agents (via the `cmux` CLI) push status/notifications here; we route them to the
-// renderer to update the sidebar. This is the backbone of the cmux "feel".
+// Agents (via the `shepherd` CLI) push status/notifications here; we route them
+// to the renderer. The legacy socket remains available during the name migration.
 // See textbook/11 (the socket API) and FEATURES.md Part 2.
 // ─────────────────────────────────────────────────────────────────────────────
 
 type ApplyFn = (cmd: SocketApply) => void
 
-let server: net.Server | null = null
+interface SocketServer {
+  server: net.Server
+  path: string
+}
+
+let servers: SocketServer[] = []
 
 const MAX_AGENT_SUBSCRIPTIONS = 64
 const MAX_SUBSCRIBER_BUFFER_BYTES = 1024 * 1024
@@ -49,7 +55,7 @@ let nextSubscriptionId = 1
 let mirror: WorkspacesSync = { workspaces: [], activeWorkspaceId: '', agents: [] }
 
 export function socketPath(): string {
-  return process.env.CMUX_SOCKET_PATH || '/tmp/cmux-linux.sock'
+  return productSocketPaths(process.env)[0]
 }
 
 export function updateWorkspaceMirror(sync: WorkspacesSync): void {
@@ -414,7 +420,7 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
       apply({ method, workspaceId, params })
       if (method === 'notify' && Notification.isSupported()) {
         new Notification({
-          title: String(params.title ?? 'cmux-linux'),
+          title: String(params.title ?? PRODUCT_NAME),
           body: String(params.body ?? '')
         }).show()
       }
@@ -480,18 +486,8 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
   }
 }
 
-export function startSocketServer(apply: ApplyFn): void {
-  const path = socketPath()
-  // Clean up a stale socket file left by a previous crash.
-  if (existsSync(path)) {
-    try {
-      unlinkSync(path)
-    } catch {
-      /* ignore */
-    }
-  }
-
-  server = net.createServer((conn) => {
+function createSocketServer(apply: ApplyFn): net.Server {
+  return net.createServer((conn) => {
     // Message framing: a single 'data' event may contain partial or multiple JSON
     // lines, so we buffer and split on '\n'. (textbook/11 §gotchas)
     let buffer = ''
@@ -513,22 +509,41 @@ export function startSocketServer(apply: ApplyFn): void {
       }
     })
   })
+}
 
-  server.on('error', (err) => console.error('[socket] server error:', err))
-  server.listen(path, () => console.log('[socket] listening on', path))
+export function startSocketServer(
+  apply: ApplyFn,
+  paths: string[] = productSocketPaths(process.env)
+): void {
+  for (const path of paths) {
+    // Clean up a stale socket file left by a previous crash.
+    if (existsSync(path)) {
+      try {
+        unlinkSync(path)
+      } catch {
+        /* ignore */
+      }
+    }
+
+    const server = createSocketServer(apply)
+    servers.push({ server, path })
+    server.on('error', (err) => console.error('[shepherd:socket] server error:', err))
+    server.listen(path, () => console.log('[shepherd:socket] listening on', path))
+  }
 }
 
 export function stopSocketServer(): void {
   for (const subscriber of agentSubscribers) subscriber.conn.destroy()
   agentSubscribers.clear()
-  server?.close()
-  server = null
-  const path = socketPath()
-  if (existsSync(path)) {
-    try {
-      unlinkSync(path)
-    } catch {
-      /* ignore */
+  for (const { server, path } of servers) {
+    server.close()
+    if (existsSync(path)) {
+      try {
+        unlinkSync(path)
+      } catch {
+        /* ignore */
+      }
     }
   }
+  servers = []
 }

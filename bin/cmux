@@ -1,20 +1,5 @@
 #!/bin/sh
-# cmux — launcher for the cmux-linux CLI (the real logic lives in cmux.js).
-#
-# Inside a cmux-linux pane the app exports CMUX_ELECTRON: the path to its own
-# Electron binary. Electron doubles as a Node runtime when ELECTRON_RUN_AS_NODE=1,
-# so the CLI works inside a packaged app even on a machine with no Node installed.
-# Outside a pane we fall back to a system `node`.
+# Deprecated compatibility alias. Prefer `shepherd`.
 
 dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-
-if [ -n "${CMUX_ELECTRON:-}" ] && [ -x "$CMUX_ELECTRON" ]; then
-  ELECTRON_RUN_AS_NODE=1 exec "$CMUX_ELECTRON" "$dir/cmux.js" "$@"
-fi
-
-if command -v node >/dev/null 2>&1; then
-  exec node "$dir/cmux.js" "$@"
-fi
-
-echo "cmux: no runtime found — run this inside a cmux-linux pane, or install Node." >&2
-exit 1
+exec "$dir/shepherd" "$@"

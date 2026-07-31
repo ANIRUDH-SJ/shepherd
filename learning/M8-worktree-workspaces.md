@@ -1,7 +1,7 @@
 # M8 — Git Worktree Workspaces: What We Actually Built
 
 > This is the implementation diary for creating a Git worktree and opening it as
-> a live cmux-linux workspace in one command. For Git/worktree architecture,
+> a live Shepherd workspace in one command. For Git/worktree architecture,
 > safety boundaries, alternatives, and tradeoffs, read
 > `../textbook/20-worktree-workspaces.md`.
 
@@ -14,7 +14,7 @@ and uncommitted state while sharing one repository object database.
 M8 adds:
 
 ```bash
-cmux new-worktree \
+shepherd new-worktree \
   --repo /projects/app \
   --path /projects/app-feature-login \
   --new-branch feat/login \
@@ -28,7 +28,7 @@ whose initial terminal starts in the new worktree.
 ## 2. The complete flow
 
 ```text
-bin/cmux.js parses flags
+bin/shepherd.js parses flags
   → socket.ts receives new-worktree
   → normalizeWorktreeRequest validates paths, branch mode, refs, and name
   → createGitWorktree runs bounded git child processes without a shell
@@ -62,16 +62,16 @@ Every Git process uses `execFile`, an argv array, a 30-second timeout, and a 1 M
 output cap. No value is interpolated into a shell command. Git remains the final
 authority for branch occupancy, ref existence, repository locks, and races.
 
-## 4. `src/main/socket.ts` and `bin/cmux.js` — orchestration
+## 4. `src/main/socket.ts` and `bin/shepherd.js` — orchestration
 
 The CLI exposes both branch modes:
 
 ```bash
 # New branch from HEAD (or --start-point REF)
-cmux new-worktree --repo /repo --path /worktrees/task --new-branch feat/task
+shepherd new-worktree --repo /repo --path /worktrees/task --new-branch feat/task
 
 # Existing branch that is not checked out elsewhere
-cmux new-worktree --repo /repo --path /worktrees/review --branch review/topic
+shepherd new-worktree --repo /repo --path /worktrees/review --branch review/topic
 ```
 
 The socket validates before mutation. A Git failure returns an error and does not

@@ -78,10 +78,19 @@ assert(subagent?.params.message === 'Subagent started', 'subagent lifecycle keep
 const clear = mapAgentEvent(
   'claude',
   { hook_event_name: 'SessionEnd' },
-  { CMUX_SURFACE_ID: 'term-1' }
+  { SHEPHERD_SURFACE_ID: 'term-1', CMUX_SURFACE_ID: 'term-legacy' }
 )
 assert(clear?.method === 'agent-clear', 'session end clears an agent')
 assert(clear?.params.agentId === 'claude:hooks:term-1', 'clear targets the derived agent id')
+const legacyClear = mapAgentEvent(
+  'claude',
+  { hook_event_name: 'SessionEnd' },
+  { CMUX_SURFACE_ID: 'term-legacy' }
+)
+assert(
+  legacyClear?.params.agentId === 'claude:hooks:term-legacy',
+  'accepts legacy surface identity'
+)
 assert(
   mapAgentEvent('claude', { hook_event_name: 'SessionEnd' }, {}) === null,
   'does not clear without terminal identity'

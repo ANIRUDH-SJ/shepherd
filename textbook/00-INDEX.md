@@ -1,7 +1,7 @@
-# 📚 The cmux-linux Textbook — Start Here
+# 📚 The Shepherd Textbook — Start Here
 
 Welcome. This folder is a **from-scratch textbook** that explains _everything_
-about how the cmux-linux project works and every technology it's built on. It is
+about how the Shepherd project works and every technology it's built on. It is
 written to be read like a book: verbose, example-driven, and building concept on
 concept. If you read it in order, you will understand not just _what_ the code
 does but _why_ every piece exists.
@@ -48,7 +48,7 @@ Think of the book in five "acts":
 
 **Act I — Foundations (the mental model)**
 
-- `01-the-big-picture.md` — what cmux is, what we're building, the whole
+- `01-the-big-picture.md` — what Shepherd is, what we're building, the whole
   architecture on one page. **Read this first, always.**
 - `02-how-terminals-work.md` — the physics of a terminal: TTY, PTY, shells,
   stdin/stdout, and the escape codes that make colors and cursors happen. This is
@@ -74,10 +74,10 @@ Think of the book in five "acts":
   Window→Workspace→Pane→Surface→Panel model.
 - `10-tiling-and-layout.md` — how split panes actually work (the layout tree).
 
-**Act V — The cmux magic + shipping**
+**Act V — Automation, agents, performance, and shipping**
 
-- `11-the-socket-api.md` — the unix-socket API that drives the sidebar and
-  automation (the backbone of the "cmux feel").
+- `11-the-socket-api.md` — the Unix-socket API that drives the sidebar and
+  automation.
 - `12-notifications-and-osc.md` — notification rings, and the OSC escape codes
   that trigger them automatically.
 - `13-session-persistence.md` — session serialization and restore fundamentals.
@@ -120,6 +120,9 @@ Think of the book in five "acts":
 - `33-terminal-memory-and-ownership.md` — renderer ownership, stale cleanup
   races, explicit retention bounds, aggregate diagnostics, PSS scaling, and safe
   process-tree cleanup.
+- `34-product-identity-and-compatible-rebranding.md` — product identity across
+  Electron, Linux packaging, sockets, CLIs, state, integrations, and safe
+  compatibility retirement.
 
 **Reference**
 
@@ -132,42 +135,43 @@ Think of the book in five "acts":
 
 ## 📇 Full table of contents (annotated)
 
-| File                                      | You'll learn                                                                                                                                   | Needs first            |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
-| `electron-crash-course.md`                | ⚡ Hands-on Electron intro (tiny working app) + learn-time estimates                                                                           | —                      |
-| `01-the-big-picture.md`                   | The problem, our architecture, the core data-flow loop                                                                                         | —                      |
-| `02-how-terminals-work.md`                | TTY/PTY, shells, stdin/stdout, ANSI/OSC escape codes                                                                                           | 01                     |
-| `03-electron-architecture.md`             | Main vs renderer, Chromium+Node, app lifecycle, BrowserWindow                                                                                  | 01                     |
-| `04-ipc-inter-process-communication.md`   | invoke/handle, send/on, webContents.send, our channels                                                                                         | 03                     |
-| `05-preload-and-context-isolation.md`     | preload scripts, contextBridge, the sandbox, `window.api`                                                                                      | 03, 04                 |
-| `06-node-pty.md`                          | Pseudo-terminals in Node: spawn, data, resize, kill, env injection                                                                             | 02, 03                 |
-| `07-xtermjs.md`                           | The Terminal object, addons (fit/webgl/search), theming, mounting                                                                              | 02, 06                 |
-| `08-react-in-this-app.md`                 | Component tree, useState/useEffect/useRef, why refs for xterm                                                                                  | 07                     |
-| `09-typescript-and-the-data-model.md`     | TS essentials + our object model + the split tree                                                                                              | 08                     |
-| `10-tiling-and-layout.md`                 | The layout tree, tiling algorithm, resize, focus                                                                                               | 09                     |
-| `11-the-socket-api.md`                    | Unix sockets, the JSON protocol, the server + `cmux` CLI                                                                                       | 04, 09                 |
-| `12-notifications-and-osc.md`             | OSC 9/99/777, parsing the pty stream, the rings/flash pipeline                                                                                 | 06, 11                 |
-| `13-session-persistence.md`               | Serializing + restoring the object model, snapshots                                                                                            | 09, 11                 |
-| `14-build-tooling-and-vite.md`            | Vite, electron-vite, bundling main/preload/renderer, HMR                                                                                       | 03                     |
-| `15-packaging-and-distribution.md`        | electron-builder, AppImage/.deb/Flatpak, icons, updates                                                                                        | 14                     |
-| `16-glossary.md`                          | Every term defined                                                                                                                             | —                      |
-| `17-how-it-all-connects.md`               | End-to-end trace of a keystroke + a notification                                                                                               | all                    |
-| `18-usage-telemetry.md`                   | Token accounting, accuracy, provider-neutral events, validation, aggregation, adapters, and UI design                                          | 09, 11, 13             |
-| `19-semantic-agent-runtime.md`            | Semantic state machines, lifecycle reports, identity, ordering, adapters, agent UI, and automation                                             | 09, 11, 12             |
-| `20-worktree-workspaces.md`               | Git worktree isolation, validated process execution, workspace cwd flow, and failure boundaries                                                | 06, 09, 11             |
-| `21-live-state-subscriptions.md`          | Snapshot-plus-delta streams, filters, ordering, reconnect behavior, and slow-consumer bounds                                                   | 11, 19                 |
-| `22-automatic-process-discovery.md`       | Linux PTY process ancestry, safe command identity, classification, activity, precedence, and cleanup                                           | 06, 19                 |
-| `23-live-workspace-metadata.md`           | Shell cwd, Git roots, cached HEAD observation, async ownership, persistence, and project/branch UI                                             | 06, 09, 20             |
-| `24-single-workspace-startup.md`          | Startup cardinality, active-workspace projection, compatibility, security, and persistence tradeoffs                                           | 09, 13, 23             |
-| `25-semantic-ui-tokens.md`                | Semantic CSS tokens, cascade architecture, visual hierarchy, accessibility, validation, and theming                                            | 08, 14                 |
-| `26-sidebar-information-architecture.md`  | Workspace identity, agent urgency projections, empty states, SVG boundaries, accessibility, and layout                                         | 08, 19, 25             |
-| `27-terminal-interaction-design.md`       | Semantic tabs, roving focus, pane activation, xterm visibility, context strips, and capability controls                                        | 07, 08, 10, 25         |
-| `28-terminal-performance-measurement.md`  | Production benchmarks, workload/end-point design, PSS/CPU, robust statistics, process ownership, and safety                                    | 02, 06, 07, 15         |
-| `29-runtime-performance-observability.md` | Cross-process startup traces, semantic boundaries, monotonic clocks, disabled overhead, security, and optimization                             | 03, 04, 07, 28         |
-| `30-startup-critical-path-scheduling.md`  | Critical-path classification, readiness handshakes, late consumers, event-loop turns, and failure handling                                     | 03, 04, 29             |
-| `31-bounded-terminal-output-flow.md`      | Producer/consumer batching, acknowledgement windows, PTY backpressure, ordering, lifecycle, security, and measurement                          | 02, 04, 06, 07, 28     |
-| `32-adaptive-event-driven-observation.md` | Event acceleration, bounded recovery, visibility-aware scheduling, exact deadlines, safety, and idle-CPU measurement                           | 03, 08, 22, 23, 28     |
-| `33-terminal-memory-and-ownership.md`     | Renderer/PTY ownership, cleanup races, retention bounds, aggregate diagnostics, PSS scaling, process safety, and allocator high-water behavior | 03, 04, 06, 07, 28, 31 |
+| File                                               | You'll learn                                                                                                                                   | Needs first            |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `electron-crash-course.md`                         | ⚡ Hands-on Electron intro (tiny working app) + learn-time estimates                                                                           | —                      |
+| `01-the-big-picture.md`                            | The problem, our architecture, the core data-flow loop                                                                                         | —                      |
+| `02-how-terminals-work.md`                         | TTY/PTY, shells, stdin/stdout, ANSI/OSC escape codes                                                                                           | 01                     |
+| `03-electron-architecture.md`                      | Main vs renderer, Chromium+Node, app lifecycle, BrowserWindow                                                                                  | 01                     |
+| `04-ipc-inter-process-communication.md`            | invoke/handle, send/on, webContents.send, our channels                                                                                         | 03                     |
+| `05-preload-and-context-isolation.md`              | preload scripts, contextBridge, the sandbox, `window.api`                                                                                      | 03, 04                 |
+| `06-node-pty.md`                                   | Pseudo-terminals in Node: spawn, data, resize, kill, env injection                                                                             | 02, 03                 |
+| `07-xtermjs.md`                                    | The Terminal object, addons (fit/webgl/search), theming, mounting                                                                              | 02, 06                 |
+| `08-react-in-this-app.md`                          | Component tree, useState/useEffect/useRef, why refs for xterm                                                                                  | 07                     |
+| `09-typescript-and-the-data-model.md`              | TS essentials + our object model + the split tree                                                                                              | 08                     |
+| `10-tiling-and-layout.md`                          | The layout tree, tiling algorithm, resize, focus                                                                                               | 09                     |
+| `11-the-socket-api.md`                             | Unix sockets, the JSON protocol, the server + `shepherd` CLI                                                                                   | 04, 09                 |
+| `12-notifications-and-osc.md`                      | OSC 9/99/777, parsing the pty stream, the rings/flash pipeline                                                                                 | 06, 11                 |
+| `13-session-persistence.md`                        | Serializing + restoring the object model, snapshots                                                                                            | 09, 11                 |
+| `14-build-tooling-and-vite.md`                     | Vite, electron-vite, bundling main/preload/renderer, HMR                                                                                       | 03                     |
+| `15-packaging-and-distribution.md`                 | electron-builder, AppImage/.deb/Flatpak, icons, updates                                                                                        | 14                     |
+| `16-glossary.md`                                   | Every term defined                                                                                                                             | —                      |
+| `17-how-it-all-connects.md`                        | End-to-end trace of a keystroke + a notification                                                                                               | all                    |
+| `18-usage-telemetry.md`                            | Token accounting, accuracy, provider-neutral events, validation, aggregation, adapters, and UI design                                          | 09, 11, 13             |
+| `19-semantic-agent-runtime.md`                     | Semantic state machines, lifecycle reports, identity, ordering, adapters, agent UI, and automation                                             | 09, 11, 12             |
+| `20-worktree-workspaces.md`                        | Git worktree isolation, validated process execution, workspace cwd flow, and failure boundaries                                                | 06, 09, 11             |
+| `21-live-state-subscriptions.md`                   | Snapshot-plus-delta streams, filters, ordering, reconnect behavior, and slow-consumer bounds                                                   | 11, 19                 |
+| `22-automatic-process-discovery.md`                | Linux PTY process ancestry, safe command identity, classification, activity, precedence, and cleanup                                           | 06, 19                 |
+| `23-live-workspace-metadata.md`                    | Shell cwd, Git roots, cached HEAD observation, async ownership, persistence, and project/branch UI                                             | 06, 09, 20             |
+| `24-single-workspace-startup.md`                   | Startup cardinality, active-workspace projection, compatibility, security, and persistence tradeoffs                                           | 09, 13, 23             |
+| `25-semantic-ui-tokens.md`                         | Semantic CSS tokens, cascade architecture, visual hierarchy, accessibility, validation, and theming                                            | 08, 14                 |
+| `26-sidebar-information-architecture.md`           | Workspace identity, agent urgency projections, empty states, SVG boundaries, accessibility, and layout                                         | 08, 19, 25             |
+| `27-terminal-interaction-design.md`                | Semantic tabs, roving focus, pane activation, xterm visibility, context strips, and capability controls                                        | 07, 08, 10, 25         |
+| `28-terminal-performance-measurement.md`           | Production benchmarks, workload/end-point design, PSS/CPU, robust statistics, process ownership, and safety                                    | 02, 06, 07, 15         |
+| `29-runtime-performance-observability.md`          | Cross-process startup traces, semantic boundaries, monotonic clocks, disabled overhead, security, and optimization                             | 03, 04, 07, 28         |
+| `30-startup-critical-path-scheduling.md`           | Critical-path classification, readiness handshakes, late consumers, event-loop turns, and failure handling                                     | 03, 04, 29             |
+| `31-bounded-terminal-output-flow.md`               | Producer/consumer batching, acknowledgement windows, PTY backpressure, ordering, lifecycle, security, and measurement                          | 02, 04, 06, 07, 28     |
+| `32-adaptive-event-driven-observation.md`          | Event acceleration, bounded recovery, visibility-aware scheduling, exact deadlines, safety, and idle-CPU measurement                           | 03, 08, 22, 23, 28     |
+| `33-terminal-memory-and-ownership.md`              | Renderer/PTY ownership, cleanup races, retention bounds, aggregate diagnostics, PSS scaling, process safety, and allocator high-water behavior | 03, 04, 06, 07, 28, 31 |
+| `34-product-identity-and-compatible-rebranding.md` | Identity contracts, precedence, state selection, dual sockets, managed migrations, packaging, and compatibility retirement                     | 03, 11, 13, 15         |
 
 ---
 
@@ -175,11 +179,10 @@ Think of the book in five "acts":
 
 Keep this in the back of your mind while reading anything:
 
-**What we're building:** _cmux-linux_ — a Linux desktop app that recreates
-**cmux** (a Mac-only "terminal built for multitasking"): a vertical sidebar of
-named workspaces, each showing a live status ("Claude is waiting for your
-input"), notification rings when an agent needs you, split terminal panes, and a
-socket API for automation.
+**What we're building:** _Shepherd_ — an independent AI-native terminal
+workspace for Linux. It began from the gap left by a Mac-only inspiration and
+now combines named workspaces, agent status, notification rings, split terminal
+panes, and a socket API under its own product identity.
 
 **The stack:**
 
@@ -201,7 +204,7 @@ Window → Workspace → Pane → Surface → Panel(Terminal | Browser)
   ───────────────────────────       (window.api)     ─────────────────────
   you type in a terminal    ──send──►  IPC  ──────►  node-pty writes to shell
   terminal shows output     ◄──push──  IPC  ◄──────  shell output (pty.onData)
-  sidebar shows agent status ◄─push──  IPC  ◄──────  socket API (cmux CLI)
+  sidebar shows agent status ◄─push──  IPC  ◄──────  socket API (Shepherd CLI)
         = "the frontend"        = "the API"           = "the backend"
 ```
 
@@ -211,7 +214,7 @@ Everything in this book is, ultimately, explaining one part of that loop.
 
 ## ✍️ Conventions used throughout
 
-- **`🔧 In cmux-linux:`** boxes connect the general concept to our actual code.
+- **`🔧 In Shepherd:`** boxes connect the general concept to our actual code.
 - **`⚠️ Gotcha:`** flags a common mistake before you hit it.
 - **`🧪 Checkpoint:`** ends each chapter — answer these to confirm understanding.
 - ASCII diagrams are used liberally; code examples are in TypeScript/JavaScript.
@@ -245,3 +248,4 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `31-bounded-terminal-output-flow.md` — acknowledged terminal batching and backpressure
 - `32-adaptive-event-driven-observation.md` — activity-aware observation and deadline scheduling
 - `33-terminal-memory-and-ownership.md` — terminal ownership, bounded retention, and lifecycle measurement
+- `34-product-identity-and-compatible-rebranding.md` — safe product identity migration and compatibility design

@@ -1,5 +1,7 @@
+import { PRODUCT_ENV, productDiagnosticsEnabled } from './product'
+
 export const RUNTIME_PERFORMANCE_SCHEMA_VERSION = 1
-export const RUNTIME_PERFORMANCE_DIAGNOSTICS_ENV = 'CMUX_PERF_DIAGNOSTICS'
+export const RUNTIME_PERFORMANCE_DIAGNOSTICS_ENV = PRODUCT_ENV.performanceDiagnostics
 
 export const RUNTIME_PERFORMANCE_MARK_NAMES = [
   'main-process-start',
@@ -57,7 +59,11 @@ export function isRendererRuntimePerformanceMarkName(
 export function runtimePerformanceDiagnosticsEnabled(
   env: Readonly<Record<string, string | undefined>>
 ): boolean {
-  return env[RUNTIME_PERFORMANCE_DIAGNOSTICS_ENV] === '1'
+  return productDiagnosticsEnabled(
+    env,
+    PRODUCT_ENV.performanceDiagnostics,
+    PRODUCT_ENV.legacyPerformanceDiagnostics
+  )
 }
 
 export interface RuntimePerformanceEvent {

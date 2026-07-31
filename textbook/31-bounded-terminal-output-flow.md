@@ -12,7 +12,7 @@ schedule drawing alongside the rest of the UI. If every small producer event
 becomes a separate cross-process message, coordination overhead can dominate the
 actual text processing.
 
-This chapter develops the flow-control design used by cmux-linux. The ideas also
+This chapter develops the flow-control design used by Shepherd. The ideas also
 apply to logs, network streams, telemetry ingestion, and any producer/consumer
 pipeline where throughput must improve without unbounded memory or unacceptable
 interactive latency.
@@ -36,7 +36,7 @@ a separate safety boundary.
 
 ## 2. A batch size and a deadline solve different problems
 
-cmux-linux uses a 32 KiB target and a 4 ms deadline:
+Shepherd uses a 32 KiB target and a 4 ms deadline:
 
 ```text
 background output reaches 32 KiB → flush now
@@ -62,7 +62,7 @@ Terminals combine background streams and conversations. A compiler can emit
 thousands of lines, while a shell usually echoes a keystroke and prints a short
 prompt.
 
-cmux-linux identifies input as a useful local signal. Immediately before writing
+Shepherd identifies input as a useful local signal. Immediately before writing
 a keystroke to the PTY, it:
 
 1. flushes any pending output; and
@@ -124,7 +124,7 @@ endpoint.
 
 ## 5. Use two limits instead of one
 
-cmux-linux normally stops emitting additional batches when sending them would
+Shepherd normally stops emitting additional batches when sending them would
 take the acknowledged window above 128 KiB. Pending bytes can continue to
 accumulate briefly. At 256 KiB of total unfinished work, it pauses node-pty.
 
@@ -201,7 +201,7 @@ environment values.
 A batching system is incomplete until exit and cancellation behavior is
 defined.
 
-On natural PTY exit, cmux-linux:
+On natural PTY exit, Shepherd:
 
 1. detaches the PTY listeners;
 2. force-flushes the pending tail;

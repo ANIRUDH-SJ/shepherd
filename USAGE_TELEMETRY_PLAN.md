@@ -2,7 +2,9 @@
 
 ## Goal
 
-Show trustworthy per-workspace AI token usage without guessing from terminal text. Agents report usage through the existing `cmux` socket API; cmux-linux records the source and accuracy, aggregates the session, and presents a compact sidebar summary.
+Show trustworthy per-workspace AI token usage without guessing from terminal
+text. Agents report usage through Shepherd's socket API; the app records source
+and accuracy, aggregates the session, and presents a compact sidebar summary.
 
 ## Product Rules
 
@@ -29,7 +31,7 @@ Each report contains non-negative `inputTokens` and `outputTokens`, plus optiona
 
 - [x] Add `report-usage` to socket capabilities and dispatch.
 - [x] Validate all external values before forwarding them to the renderer.
-- [x] Add `cmux report-usage` flags and help examples.
+- [x] Add `shepherd report-usage` flags and help examples.
 - [x] Add CLI/parser or socket-boundary regression tests where practical.
 
 ### Goal 3 — Application state
@@ -48,7 +50,7 @@ Each report contains non-negative `inputTokens` and `outputTokens`, plus optiona
 ### Goal 5 — Verification
 
 - [x] Run tests, targeted lint, typecheck, and production build.
-- [x] Exercise `cmux report-usage` against a live or controlled socket.
+- [x] Exercise `shepherd report-usage` against a live or controlled socket.
 - [x] Review the final diff for unrelated generated output.
 
 ### Goal 6 — Post-code documentation

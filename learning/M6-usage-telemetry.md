@@ -8,22 +8,22 @@
 
 We wanted each workspace row to answer a quiet but useful question: **how many
 tokens has this agent session reported using?** The first design idea was to infer
-usage after every visible response. We deliberately did not do that. cmux-linux
+usage after every visible response. We deliberately did not do that. Shepherd
 sees terminal bytes, not the provider's complete API request, hidden context,
 cache accounting, or billing record.
 
 The implemented rule is therefore:
 
-> An agent reports usage explicitly; cmux-linux validates, aggregates, and displays
+> An agent reports usage explicitly; Shepherd validates, aggregates, and displays
 > it. It never invents missing numbers.
 
 ## 2. The complete data flow
 
 ```text
 agent or script
-  → cmux report-usage --input-tokens 1200 --output-tokens 300 --accuracy exact
-  → bin/cmux converts kebab-case flags to camelCase JSON
-  → /tmp/cmux-linux.sock receives { method: "report-usage", params: ... }
+  → shepherd report-usage --input-tokens 1200 --output-tokens 300 --accuracy exact
+  → bin/shepherd converts kebab-case flags to camelCase JSON
+  → /tmp/shepherd.sock receives { method: "report-usage", params: ... }
   → src/main/socket.ts validates and timestamps the report
   → main pushes a socket:command IPC event
   → App.tsx dispatches reportUsage
@@ -67,7 +67,7 @@ resolving the workspace and before sending anything to React. Invalid input gets
 a normal socket error response, for example:
 
 ```text
-cmux: error: outputTokens must be a non-negative integer
+shepherd: error: outputTokens must be a non-negative integer
 ```
 
 The main process replaces any caller timestamp with `Date.now()`. This gives every
@@ -79,7 +79,7 @@ The forwarded IPC params contain the normalized report only:
 apply({ method: 'report-usage', workspaceId, params: { report } })
 ```
 
-## 5. `bin/cmux` — the reporting interface
+## 5. `bin/shepherd` — the reporting interface
 
 The existing CLI parser now converts all kebab-case flag names to camelCase:
 
@@ -90,13 +90,13 @@ The existing CLI parser now converts all kebab-case flag names to camelCase:
 ```
 
 That keeps shell spelling conventional without leaking shell-style names into the
-TypeScript protocol. `CMUX_WORKSPACE_ID` still targets the current pane's workspace
+TypeScript protocol. `SHEPHERD_WORKSPACE_ID` still targets the current pane's workspace
 automatically; `--workspace` can override it.
 
 Full example:
 
 ```bash
-cmux report-usage \
+shepherd report-usage \
   --input-tokens 1200 \
   --output-tokens 300 \
   --cached-tokens 800 \
@@ -106,7 +106,7 @@ cmux report-usage \
   --model example-model
 ```
 
-cmux-linux accepts reported cost but does not calculate it.
+Shepherd accepts reported cost but does not calculate it.
 
 ## 6. Reducer state and session behavior
 
@@ -146,7 +146,7 @@ cost, caching, and sticky estimated state.
 `src/renderer/src/appReducer.test.ts` covers per-workspace accumulation and reset
 on restore. `usageView.test.ts` covers compact formatting and detail provenance.
 
-`bin/cmux.test.js` is a cross-layer integration test. It opens a temporary Unix
+`bin/shepherd.test.js` is a cross-layer integration test. It opens a temporary Unix
 socket, launches the real CLI, captures its JSON, replies successfully, and checks
 flag mapping plus automatic workspace targeting.
 

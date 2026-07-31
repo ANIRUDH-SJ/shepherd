@@ -1,8 +1,12 @@
-# cmux-linux
+# Shepherd
 
-A Linux desktop recreation of [cmux](https://cmux.com) — *the terminal built for
-multitasking with AI agents*. cmux is a native macOS app; this is an open-source
-Linux equivalent built on web technologies.
+Shepherd is an open-source, AI-native terminal workspace for Linux. It combines
+real shells, tiled panes, per-pane tabs, live project and Git context, automatic
+agent discovery, semantic agent status, and a Unix-socket automation API.
+
+The project began because [cmux](https://cmux.com) did not have a Linux version.
+Shepherd now has its own product identity and is evolving beyond parity while
+retaining attribution to that original inspiration.
 
 Vertical named sidebar with live project/branch context and per-agent status,
 notification rings when an agent needs you, split terminal panes, and a socket
@@ -26,33 +30,35 @@ API for automation.
 
 ## Install
 
-Grab an artifact from the releases page, or build one yourself (below).
+Grab an artifact from the
+[GitHub releases page](https://github.com/ANIRUDH-SJ/shepherd/releases), or build
+one yourself.
 
-**AppImage** — no install, runs anywhere:
+**AppImage** — no installation:
 
 ```bash
-chmod +x cmux-linux-*.AppImage
-./cmux-linux-*.AppImage
+chmod +x Shepherd-*.AppImage
+./Shepherd-*.AppImage
 ```
 
 **Debian / Ubuntu:**
 
 ```bash
-sudo apt install ./cmux-linux_*_amd64.deb
-cmux-linux            # or launch it from your app menu
+sudo apt install ./Shepherd_*_amd64.deb
+shepherd             # or launch Shepherd from the app menu
 ```
 
 ## Usage
 
-| Shortcut | Action |
-| --- | --- |
-| `Ctrl+Shift+D` / `E` | split right / down |
-| `Ctrl+Shift+T` | new tab |
-| `Ctrl+Shift+N` | new workspace |
-| `Ctrl+Shift+W` | close surface |
-| `Ctrl+Shift+B` | toggle sidebar |
-| `Ctrl+Shift+=` / `-` / `0` | zoom terminal in / out / reset |
-| `F2` on a workspace | rename workspace (`Enter` saves, `Escape` cancels) |
+| Shortcut                   | Action                                             |
+| -------------------------- | -------------------------------------------------- |
+| `Ctrl+Shift+D` / `E`       | split right / down                                 |
+| `Ctrl+Shift+T`             | new tab                                            |
+| `Ctrl+Shift+N`             | new workspace                                      |
+| `Ctrl+Shift+W`             | close surface                                      |
+| `Ctrl+Shift+B`             | toggle sidebar                                     |
+| `Ctrl+Shift+=` / `-` / `0` | zoom terminal in / out / reset                     |
+| `F2` on a workspace        | rename workspace (`Enter` saves, `Escape` cancels) |
 
 When a terminal tab has keyboard focus, Left/Right wraps across tabs, Home/End
 jumps to the first or last tab in that pane, and Delete closes the focused tab.
@@ -62,19 +68,23 @@ its name, or use its pencil action. Submitting an empty name returns to the live
 project name, with a positional label such as `Workspace 2` as context.
 
 Each launch begins with one workspace. If the previous session had several,
-cmux-linux resumes only the workspace that was active at shutdown, including its
+Shepherd resumes only the workspace that was active at shutdown, including its
 latest cwd, tabs, panes, and split layout.
 
-Every pane gets a `cmux` command on its `PATH`, which drives the app over its
-unix socket — this is how an agent reports status back to the sidebar:
+Every pane gets a `shepherd` command on its `PATH`. It drives the app over
+`/tmp/shepherd.sock`, including agent status and automation:
 
 ```bash
-cmux set-status "running tests"
-cmux notify --title Claude --body "needs your attention"
-cmux rename-workspace --workspace "workspace 1" --name build
-cmux hooks setup      # install a Claude Code notify hook
-cmux --help
+shepherd set-status "running tests"
+shepherd notify --title Claude --body "needs your attention"
+shepherd rename-workspace --workspace "workspace 1" --name build
+shepherd integrations setup
+shepherd --help
 ```
+
+The deprecated `cmux` launcher and `CMUX_*` environment names remain available
+for existing scripts during the compatibility window. New integrations should
+use `shepherd` and `SHEPHERD_*`.
 
 ## Develop
 
@@ -91,23 +101,23 @@ npm run dist     # package an AppImage + .deb into release/
 ## Repository layout
 
 ```
-cmux-linux/
+shepherd/
 ├── src/
 │   ├── main/          # Electron main process (Node backend)
 │   ├── preload/       # the secure window.api bridge
 │   └── renderer/      # the React app (UI)
-├── bin/               # the `cmux` CLI shipped onto every pane's PATH
+├── bin/               # primary `shepherd` CLI plus compatibility launcher
 ├── build/             # packaging assets (app icon)
 ├── electron-builder.yml  # AppImage / .deb packaging config
 ├── textbook/          # deep textbook: how the project + every tech works
 ├── learning/          # as-we-build log — what each milestone actually added
 ├── ROADMAP.md         # milestones M0–M6
-├── FEATURES.md        # cmux feature parity map + object model + socket API
+├── FEATURES.md        # feature map, object model, and socket API
 ├── LEARNING.md        # Electron study plan
 └── REFRESHER.md       # React / Node / CSS refresher
 ```
 
 ## License
 
-MIT © 2026 Anirudh S J. Inspired by cmux (manaflow-ai/cmux); this is an
-independent implementation, not affiliated with or derived from cmux's source.
+MIT © 2026 Anirudh S J. Shepherd is an independent implementation inspired by
+cmux and is not affiliated with or derived from cmux's source.

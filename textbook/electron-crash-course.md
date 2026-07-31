@@ -1,13 +1,13 @@
 # ⚡ Electron Crash Course (do this before the deep chapters)
 
 A **hands-on, zero-to-working** intro to Electron. In ~30–45 minutes you'll build a
-tiny app that contains the *entire* mental model cmux-linux is built on. No Vite,
+tiny app that contains the _entire_ mental model Shepherd is built on. No Vite,
 no TypeScript, no build tools yet — just plain JavaScript so you learn **Electron
 itself**, not the tooling. (The real project adds TS + Vite later; those are easy
 once the model below clicks.)
 
 > **How to use this:** actually type it out and run it. Reading Electron docs is
-> fine, but the two-process model only really lands when you *see* a button in a
+> fine, but the two-process model only really lands when you _see_ a button in a
 > window trigger code in a Node backend and get an answer back.
 
 ---
@@ -18,6 +18,7 @@ once the model below clicks.)
 > running a web page (the "renderer" process), talking over a message channel (IPC).**
 
 That's it. If you know Express + a frontend, you know 80% of this already:
+
 - **main process** ≈ your Express backend (full OS access: files, processes, network)
 - **renderer process** ≈ your frontend (HTML/CSS/JS in a sandboxed browser window)
 - **IPC** ≈ the API calls between them
@@ -47,6 +48,7 @@ Then create the five files below in that folder.
 > file to run) and a `start` script. We set both next.
 
 **`package.json`** (edit the generated one to look like this):
+
 ```json
 {
   "name": "electron-crash-course",
@@ -66,9 +68,10 @@ Then create the five files below in that folder.
 ## 3. Example 1 — Open a window
 
 **`main.js`** — the backend. It creates a window and loads a web page into it.
+
 ```js
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
+const { app, BrowserWindow } = require('electron')
+const path = require('path')
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -76,30 +79,31 @@ function createWindow() {
     height: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'), // the safe bridge (Example 2)
-      contextIsolation: true,   // keep the page sandboxed (secure default)
-      nodeIntegration: false,   // the page canNOT use Node directly (secure default)
-    },
-  });
-  win.loadFile('index.html'); // load our web page into the window
+      contextIsolation: true, // keep the page sandboxed (secure default)
+      nodeIntegration: false // the page canNOT use Node directly (secure default)
+    }
+  })
+  win.loadFile('index.html') // load our web page into the window
 }
 
 // app.whenReady() fires once Electron is initialized — then we can open windows.
 app.whenReady().then(() => {
-  createWindow();
+  createWindow()
 
   // macOS convention: re-open a window when the dock icon is clicked and none are open.
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-});
+    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  })
+})
 
 // Quit when all windows are closed (except on macOS, where apps stay running).
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
+  if (process.platform !== 'darwin') app.quit()
+})
 ```
 
 **`index.html`** — the web page shown in the window.
+
 ```html
 <!doctype html>
 <html>
@@ -107,11 +111,26 @@ app.on('window-all-closed', () => {
     <meta charset="utf-8" />
     <title>Electron Crash Course</title>
     <style>
-      body { font-family: system-ui, sans-serif; padding: 24px; background:#111; color:#eee; }
-      button { padding: 6px 12px; }
-      input { padding: 6px; }
-      h2 { margin-top: 28px; }
-      .box { background:#1b1b1b; padding:14px; border-radius:8px; }
+      body {
+        font-family: system-ui, sans-serif;
+        padding: 24px;
+        background: #111;
+        color: #eee;
+      }
+      button {
+        padding: 6px 12px;
+      }
+      input {
+        padding: 6px;
+      }
+      h2 {
+        margin-top: 28px;
+      }
+      .box {
+        background: #1b1b1b;
+        padding: 14px;
+        border-radius: 8px;
+      }
     </style>
   </head>
   <body>
@@ -135,9 +154,11 @@ app.on('window-all-closed', () => {
 ```
 
 At this point you can already run it:
+
 ```bash
 npm start
 ```
+
 A window opens showing the page. 🎉 You just made a desktop app. The buttons don't
 work yet — that needs IPC, which is Examples 2 and 3.
 
@@ -150,8 +171,9 @@ except the "server" is your main process.
 
 **`preload.js`** — the safe bridge. It exposes a tidy `window.api` to the page.
 The page will call `window.api.ping(...)` and never touches raw IPC.
+
 ```js
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron')
 
 // Whatever we put here becomes `window.api` inside the web page.
 contextBridge.exposeInMainWorld('api', {
@@ -161,41 +183,43 @@ contextBridge.exposeInMainWorld('api', {
   // Subscribe to a stream of pushes from main (used in Example 3).
   // Returns an "unsubscribe" function — important for cleanup.
   onTick: (callback) => {
-    const listener = (_event, time) => callback(time);
-    ipcRenderer.on('tick', listener);
-    return () => ipcRenderer.removeListener('tick', listener);
-  },
-});
+    const listener = (_event, time) => callback(time)
+    ipcRenderer.on('tick', listener)
+    return () => ipcRenderer.removeListener('tick', listener)
+  }
+})
 ```
 
 Add the **handler** in `main.js` (put it above `app.whenReady()`):
+
 ```js
-const { ipcMain } = require('electron'); // add ipcMain to the top require
+const { ipcMain } = require('electron') // add ipcMain to the top require
 
 // When the renderer calls window.api.ping(name), THIS runs in the backend.
 // Whatever you return becomes the reply the renderer awaits.
 ipcMain.handle('ping', async (_event, name) => {
-  return `Hello ${name || 'stranger'} — this reply came from the Node backend!`;
-});
+  return `Hello ${name || 'stranger'} — this reply came from the Node backend!`
+})
 ```
 
-**`renderer.js`** — runs in the page. It can *only* use `window.api`.
+**`renderer.js`** — runs in the page. It can _only_ use `window.api`.
+
 ```js
 // Note: no `require`, no Node here. The renderer is sandboxed.
 // It talks to the backend exclusively through window.api (from preload).
 
 document.getElementById('pingBtn').addEventListener('click', async () => {
-  const name = document.getElementById('name').value;
-  const reply = await window.api.ping(name); // → IPC → main → back
-  document.getElementById('reply').textContent = reply;
-});
+  const name = document.getElementById('name').value
+  const reply = await window.api.ping(name) // → IPC → main → back
+  document.getElementById('reply').textContent = reply
+})
 ```
 
 Run `npm start` again, type your name, click **Ping main** → the reply text is
-produced *in the Node backend* and shown in the window. **That round trip is the
+produced _in the Node backend_ and shown in the window. **That round trip is the
 heartbeat of every Electron app.**
 
-> **🔧 In cmux-linux:** this exact pattern is how the UI will ask the backend to
+> **🔧 In Shepherd:** this exact pattern is how the UI will ask the backend to
 > "create a workspace," "split a pane," or "send this keystroke to the shell."
 > `window.api.ping` becomes `window.api.sendInput`, etc.
 
@@ -204,31 +228,33 @@ heartbeat of every Electron app.**
 ## 5. Example 3 — main pushes to the renderer (streaming)
 
 Request/response is renderer-initiated. But sometimes the **backend** needs to push
-data whenever *it* wants — like a clock ticking, or terminal output arriving. That's
+data whenever _it_ wants — like a clock ticking, or terminal output arriving. That's
 `webContents.send` (main) → `ipcRenderer.on` (renderer).
 
 Add to `main.js` inside `app.whenReady().then(() => { ... })`, after `createWindow()`:
+
 ```js
-  // Every second, push the current time to the window.
-  setInterval(() => {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (win) win.webContents.send('tick', new Date().toLocaleTimeString());
-  }, 1000);
+// Every second, push the current time to the window.
+setInterval(() => {
+  const win = BrowserWindow.getAllWindows()[0]
+  if (win) win.webContents.send('tick', new Date().toLocaleTimeString())
+}, 1000)
 ```
 
 Add to `renderer.js`:
+
 ```js
 // Subscribe to the 'tick' stream. onTick returns an unsubscribe function.
 const stopClock = window.api.onTick((time) => {
-  document.getElementById('clock').textContent = time;
-});
+  document.getElementById('clock').textContent = time
+})
 // If you ever wanted to stop receiving ticks: stopClock();
 ```
 
 Run `npm start` → the clock updates every second, **pushed from the backend.**
 
-> **🔧 In cmux-linux:** replace "a clock tick every second" with "a chunk of
-> terminal output whenever the shell prints," and this *is* how a live terminal
+> **🔧 In Shepherd:** replace "a clock tick every second" with "a chunk of
+> terminal output whenever the shell prints," and this _is_ how a live terminal
 > streams into the UI. Replace it with "a workspace status changed" and it's how
 > the sidebar lights up. Same pattern, different payload.
 
@@ -236,15 +262,15 @@ Run `npm start` → the clock updates every second, **pushed from the backend.**
 
 ## 6. You just learned the whole skeleton
 
-Those three examples map 1:1 onto cmux-linux:
+Those three examples map 1:1 onto Shepherd:
 
-| Crash-course example | The real cmux-linux feature it becomes |
-|---|---|
-| Example 1 — open a window | The app shell (sidebar + panes live here) |
-| Example 2 — `ping` request/response | "create workspace", "split pane", "send keystroke" |
-| Example 3 — `tick` push | Terminal output streaming in; sidebar status updates |
-| `preload.js` `window.api` | The real `window.api` (sendInput, onPtyData, …) |
-| `contextIsolation`/`nodeIntegration:false` | The same security settings we ship with |
+| Crash-course example                       | The real Shepherd feature it becomes                 |
+| ------------------------------------------ | ---------------------------------------------------- |
+| Example 1 — open a window                  | The app shell (sidebar + panes live here)            |
+| Example 2 — `ping` request/response        | "create workspace", "split pane", "send keystroke"   |
+| Example 3 — `tick` push                    | Terminal output streaming in; sidebar status updates |
+| `preload.js` `window.api`                  | The real `window.api` (sendInput, onPtyData, …)      |
+| `contextIsolation`/`nodeIntegration:false` | The same security settings we ship with              |
 
 If you understand this tiny app, you understand the architecture of the whole
 project. Everything else is adding **node-pty** (real shells behind Example 3's
@@ -272,32 +298,34 @@ and CSS you already know.
 Honest estimates for **you** (already fluent in React/Node/Express). "Part-time" =
 ~1–2 hrs an evening.
 
-| Goal | Time | What it involves |
-|---|---|---|
-| **"I get Electron"** | **1 afternoon (2–4 hrs)** | Do this crash course; run all 3 examples; tweak them |
-| **Comfortable with the core** | **~1 week part-time** | This + textbook ch `03`,`04`,`05` (Electron/IPC/preload) + `06` node-pty + `07` xterm.js |
-| **Ready to build M1** | **~1 week part-time** | The above, then build the one-terminal milestone (learning cements while building) |
-| **Understand the whole stack** | **~3–4 weeks part-time** | Best done *while* building M0→M4; read chapters as each milestone needs them |
-| **Read the full textbook cover-to-cover** | **~15–25 hrs total** | Optional/reference — you do NOT need this before starting |
+| Goal                                      | Time                      | What it involves                                                                         |
+| ----------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------- |
+| **"I get Electron"**                      | **1 afternoon (2–4 hrs)** | Do this crash course; run all 3 examples; tweak them                                     |
+| **Comfortable with the core**             | **~1 week part-time**     | This + textbook ch `03`,`04`,`05` (Electron/IPC/preload) + `06` node-pty + `07` xterm.js |
+| **Ready to build M1**                     | **~1 week part-time**     | The above, then build the one-terminal milestone (learning cements while building)       |
+| **Understand the whole stack**            | **~3–4 weeks part-time**  | Best done _while_ building M0→M4; read chapters as each milestone needs them             |
+| **Read the full textbook cover-to-cover** | **~15–25 hrs total**      | Optional/reference — you do NOT need this before starting                                |
 
 **The fast path (recommended):** crash course (1 afternoon) → skim textbook ch
 `01`,`02` → build M0 → read ch `03`–`07` → build M1. That's roughly **one to two
 weeks part-time to a working terminal you built yourself.**
 
 > **The single biggest accelerator:** don't try to master Electron before building.
-> You're vibe-coding — you'll learn far faster reading *working* code as we scaffold
-> each milestone than by studying docs cold. The book is there to explain *why*
+> You're vibe-coding — you'll learn far faster reading _working_ code as we scaffold
+> each milestone than by studying docs cold. The book is there to explain _why_
 > whenever something is unclear, not to be finished first.
 
 ---
 
 ## Where this shows up next
+
 - Go deeper on each piece you just met:
   `03-electron-architecture.md`, `04-ipc-inter-process-communication.md`, `05-preload-and-context-isolation.md`
 - Real shells behind the stream: `06-node-pty.md` · Real terminal UI: `07-xtermjs.md`
 - The whole picture again, now that it'll click: `01-the-big-picture.md`
 
 ## Further reading
+
 - Electron — Quick Start: https://www.electronjs.org/docs/latest/tutorial/quick-start
 - Electron — Process Model: https://www.electronjs.org/docs/latest/tutorial/process-model
 - Electron — IPC: https://www.electronjs.org/docs/latest/tutorial/ipc

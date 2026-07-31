@@ -24,7 +24,7 @@ Backend ownership should not dictate visual priority.
 A workspace has several identities: a custom name, project name, path, stable
 identifier, and list position. No single value works everywhere.
 
-cmux-linux applies a small presentation function:
+Shepherd applies a small presentation function:
 
 ```text
 custom name exists  -> primary: custom name, context: project
@@ -75,7 +75,7 @@ records arrive, minimizing layout surprise.
 
 ## 5. Progressive disclosure in narrow space
 
-A sidebar cannot show every identifier at full length. cmux-linux uses layers:
+A sidebar cannot show every identifier at full length. Shepherd uses layers:
 
 - the most useful value is visible and ellipsized;
 - secondary context sits on the next line;
@@ -132,7 +132,7 @@ counts, borders, or state colors.
 
 Composite rows require careful DOM structure. A row-level selection target must
 not contain its rename and close buttons, and edit mode must not place an input
-inside a button-like element. cmux-linux renders selection and actions as
+inside a button-like element. Shepherd renders selection and actions as
 siblings, then temporarily removes the selection role while its rename input is
 active.
 

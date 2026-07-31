@@ -23,8 +23,8 @@ code as we write it.
 | **M0**    | `M0-project-scaffold.md`                     | The Electron + React + TypeScript skeleton: every file, the build pipeline, how to run it                                   |
 | **M1**    | `M1-terminal.md`                             | One real terminal: node-pty (backend) + xterm.js (UI) + the IPC loop, function by function                                  |
 | **M2**    | `M2-panes-tabs-splits.md`                    | Many terminals: the flat keyed pane layer, tabs, resizable splits, the pure layout engine + its test                        |
-| **M3**    | `M3-workspaces-and-socket.md`                | Multi-workspace sidebar (status, markers, resize, collapse) + the unix-socket server + `cmux` CLI                           |
-| **M4**    | `M4-agents-and-persistence.md`               | OSC auto-notifications, `cmux hooks setup`, and session restore (+ the review hardening)                                    |
+| **M3**    | `M3-workspaces-and-socket.md`                | Multi-workspace sidebar (status, markers, resize, collapse) + the unix-socket server + `shepherd` CLI                       |
+| **M4**    | `M4-agents-and-persistence.md`               | OSC auto-notifications, `shepherd hooks setup`, and session restore (+ the review hardening)                                |
 | **M5**    | `M5-socket-control.md`                       | Full socket control API: workspace + surface control + queries, and the review hardening                                    |
 | **M6**    | `M6-usage-telemetry.md`                      | Agent-reported token usage: validation, socket/CLI flow, reducer aggregation, sidebar UI, and tests                         |
 | **M7**    | `M7-semantic-agent-runtime.md`               | Semantic lifecycle state: contract, socket controls, reducer ownership, sidebar, focus, and adapters                        |
@@ -42,6 +42,7 @@ code as we write it.
 | **M19**   | `M19-terminal-output-batching.md`            | Bounded PTY batching, xterm acknowledgements, backpressure, lifecycle correctness, and matched benchmark proof              |
 | **M20**   | `M20-adaptive-runtime-polling.md`            | Activity-aware agent and metadata scans, visibility backoff, exact renderer deadlines, cleanup, and measured idle-CPU proof |
 | **M21**   | `M21-terminal-memory-lifecycle.md`           | Renderer-owned PTYs, crash cleanup, explicit retention bounds, aggregate diagnostics, and 1/2/4/8 lifecycle proof           |
+| **M22**   | `M22-shepherd-rebrand.md`                    | Product identity, state compatibility, sockets, CLI aliases, managed hooks, renderer settings, packaging, and tests         |
 
 ## How to read a milestone file
 

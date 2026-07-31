@@ -25,7 +25,7 @@ claim input-to-photon latency or rendered-frame throughput.
 - Linux with readable `/proc/<pid>/stat`, `/proc/<pid>/environ`, and
   `/proc/<pid>/smaps_rollup`
 - An active X11 display and absolute paths to every terminal executable
-- A production cmux-linux build from `npm run dist:dir` or `npm run dist`
+- A production Shepherd build from `npm run dist:dir` or `npm run dist`
 - Low background load, at least 25% available memory, and no more than 50% swap
   use for a publishable run
 
@@ -39,7 +39,7 @@ configuration.
 
 ```bash
 npm run benchmark -- run \
-  --config /tmp/cmux-bench-subjects.json \
+  --config /tmp/shepherd-bench-subjects.json \
   --output benchmarks/results/terminal-$(date +%F).json
 ```
 
@@ -49,7 +49,7 @@ period, a one-second CPU window, and an 8 MiB ANSI fixture. Useful options:
 ```bash
 # Validate one subject without presenting the result as final evidence.
 npm run benchmark -- run --config /tmp/subjects.json \
-  --output /tmp/cmux-pilot.json --subjects cmux-unpacked \
+  --output /tmp/shepherd-pilot.json --subjects shepherd-unpacked \
   --warmups 1 --samples 1 --allow-pressure
 
 # Exercise valid UTF-8 text instead of ANSI color changes.
@@ -68,14 +68,14 @@ per-terminal PSS, process composition, and repeated open/close recovery:
 
 ```bash
 npm run benchmark:lifecycle -- run \
-  --config /tmp/cmux-lifecycle-subjects.json \
-  --output /tmp/cmux-lifecycle-results.json
+  --config /tmp/shepherd-lifecycle-subjects.json \
+  --output /tmp/shepherd-lifecycle-results.json
 ```
 
-It expects cmux-mode production subjects using the same validated configuration
+It expects `shepherd`-mode production subjects using the same validated configuration
 schema. Defaults are five fresh runs, three samples at each of 1/2/4/8 live
 terminals, and ten 8→1 recovery cycles. Candidate builds may emit opt-in
-`[cmux:memory]` snapshots; the runner verifies terminal, owner, inspection,
+`[shepherd:memory]` snapshots; the runner verifies terminal, owner, inspection,
 queued-output, and paused-PTY counts without storing terminal content.
 
 Each directly spawned application PID is the root ownership proof. Cleanup
@@ -84,16 +84,16 @@ rechecks those ticks before escalation so PID reuse cannot target an unrelated
 process. Chromium helpers whose sanitized role is unavailable are reported as a
 combined `electron:helper` group.
 
-## cmux-linux startup diagnostics
+## Shepherd startup diagnostics
 
 The external harness measures every terminal through the same worker. To explain
-where cmux-linux spends its own startup time, enable its separate internal trace:
+where Shepherd spends its own startup time, enable its separate internal trace:
 
 ```bash
-CMUX_PERF_DIAGNOSTICS=1 npm run start
+SHEPHERD_PERF_DIAGNOSTICS=1 npm run start
 ```
 
-The app writes one `[cmux:perf]` JSON line to its process output. It timestamps a
+The app writes one `[shepherd:perf]` JSON line to its process output. It timestamps a
 fixed, content-free sequence across Electron main, backend registration, window
 creation, React, xterm, WebGL or fallback, node-pty, and first written terminal
 output. The same record separates first-terminal readiness from the later
@@ -101,7 +101,7 @@ activation of agent and workspace metadata observers. It records no terminal
 text, commands, arguments, paths, prompts, or environment contents. Diagnostics
 are disabled for every other environment value and do not write a file.
 
-Use the trace to locate a cmux-linux phase, not to compare different terminals.
+Use the trace to locate a Shepherd phase, not to compare different terminals.
 External harness results remain the independent before/after acceptance measure.
 
 ## Result semantics
@@ -124,7 +124,7 @@ and never replaced.
 ## Safety and cleanup
 
 Every sample's launch environment receives private XDG directories, a unique
-cmux socket, a bounded timeout, and a random run marker. A pre-existing shared
+Shepherd socket, a bounded timeout, and a random run marker. A pre-existing shared
 terminal server can retain its existing profile and state, so record that as a
 comparison limitation. Measurement can include an allowlisted shared server such
 as `gnome-terminal-server`; cleanup deliberately cannot signal that server. Only

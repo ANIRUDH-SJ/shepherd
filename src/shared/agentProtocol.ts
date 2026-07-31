@@ -100,8 +100,8 @@ const queryResult = {
 
 export const AGENT_PROTOCOL_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
-  $id: 'urn:cmux-linux:agent-protocol:v1',
-  title: 'cmux-linux semantic agent protocol',
+  $id: 'urn:shepherd:agent-protocol:v1',
+  title: 'Shepherd semantic agent protocol',
   version: AGENT_PROTOCOL_VERSION,
   transport: {
     kind: 'unix-domain-socket',

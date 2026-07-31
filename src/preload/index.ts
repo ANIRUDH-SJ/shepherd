@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import {
   IPC,
-  type CmuxApi,
+  type ShepherdApi,
   type TermData,
   type TermDataAck,
   type TermExit,
@@ -18,7 +18,7 @@ import { runtimePerformanceDiagnosticsEnabled } from '../shared/runtimePerforman
 const performanceDiagnosticsEnabled = runtimePerformanceDiagnosticsEnabled(process.env)
 let firstTerminalReadyReported = false
 
-const api: CmuxApi = {
+const api: ShepherdApi = {
   version: '0.0.1',
 
   terminal: {
@@ -91,5 +91,5 @@ const api: CmuxApi = {
 try {
   contextBridge.exposeInMainWorld('api', api)
 } catch (error) {
-  console.error('[preload] exposeInMainWorld failed:', error)
+  console.error('[shepherd:preload] exposeInMainWorld failed:', error)
 }

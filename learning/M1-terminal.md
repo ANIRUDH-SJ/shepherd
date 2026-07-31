@@ -14,7 +14,7 @@ explains **our specific M1 code**, function by function.
 
 ## 1. The big idea (read this first)
 
-A terminal in cmux-linux is split across the two processes:
+A terminal in Shepherd is split across the two processes:
 
 ```
    RENDERER (Chromium)                                MAIN (Node.js)
@@ -47,7 +47,7 @@ src/
 └── renderer/src/
     ├── App.tsx                    ~ edited — render <TerminalView/>
     ├── App.css                    ~ edited — make the terminal fill the work area
-    ├── env.d.ts                   ~ edited — window.api now typed by CmuxApi
+    ├── env.d.ts                   ~ edited — window.api now typed by ShepherdApi
     └── components/
         └── TerminalView.tsx       ★ NEW — one xterm.js terminal, wired over IPC
 ```
@@ -64,15 +64,18 @@ channel names or message shapes. Two halves:
 
 - **`IPC` constants** — the channel name strings, grouped by direction:
   ```ts
-  TERM_CREATE: 'terminal:create',   // renderer → main (invoke/handle)
-  TERM_INPUT, TERM_RESIZE, TERM_DISPOSE, // renderer → main (send/on)
-  TERM_DATA, TERM_EXIT              // main → renderer (webContents.send)
+  TERM_CREATE: ('terminal:create', // renderer → main (invoke/handle)
+    TERM_INPUT,
+    TERM_RESIZE,
+    TERM_DISPOSE, // renderer → main (send/on)
+    TERM_DATA,
+    TERM_EXIT) // main → renderer (webContents.send)
   ```
-  Using constants (not raw strings) means a typo is a *compile error*, not a
+  Using constants (not raw strings) means a typo is a _compile error_, not a
   silently-dead channel.
 - **Payload interfaces** — `TermCreateOptions`, `TermInput`, `TermResize`,
-  `TermData`, `TermExit`, and the big one: **`CmuxApi`**, the shape of
-  `window.api`. Preload *implements* `CmuxApi`; the renderer *sees* it via
+  `TermData`, `TermExit`, and the big one: **`ShepherdApi`**, the shape of
+  `window.api`. Preload _implements_ `ShepherdApi`; the renderer _sees_ it via
   `env.d.ts`. One source of truth (textbook/09).
 
 > **🔧 Why a shared file:** in M0 the api type was duplicated in `env.d.ts`. As
@@ -83,7 +86,7 @@ channel names or message shapes. Two halves:
 
 ## 4. `src/main/pty.ts` — the backend half (function by function)
 
-This is where the *real shells* live. Key pieces:
+This is where the _real shells_ live. Key pieces:
 
 - **`const terminals = new Map<string, pty.IPty>()`** — one live shell per
   terminal id. A Map (not a single variable) because M2 will have many; M1 just
@@ -102,19 +105,19 @@ This is where the *real shells* live. Key pieces:
   proc.onData((data) => sender.send(IPC.TERM_DATA, { id, data }))   // output → UI
   proc.onExit(({ exitCode }) => { sender.send(IPC.TERM_EXIT, …); terminals.delete(id) })
   ```
-  - `sender` is the *WebContents that asked* — so output goes back to the right
+  - `sender` is the _WebContents that asked_ — so output goes back to the right
     window (matters once there are many windows).
   - `sender.isDestroyed()` guards every send: if the window closed, we don't try
     to message a dead renderer (that would throw).
 - **`registerPtyIpc()`** — wires the four inbound channels to the Map:
-  | Channel | Handler | What it does |
-  |---|---|---|
-  | `TERM_CREATE` | `ipcMain.handle` | spawn a shell (request/response) |
-  | `TERM_INPUT` | `ipcMain.on` | `terminals.get(id)?.write(data)` — keystrokes in |
-  | `TERM_RESIZE` | `ipcMain.on` | `.resize(cols, rows)` — so `vim` etc. fit |
-  | `TERM_DISPOSE` | `ipcMain.on` | `.kill()` + remove from Map |
-  The `?.` (optional chaining) means a message for an unknown id is a safe no-op,
-  not a crash.
+  | Channel                                                                         | Handler          | What it does                                     |
+  | ------------------------------------------------------------------------------- | ---------------- | ------------------------------------------------ |
+  | `TERM_CREATE`                                                                   | `ipcMain.handle` | spawn a shell (request/response)                 |
+  | `TERM_INPUT`                                                                    | `ipcMain.on`     | `terminals.get(id)?.write(data)` — keystrokes in |
+  | `TERM_RESIZE`                                                                   | `ipcMain.on`     | `.resize(cols, rows)` — so `vim` etc. fit        |
+  | `TERM_DISPOSE`                                                                  | `ipcMain.on`     | `.kill()` + remove from Map                      |
+  | The `?.` (optional chaining) means a message for an unknown id is a safe no-op, |
+  | not a crash.                                                                    |
 - **`killAllTerminals()`** — loops the Map and kills every shell. Called on quit so
   we never leak **zombie processes** (textbook/06 §gotchas).
 
@@ -127,7 +130,7 @@ This is where the *real shells* live. Key pieces:
 ## 5. `src/main/index.ts` — three small edits
 
 1. `import { registerPtyIpc, killAllTerminals } from './pty'`
-2. In `app.whenReady()` → **`registerPtyIpc()`** *before* creating the window, so
+2. In `app.whenReady()` → **`registerPtyIpc()`** _before_ creating the window, so
    the handlers exist by the time the renderer sends anything.
 3. In `window-all-closed` **and** a new `before-quit` handler → **`killAllTerminals()`**.
 
@@ -137,16 +140,18 @@ That's the entire main-process change — the window code from M0 is untouched.
 
 ## 6. `src/preload/index.ts` — the typed bridge
 
-Now `window.api` has a `terminal` namespace implementing `CmuxApi`:
+Now `window.api` has a `terminal` namespace implementing `ShepherdApi`:
 
 - **`create`** → `ipcRenderer.invoke(TERM_CREATE, opts)` (async request/response).
 - **`input` / `resize` / `dispose`** → `ipcRenderer.send(...)` (fire-and-forget).
-- **`onData(id, cb)`** — the clever bit. Main broadcasts *all* terminal output on
-  one `TERM_DATA` channel tagged with an id. This filters to just *your* id:
+- **`onData(id, cb)`** — the clever bit. Main broadcasts _all_ terminal output on
+  one `TERM_DATA` channel tagged with an id. This filters to just _your_ id:
   ```ts
-  const listener = (_e, msg) => { if (msg.id === id) cb(msg.data) }
+  const listener = (_e, msg) => {
+    if (msg.id === id) cb(msg.data)
+  }
   ipcRenderer.on(IPC.TERM_DATA, listener)
-  return () => ipcRenderer.removeListener(IPC.TERM_DATA, listener)  // ← unsubscribe
+  return () => ipcRenderer.removeListener(IPC.TERM_DATA, listener) // ← unsubscribe
   ```
   It **returns an unsubscribe function** — React's `useEffect` cleanup calls it so
   listeners don't pile up (textbook/05 + /08).
@@ -164,7 +169,7 @@ once on mount), in **seven numbered steps** — read them in the file, but here'
 why:
 
 1. **Create `Terminal` + `FitAddon`, `term.open(container)`** — xterm paints into
-   our `div` (held in a `useRef`, *not* state, so React never re-renders it —
+   our `div` (held in a `useRef`, _not_ state, so React never re-renders it —
    textbook/08).
 2. **`const id = crypto.randomUUID()`** — the handle that ties this xterm to one
    backend shell.
@@ -189,16 +194,18 @@ why:
 ## 8. The native-module story (why we ran a rebuild)
 
 `node-pty` is a **native C++ addon** — it ships a compiled `pty.node` binary. But
-it's compiled for *Node's* ABI, and **Electron uses a different ABI** (it embeds
+it's compiled for _Node's_ ABI, and **Electron uses a different ABI** (it embeds
 its own Node). So the stock binary won't load inside Electron.
 
 Fix (a one-time step, textbook/06 + /14):
+
 ```bash
 npx electron-rebuild -f -w node-pty
 ```
+
 `@electron/rebuild` recompiled `node-pty` against Electron 43's ABI →
 `node_modules/node-pty/build/Release/pty.node`. `electron.vite.config.ts`'s
-`externalizeDepsPlugin()` keeps it *out* of the bundle so Electron `require`s the
+`externalizeDepsPlugin()` keeps it _out_ of the bundle so Electron `require`s the
 real binary at runtime.
 
 > **⚠️ Gotcha for later:** after upgrading Electron, or on a fresh `npm install`,
@@ -209,6 +216,7 @@ real binary at runtime.
 ## 9. The life of one keystroke (the payoff)
 
 Type `l` in the terminal:
+
 ```
 term.onData('l')                         [TerminalView, step 5]
  → window.api.terminal.input({id,'l'})   [preload]
@@ -216,7 +224,9 @@ term.onData('l')                         [TerminalView, step 5]
  → ipcMain.on(TERM_INPUT)                [pty.ts]
  → terminals.get(id).write('l')          [node-pty → real bash stdin]
 ```
+
 bash echoes it back / runs your command; output returns:
+
 ```
 proc.onData('l  file1 file2\n')          [pty.ts]
  → sender.send(TERM_DATA,{id,data})      [IPC push]
@@ -224,6 +234,7 @@ proc.onData('l  file1 file2\n')          [pty.ts]
  → term.write(data)                      [TerminalView]
  → xterm parses ANSI, paints glyphs      [you SEE it]
 ```
+
 That round trip — proven end-to-end — is M1. (Full narration: textbook/17.)
 
 ---
@@ -246,8 +257,10 @@ That round trip — proven end-to-end — is M1. (Full narration: textbook/17.)
 ```bash
 npm run dev
 ```
+
 A window opens with the sidebar on the left and a **working terminal** on the
 right. Click it and:
+
 - type `ls` → see your files
 - type `pwd`, `echo hi`, run `vim` → it all works, colors and all
 - resize the window → the terminal reflows
@@ -269,6 +282,7 @@ over from the app.
 ---
 
 ## Next: M2 — many terminals, tabs & splits
+
 We generalize today's single `<TerminalView/>` into a **Pane → Surface** tree:
 multiple terminals, per-pane tabs (surfaces), and horizontal/vertical splits.
 See `../textbook/10-tiling-and-layout.md` and `../FEATURES.md` Part 1.

@@ -10,7 +10,7 @@ snapshot and then streams only meaningful changes.
 
 - `src/main/socket.ts` owns live subscriptions and publishes bounded deltas.
 - `src/shared/agentProtocol.ts` describes the subscription and event envelopes.
-- `bin/cmux.js` exposes the stream as `cmux watch-agents [query flags]`.
+- `bin/shepherd.js` exposes the stream as `shepherd watch-agents [query flags]`.
 - The socket, protocol, and CLI tests cover snapshot, update, removal, and flag mapping.
 
 ## Walking through the code
@@ -72,7 +72,7 @@ Each query already has the shared maximum of 1,000 visible agent records.
 
 ### 5. The CLI keeps reading complete frames
 
-Normal `cmux` commands still stop after one reply. `watch-agents` maps to
+Normal `shepherd` commands still stop after one reply. `watch-agents` maps to
 `subscribe-agents`, keeps the connection open, and prints each response/event as
 one JSON line. Its parser now loops over every newline-delimited frame in a data
 chunk, which is required because Unix sockets are byte streams rather than message
@@ -81,7 +81,7 @@ queues.
 Example:
 
 ```bash
-cmux watch-agents --state blocked,done --provider codex,claude
+shepherd watch-agents --state blocked,done --provider codex,claude
 ```
 
 Stop it with Ctrl+C; closing the client connection performs server cleanup.

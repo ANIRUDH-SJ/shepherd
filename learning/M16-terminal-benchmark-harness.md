@@ -2,7 +2,7 @@
 
 ## The goal
 
-M16 turns “is cmux-linux faster?” from an impression into a repeatable
+M16 turns “is Shepherd faster?” from an impression into a repeatable
 experiment. It builds and smoke-tests production artifacts, then gives every
 terminal the same child worker and fixture. The first suite measures startup,
 settled memory, idle CPU, and parser-confirmed output throughput while retaining
@@ -35,7 +35,7 @@ Environment keys, values, process names, paths, and list lengths are bounded.
 Two launch modes cover the current comparison:
 
 - `terminal` places the generated worker shell into a terminal's argv;
-- `cmux` sets `SHELL` to that worker because cmux-linux creates its first PTY
+- `shepherd` sets `SHELL` to that worker because Shepherd creates its first PTY
   internally.
 
 The source string and a version command make the eventual result self-describing.
@@ -82,7 +82,7 @@ hand the new window to a shared server. Measuring only the launcher PID would
 make the comparison meaningless.
 
 `processIdentities()` takes a bounded snapshot of numeric `/proc` entries and
-marks processes carrying a random per-sample `CMUX_BENCH_RUN_ID`. Measurement
+marks processes carrying a random per-sample `SHEPHERD_BENCH_RUN_ID`. Measurement
 starts with the launcher tree, finds the marked worker even after a server handoff,
 and follows only explicitly allowed ancestor command names. The worker is removed
 from memory and CPU totals because it is common test equipment.
@@ -136,7 +136,7 @@ shutdown was clean.
 - Debian package: 100,454,264 bytes; SHA-256
   `e847dbc981cc427a0f3dbe5733d6cb773f2a5617f69ba5ba68270765f82344e2`
 
-The four-subject harness pilot used cmux-linux, Kitty 0.48.0, Ghostty 1.3.1, and
+The four-subject harness pilot used Shepherd, Kitty 0.48.0, Ghostty 1.3.1, and
 GNOME Terminal 3.52.0. It validated launch, process accounting, the DSR round
 trip, cleanup, and JSON generation. Its 88.5% swap-use baseline makes its timing
 non-publishable; the JSON correctly labels it `pilot`, and no performance ranking

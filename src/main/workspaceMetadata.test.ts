@@ -21,8 +21,7 @@ function assert(condition: boolean, message: string): void {
 }
 
 assert(
-  parseGitLocation('/projects/cmux-linux\n/projects/cmux-linux/.git\n')?.root ===
-    '/projects/cmux-linux',
+  parseGitLocation('/projects/shepherd\n/projects/shepherd/.git\n')?.root === '/projects/shepherd',
   'parses bounded absolute Git locations'
 )
 assert(parseGitLocation('relative\nrelative/.git\n') === null, 'rejects relative Git locations')
@@ -50,8 +49,8 @@ async function main(): Promise<void> {
   const discovery = new WorkspaceMetadataDiscovery((command) => emitted.push(command), {
     probeGit: async (cwd) => {
       probes++
-      return cwd.startsWith('/projects/cmux-linux')
-        ? { root: '/projects/cmux-linux', gitDir: '/projects/cmux-linux/.git' }
+      return cwd.startsWith('/projects/shepherd')
+        ? { root: '/projects/shepherd', gitDir: '/projects/shepherd/.git' }
         : null
     },
     readGitHead: () => head,
@@ -59,18 +58,18 @@ async function main(): Promise<void> {
   })
   discovery.updateWorkspaces([{ id: 'ws-1', name: '', activeSurfaceId: 'term-1' }])
 
-  await discovery.scan([context('term-1', '/projects/cmux-linux/src')], 1_000)
+  await discovery.scan([context('term-1', '/projects/shepherd/src')], 1_000)
   const first = emitted[0]?.params.metadata as WorkspaceMetadata
-  assert(first?.projectName === 'cmux-linux', 'reports the repository as the project')
+  assert(first?.projectName === 'shepherd', 'reports the repository as the project')
   assert(first?.gitBranch === 'main', 'reports the current branch')
   assert(probes === 1, 'probes Git once for the initial cwd')
 
-  await discovery.scan([context('term-1', '/projects/cmux-linux/src')], 1_500)
+  await discovery.scan([context('term-1', '/projects/shepherd/src')], 1_500)
   assert(emitted.length === 1, 'deduplicates unchanged metadata')
   assert(probes === 1, 'uses cached Git locations on unchanged scans')
 
   head = 'ref: refs/heads/feat/live-sidebar'
-  await discovery.scan([context('term-1', '/projects/cmux-linux/src')], 2_000)
+  await discovery.scan([context('term-1', '/projects/shepherd/src')], 2_000)
   const branchUpdate = emitted[1]?.params.metadata as WorkspaceMetadata
   assert(branchUpdate?.gitBranch === 'feat/live-sidebar', 'detects a branch switch from HEAD')
   assert(probes === 1, 'does not spawn Git to detect a branch switch')
@@ -82,7 +81,7 @@ async function main(): Promise<void> {
   assert(probes === 2, 're-probes after leaving the cached repository')
 
   discovery.updateWorkspaces([{ id: 'ws-1', name: '', activeSurfaceId: 'term-2' }])
-  await discovery.scan([context('term-1', '/projects/cmux-linux')], 3_000)
+  await discovery.scan([context('term-1', '/projects/shepherd')], 3_000)
   assert(emitted.length === 3, 'ignores metadata from a non-active terminal')
 
   interface ScheduledTask {
@@ -96,34 +95,31 @@ async function main(): Promise<void> {
   let runtimeNow = 10_000
   let runtimeHead = 'ref: refs/heads/main'
   const runtimeEmitted: SocketApply[] = []
-  const runtime = startWorkspaceMetadataDiscovery(
-    (command) => runtimeEmitted.push(command),
-    {
-      listContexts: () => [context('term-1', '/projects/cmux-linux')],
-      subscribeActivity: (listener) => {
-        activityListener = listener
-        return () => {
-          unsubscribed = true
-        }
-      },
-      dependencies: {
-        probeGit: async () => ({
-          root: '/projects/cmux-linux',
-          gitDir: '/projects/cmux-linux/.git'
-        }),
-        readGitHead: () => runtimeHead,
-        home: '/home/dev'
-      },
-      now: () => runtimeNow,
-      schedule: (task, delayMs) => {
-        const scheduled = { cancelled: false, delayMs, run: task }
-        tasks.push(scheduled)
-        return () => {
-          scheduled.cancelled = true
-        }
+  const runtime = startWorkspaceMetadataDiscovery((command) => runtimeEmitted.push(command), {
+    listContexts: () => [context('term-1', '/projects/shepherd')],
+    subscribeActivity: (listener) => {
+      activityListener = listener
+      return () => {
+        unsubscribed = true
+      }
+    },
+    dependencies: {
+      probeGit: async () => ({
+        root: '/projects/shepherd',
+        gitDir: '/projects/shepherd/.git'
+      }),
+      readGitHead: () => runtimeHead,
+      home: '/home/dev'
+    },
+    now: () => runtimeNow,
+    schedule: (task, delayMs) => {
+      const scheduled = { cancelled: false, delayMs, run: task }
+      tasks.push(scheduled)
+      return () => {
+        scheduled.cancelled = true
       }
     }
-  )
+  })
   const runNext = (): ScheduledTask | undefined => {
     let task = tasks.shift()
     while (task?.cancelled) task = tasks.shift()
@@ -147,7 +143,10 @@ async function main(): Promise<void> {
 
   const scheduledBeforeOutput = pending()[0]
   activityListener?.({ surfaceId: 'term-1', kind: 'output', timestamp: runtimeNow })
-  assert(pending()[0] === scheduledBeforeOutput, 'does not reschedule metadata for output-only churn')
+  assert(
+    pending()[0] === scheduledBeforeOutput,
+    'does not reschedule metadata for output-only churn'
+  )
   activityListener?.({ surfaceId: 'term-1', kind: 'input', timestamp: runtimeNow })
   assert(
     pending()[0]?.delayMs === WORKSPACE_METADATA_ACTIVE_POLL_MS,

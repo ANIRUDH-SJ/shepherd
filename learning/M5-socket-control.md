@@ -1,6 +1,6 @@
 # M5 — The Full Socket Control API (deep dive)
 
-> **The goal of M5:** make cmux-linux **scriptable**. The M3 socket could push
+> **The goal of M5:** make Shepherd **scriptable**. The M3 socket could push
 > status/notifications; M5 turns it into a full control channel so an agent or
 > script can **drive the whole app** over the unix socket — create workspaces,
 > split panes, type into terminals, and query state.
@@ -14,10 +14,10 @@ kernel-style commits: workspace control → surface control → queries. Pairs w
 ## 1. The shape of it
 
 Everything speaks the M3 wire format — newline JSON `{id, method, params}` over
-`/tmp/cmux-linux.sock` — and routes one of two ways:
+`/tmp/shepherd.sock` — and routes one of two ways:
 
 ```
- cmux <verb>  ──►  socket server (main)
+ shepherd <verb>  ──►  socket server (main)
                      │
       ┌──────────────┴───────────────┐
       │                              │
@@ -27,7 +27,7 @@ Everything speaks the M3 wire format — newline JSON `{id, method, params}` ove
    from the workspace mirror    → dispatch an app action / terminal input
 ```
 
-Queries are answered by **main** from the workspace *mirror* (the renderer syncs
+Queries are answered by **main** from the workspace _mirror_ (the renderer syncs
 its workspace list to main). Actions are **forwarded to the renderer**, which
 applies them to the reducer or writes to a terminal.
 
@@ -35,20 +35,20 @@ applies them to the reducer or writes to a terminal.
 
 ## 2. The method surface
 
-| Verb | Effect |
-|---|---|
-| `ping` | health check |
-| `capabilities` | list supported methods |
-| `identify` | this pane's workspace + the active one |
-| `list-workspaces` | open workspaces |
-| `new-workspace [--name N]` | create a workspace |
+| Verb                                      | Effect                                    |
+| ----------------------------------------- | ----------------------------------------- |
+| `ping`                                    | health check                              |
+| `capabilities`                            | list supported methods                    |
+| `identify`                                | this pane's workspace + the active one    |
+| `list-workspaces`                         | open workspaces                           |
+| `new-workspace [--name N]`                | create a workspace                        |
 | `rename-workspace --workspace W --name N` | change or clear a workspace's custom name |
-| `select-workspace --workspace W` | switch (by id or name) |
-| `close-workspace --workspace W` | close |
-| `new-split [right\|down]` | split the active pane |
-| `send-text <text>` | type into the active terminal |
-| `send-key <enter\|tab\|…>` | send a key to the active terminal |
-| `set-status` / `log` / `notify` | (from M3/M4) sidebar status + flash |
+| `select-workspace --workspace W`          | switch (by id or name)                    |
+| `close-workspace --workspace W`           | close                                     |
+| `new-split [right\|down]`                 | split the active pane                     |
+| `send-text <text>`                        | type into the active terminal             |
+| `send-key <enter\|tab\|…>`                | send a key to the active terminal         |
+| `set-status` / `log` / `notify`           | (from M3/M4) sidebar status + flash       |
 
 ---
 
@@ -60,10 +60,10 @@ make scripting awkward. The fix: **`new-workspace` takes a `--name`, and every
 command resolves `--workspace` by name.** So a script never needs a round-trip id:
 
 ```bash
-cmux new-workspace --name build
-cmux select-workspace --workspace build
-cmux send-text "npm run build"
-cmux send-key enter
+shepherd new-workspace --name build
+shepherd select-workspace --workspace build
+shepherd send-text "npm run build"
+shepherd send-key enter
 ```
 
 Renaming uses the same address-by-name rule, but keeps the target and replacement
@@ -71,7 +71,7 @@ separate: `--workspace` identifies the current workspace and `--name` supplies i
 new label. Main resolves the old id/name before forwarding the normalized new name:
 
 ```bash
-cmux rename-workspace --workspace build --name "build and test"
+shepherd rename-workspace --workspace build --name "build and test"
 ```
 
 An empty `--name ""` removes the custom label, so the sidebar falls back to its
@@ -79,11 +79,12 @@ positional `workspace N` display. The renderer changes only metadata; the layout
 PTYs, cwd, status, and session identity stay intact.
 
 ### The mirror race (and the retry)
+
 There's a subtlety: the renderer creates the workspace, then syncs its list to
 main — a beat later. A back-to-back `select-workspace --workspace build`
 immediately after `new-workspace` could miss it. So **`resolveWorkspaceRetry`
 polls the mirror briefly (~500 ms)** when a name/id was given before erroring, and
-the error names the workspace it couldn't find. *(Found in code review — see below.)*
+the error names the workspace it couldn't find. _(Found in code review — see below.)_
 
 ---
 
@@ -98,7 +99,8 @@ existing `window.api.terminal.input`. Key names are matched **case-insensitively
 
 ## 5. Hardened by code review (Copilot, PRs #6/#7)
 
-Three fixes worth noting — this is what review is *for*:
+Three fixes worth noting — this is what review is _for_:
+
 - **Mirror race → brief retry** on workspace resolution (§3), with a workspace-named error.
 - **`send-key` case-sensitivity** → key names lowercased + trimmed.
 - **No payload validation** → `send-text`/`send-key` reject an empty text/key with
@@ -118,14 +120,16 @@ Three fixes worth noting — this is what review is *for*:
 ## 7. Try it
 
 With the app running (`npm run dev`), from any pane:
+
 ```bash
-cmux capabilities                 # → the method list
-cmux identify                     # → this pane's workspace + the active one
-cmux new-workspace --name demo
-cmux rename-workspace --workspace demo --name "demo agent"
-cmux send-text "echo hello from a script"
-cmux send-key enter
+shepherd capabilities                 # → the method list
+shepherd identify                     # → this pane's workspace + the active one
+shepherd new-workspace --name demo
+shepherd rename-workspace --workspace demo --name "demo agent"
+shepherd send-text "echo hello from a script"
+shepherd send-key enter
 ```
+
 The `demo` workspace appears, and the command runs in its terminal — driven
 entirely over the socket.
 
@@ -142,5 +146,6 @@ entirely over the socket.
 ---
 
 ## Next: M6 — polish & packaging
+
 The finish line: a theming pass to match cmux, settings, and packaging as an
 AppImage/.deb so others can install it. See `../ROADMAP.md` M6 and `../textbook/15`.

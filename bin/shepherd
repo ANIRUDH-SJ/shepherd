@@ -1,0 +1,20 @@
+#!/bin/sh
+# Shepherd CLI launcher. The real logic lives in shepherd.js.
+#
+# Inside a Shepherd pane the app exports SHEPHERD_ELECTRON. Electron doubles as
+# a Node runtime when ELECTRON_RUN_AS_NODE=1, so the packaged CLI does not require
+# a system Node installation. CMUX_ELECTRON remains a compatibility fallback.
+
+dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+runtime=${SHEPHERD_ELECTRON:-${CMUX_ELECTRON:-}}
+if [ -n "$runtime" ] && [ -x "$runtime" ]; then
+  ELECTRON_RUN_AS_NODE=1 exec "$runtime" "$dir/shepherd.js" "$@"
+fi
+
+if command -v node >/dev/null 2>&1; then
+  exec node "$dir/shepherd.js" "$@"
+fi
+
+echo "shepherd: no runtime found; run this inside a Shepherd pane or install Node." >&2
+exit 1

@@ -7,12 +7,16 @@ import { startAutomaticAgentDiscovery } from './agentDiscovery'
 import { DeferredBackgroundServices } from './deferredBackgroundServices'
 import { startWorkspaceMetadataDiscovery } from './workspaceMetadata'
 import { RuntimePerformanceRecorder } from './runtimePerformance'
+import { configureProductIdentity } from './productIdentity'
 import { loadSession, saveSession } from './session'
 import { IPC, type SocketApply, type WorkspacesSync } from '../shared/ipc'
+import { PRODUCT_NAME } from '../shared/product'
 import {
   isRendererRuntimePerformanceMarkName,
   runtimePerformanceDiagnosticsEnabled
 } from '../shared/runtimePerformance'
+
+configureProductIdentity(app)
 
 let deferredBackgroundServices: DeferredBackgroundServices | null = null
 const runtimePerformance = new RuntimePerformanceRecorder({
@@ -51,7 +55,7 @@ function createWindow(): void {
     height: 720,
     show: false,
     autoHideMenuBar: true,
-    title: 'cmux-linux',
+    title: PRODUCT_NAME,
     backgroundColor: '#0d0d0f',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

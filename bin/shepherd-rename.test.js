@@ -14,8 +14,8 @@ function assert(condition, message) {
   }
 }
 
-const socketPath = path.join(os.tmpdir(), `cmux-rename-test-${process.pid}.sock`)
-const cliPath = path.join(__dirname, 'cmux')
+const socketPath = path.join(os.tmpdir(), `shepherd-rename-test-${process.pid}.sock`)
+const cliPath = path.join(__dirname, 'shepherd')
 
 async function main() {
   let request
@@ -39,7 +39,11 @@ async function main() {
     cliPath,
     ['rename-workspace', '--workspace', 'ws-old', '--name', 'build agent'],
     {
-      env: { ...process.env, CMUX_ELECTRON: '', CMUX_SOCKET_PATH: socketPath }
+      env: {
+        ...process.env,
+        SHEPHERD_ELECTRON: '',
+        SHEPHERD_SOCKET_PATH: socketPath
+      }
     }
   )
 

@@ -7,8 +7,8 @@
 
 ## Symptom
 
-The headless test for the `cmux` CLI (start a mock socket server, run the CLI against
-it, assert the protocol) **hung** and was killed by the timeout:
+The headless test for the Shepherd CLI (start a mock socket server, run the CLI
+against it, assert the protocol) **hung** and was killed by the timeout:
 
 ```
 Exit code 143            # 143 = 128 + 15 (SIGTERM) — the timeout killed it
@@ -18,6 +18,7 @@ Command timed out after 1m 0s
 ## How we debugged it
 
 The test did three things in one Node process:
+
 1. started a `net` mock server (async, event-loop driven),
 2. ran the CLI with **`execFileSync`** (synchronous),
 3. asserted on what the server received.
@@ -27,9 +28,9 @@ Reasoning through the timeline exposed a **deadlock**:
 ```
 main process event loop
   ├─ net server listening (needs the event loop to accept + reply)
-  └─ execFileSync(cmux …)   ← BLOCKS the event loop until the child exits
+  └─ execFileSync(shepherd …)   ← BLOCKS the event loop until the child exits
                                 │
-        child `cmux` connects ──┘ and waits for a reply…
+        child `shepherd` connects ──┘ and waits for a reply…
         …but the server can't reply — the event loop is blocked by execFileSync
         → child waits forever → execFileSync waits forever → 💀
 ```

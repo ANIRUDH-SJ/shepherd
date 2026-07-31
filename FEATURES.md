@@ -1,9 +1,9 @@
-# cmux-linux — Feature Research & Implementation Map
+# Shepherd — Feature Research & Implementation Map
 
-Researched from the actual cmux source (cmux.com docs + `manaflow-ai/cmux` on
-GitHub), then mapped feature-by-feature onto **our** Electron + xterm.js +
-node-pty + React stack. This is the reference for _what cmux does_ and _how we'll
-build each piece_. Pairs with `ROADMAP.md` (the build order).
+The initial feature research used cmux documentation and its public repository,
+then mapped the concepts onto Shepherd's Electron + xterm.js + node-pty + React
+stack. This file now distinguishes upstream behavior from Shepherd's implemented
+surface. It pairs with `ROADMAP.md`.
 
 > **The single most important finding:** rich sidebar status is driven by a
 > **socket API**. Agents push status/log/notification data over a Unix socket, and
@@ -26,9 +26,9 @@ Window
 
 - **Window** — an OS window; each has its own sidebar + independent workspaces.
 - **Workspace** — one row in the sidebar. Carries the name, cwd, git branch, PR,
-  ports, status pills, progress, and notification/unread state. Env: `CMUX_WORKSPACE_ID`.
+  ports, status pills, progress, and notification/unread state. Env: `SHEPHERD_WORKSPACE_ID`.
 - **Pane** — a resizable split region inside a workspace (the tiling).
-- **Surface** — a tab inside a pane; a pane can hold several surfaces. Env: `CMUX_SURFACE_ID`.
+- **Surface** — a tab inside a pane; a pane can hold several surfaces. Env: `SHEPHERD_SURFACE_ID`.
 - **Panel** — what's rendered in a surface: a **Terminal** (Ghostty session) or a **Browser**.
 
 **Mapping to the screenshot you shared:** the left list = _workspaces_; each big
@@ -89,13 +89,14 @@ interface Window {
 
 ## Part 2 — The socket API (the backbone of everything)
 
-cmux exposes a unix-socket JSON API; the `cmux` CLI is just a thin client to it.
-This is how agents drive the sidebar AND how automation works. We mirror it.
+The upstream cmux app exposes a Unix-socket JSON API. Shepherd uses the same
+transport idea with its own `shepherd` CLI and identity.
 
 **cmux's actual wire format** (we copy this):
 
-- Socket path: `/tmp/cmux.sock` (release) — we'll use `/tmp/cmux-linux.sock`
-- Override via `CMUX_SOCKET_PATH`
+- Upstream socket path: `/tmp/cmux.sock`
+- Shepherd socket path: `/tmp/shepherd.sock`
+- Shepherd override: `SHEPHERD_SOCKET_PATH`
 - Messages: **newline-terminated JSON**, `{ id, method, params }` → `{ id, result }` / `{ id, error }`
   (basically JSON-RPC).
 
@@ -119,8 +120,8 @@ is literally a `notify` / `set-status` call an agent makes. So our build order i
 
 ```
 Agent (Claude Code hook)
-  → runs `cmux notify --title Claude --body "waiting..."`
-  → CLI connects to /tmp/cmux-linux.sock, sends {id, method:"notification.create", params}
+  → runs `shepherd notify --title Claude --body "waiting..."`
+  → CLI connects to /tmp/shepherd.sock, sends {id, method:"notification.create", params}
   → Electron MAIN receives it, updates that Workspace's state (unread=true, attention=true)
   → MAIN pushes new state to RENDERER over IPC
   → React sidebar re-renders: status subtitle + ring/flash  ← the cmux look
@@ -128,13 +129,13 @@ Agent (Claude Code hook)
 
 ### Our implementation (Node)
 
-- **Main process:** `net.createServer` on `/tmp/cmux-linux.sock`; parse
+- **Main process:** `net.createServer` on `/tmp/shepherd.sock`; parse
   newline-delimited JSON; dispatch by `method`; mutate the Window/Workspace store;
   broadcast changes to the renderer via `webContents.send`.
-- **CLI client:** a tiny `cmux` bin (Node script) that connects, writes one JSON
-  line, prints the response. This is what agents/scripts call.
-- **Every terminal pane** gets `CMUX_WORKSPACE_ID`, `CMUX_SURFACE_ID`, and
-  `CMUX_SOCKET_PATH` injected into its env (via node-pty) so a command run _inside_
+- **CLI client:** `bin/shepherd.js` connects, writes one JSON line, and prints the
+  response. `bin/cmux` is a compatibility launcher only.
+- **Every terminal pane** gets `SHEPHERD_WORKSPACE_ID`, `SHEPHERD_SURFACE_ID`, and
+  `SHEPHERD_SOCKET_PATH` injected into its env (via node-pty) so a command run _inside_
   a pane knows which workspace to update by default.
 
 ---
@@ -144,42 +145,43 @@ Agent (Claude Code hook)
 Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth) ·
 **🔵 Stretch** (later) · **⚪ Skip** (not worth it on Linux).
 
-| #   | cmux feature                                                           | How we build it (Electron stack)                                                                                                                                                     | Tier                                                        |
-| --- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| 1   | **Object model** (Window→Workspace→Pane→Surface→Panel)                 | the TS data model in Part 1; terminal panels only for v1                                                                                                                             | 🟢                                                          |
-| 2   | **Vertical workspace sidebar**                                         | custom-name/project identity, positional context, live branch/usage/status/agent rollup, accessible SVG actions, and restrained active state                                         | 🟢                                                          |
-| 3   | **Notification rings / tab flash / unread badge**                      | React state + CSS animation, toggled by socket notify + OSC parse                                                                                                                    | 🟢                                                          |
-| 4   | **Multiple terminals**                                                 | node-pty per terminal panel, map `ptyId → process` in main                                                                                                                           | 🟢                                                          |
-| 5   | **Split panes** (h/v)                                                  | pure split tree + percentage tiling, live dividers, explicit active-pane chrome, and accessible SVG pane actions                                                                     | 🟢                                                          |
-| 6   | **Surfaces** (tabs within a pane)                                      | mounted xterm panel per surface, semantic tablist/tabpanel links, roving keyboard navigation, and capability-aware close controls                                                    | 🟢                                                          |
-| 7   | **Socket API + `cmux` CLI**                                            | `net` server in main + tiny Node CLI client (Part 2)                                                                                                                                 | 🟢                                                          |
-| 8   | **Sidebar status API** (`set-status`, `set-progress`, `log`)           | socket methods → workspace metadata → React status pills / progress bar                                                                                                              | 🟢 (status/notify) · 🟡 (pills+progress polish)             |
-| 9   | **OSC 9/99/777 detection** (auto notifications from terminal output)   | scan pty output stream in main for these escape codes → fire notification                                                                                                            | 🟢                                                          |
-| 10  | **Automatic + semantic agent runtime**                                 | zero-setup PTY process discovery, enriched lifecycle reports, urgency-grouped sidebar with persistent empty state, bounded queries/inspection, focus/wait controls, and integrations | 🟢                                                          |
-| 11  | **Single-workspace session restoration**                               | serialize the active workspace layout/cwd; relaunch with exactly that workspace and re-spawn its shells                                                                              | 🟢 (active layout+cwd) · 🟡 (scrollback/resume-all setting) |
-| 12  | **Live project + Git branch in sidebar**                               | active shell cwd comes from `/proc`; main resolves/caches the worktree root and reads Git `HEAD`, then React renders separate project/branch rows                                    | 🟢                                                          |
-| 13  | **Keyboard shortcuts** (new/close/split/focus/nav)                     | React keymap plus Left/Right/Home/End tab navigation; Linux Ctrl/Super equivalents                                                                                                   | 🟢                                                          |
-| 14  | **Semantic dark theme**                                                | shared CSS tokens for surfaces, content, focus, state, spacing, and motion across sidebar and terminal chrome; optionally map validated Ghostty colors (#20)                         | 🟢                                                          |
-| 15  | **PR status/number in sidebar**                                        | `gh pr view --json` (or GitHub API) per workspace branch                                                                                                                             | 🟡                                                          |
-| 16  | **Listening ports in sidebar**                                         | main scans `/proc/net` or `ss -tlnp` for the pane's process tree                                                                                                                     | 🟡                                                          |
-| 17  | **Status pills w/ icon/color/priority + progress bars**                | extend the sidebar renderer; the socket already carries these params                                                                                                                 | 🟡                                                          |
-| 18  | **Notification panel + jump-to-unread**                                | a React panel listing notifications; keybind to focus latest unread workspace                                                                                                        | 🟡                                                          |
-| 19  | **Command palette + project `cmux.json` actions**                      | a React command palette; read a repo-local `cmux.json` for custom launch actions                                                                                                     | 🟡                                                          |
-| 20  | **Read Ghostty config** for theme/font/colors                          | parse `~/.config/ghostty/config` → apply to xterm theme (compat nicety)                                                                                                              | 🟡                                                          |
-| 21  | **Settings UI** (font, theme, shell, keybinds)                         | a React settings pane persisting to `~/.config/cmux-linux/config.json`                                                                                                               | 🟡                                                          |
-| 22  | **In-app browser panels** + browser automation API                     | `Panel='browser'` via a `<webview>`/`BrowserView`; automation over the socket                                                                                                        | 🔵                                                          |
-| 23  | **Remote SSH workspaces** (`cmux ssh`, remote tmux, localhost routing) | spawn `ssh`/attach `tmux` in a pane; network routing is hard — defer                                                                                                                 | 🔵                                                          |
-| 24  | **Claude Code Teams mode** (`claude-teams` → teammates as splits)      | orchestrate multiple agent panes via the socket API                                                                                                                                  | 🔵                                                          |
-| 25  | **Skills system** (reusable agent workflows)                           | ship prompt/workflow snippets invokable from the palette                                                                                                                             | 🔵                                                          |
-| 26  | **Git worktree-per-workspace**                                         | validated `new-worktree` socket/CLI flow creates or attaches a branch, then opens the canonical path as workspace cwd                                                                | 🟢                                                          |
-| 27  | **GPU rendering**                                                      | xterm.js **WebGL addon** (our closest equivalent to libghostty)                                                                                                                      | 🟢-ish                                                      |
-| 28  | **iOS companion / realtime sync**                                      | out of scope for a Linux desktop app                                                                                                                                                 | ⚪                                                          |
-| 29  | **libghostty rendering**                                               | we use xterm.js instead (see the decisions log)                                                                                                                                      | ⚪                                                          |
-| 30  | **Sparkle auto-update**                                                | use AppImage self-update or GitHub Releases instead                                                                                                                                  | ⚪                                                          |
-| 31  | **Reproducible performance diagnostics**                               | production harness, opt-in lifecycle traces, and readiness-driven deferred discovery; rendered/interaction suites follow                                                             | 🟢 foundation · 🟡 expanded suites                          |
-| 32  | **Bounded terminal output flow**                                       | 32 KiB/4 ms main-process batching, xterm write acknowledgements, interactive bypass, and PTY high/low-water backpressure                                                             | 🟢                                                          |
-| 33  | **Adaptive background observation**                                    | content-free activity acceleration, quiet/hidden recovery cadences, non-overlapping agent and metadata scans, and exact renderer lifecycle deadlines                                 | 🟢                                                          |
-| 34  | **Owned terminal lifecycle**                                           | creator-authorized PTY control, renderer-loss cleanup, explicit scrollback/capture/queue bounds, aggregate memory diagnostics, and scaling/recovery benchmarks                       | 🟢                                                          |
+| #   | cmux feature                                                         | How we build it (Electron stack)                                                                                                                                                     | Tier                                                        |
+| --- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| 1   | **Object model** (Window→Workspace→Pane→Surface→Panel)               | the TS data model in Part 1; terminal panels only for v1                                                                                                                             | 🟢                                                          |
+| 2   | **Vertical workspace sidebar**                                       | custom-name/project identity, positional context, live branch/usage/status/agent rollup, accessible SVG actions, and restrained active state                                         | 🟢                                                          |
+| 3   | **Notification rings / tab flash / unread badge**                    | React state + CSS animation, toggled by socket notify + OSC parse                                                                                                                    | 🟢                                                          |
+| 4   | **Multiple terminals**                                               | node-pty per terminal panel, map `ptyId → process` in main                                                                                                                           | 🟢                                                          |
+| 5   | **Split panes** (h/v)                                                | pure split tree + percentage tiling, live dividers, explicit active-pane chrome, and accessible SVG pane actions                                                                     | 🟢                                                          |
+| 6   | **Surfaces** (tabs within a pane)                                    | mounted xterm panel per surface, semantic tablist/tabpanel links, roving keyboard navigation, and capability-aware close controls                                                    | 🟢                                                          |
+| 7   | **Socket API + `shepherd` CLI**                                      | `net` server in main + tiny Node CLI client, with a compatibility launcher                                                                                                           | 🟢                                                          |
+| 8   | **Sidebar status API** (`set-status`, `set-progress`, `log`)         | socket methods → workspace metadata → React status pills / progress bar                                                                                                              | 🟢 (status/notify) · 🟡 (pills+progress polish)             |
+| 9   | **OSC 9/99/777 detection** (auto notifications from terminal output) | scan pty output stream in main for these escape codes → fire notification                                                                                                            | 🟢                                                          |
+| 10  | **Automatic + semantic agent runtime**                               | zero-setup PTY process discovery, enriched lifecycle reports, urgency-grouped sidebar with persistent empty state, bounded queries/inspection, focus/wait controls, and integrations | 🟢                                                          |
+| 11  | **Single-workspace session restoration**                             | serialize the active workspace layout/cwd; relaunch with exactly that workspace and re-spawn its shells                                                                              | 🟢 (active layout+cwd) · 🟡 (scrollback/resume-all setting) |
+| 12  | **Live project + Git branch in sidebar**                             | active shell cwd comes from `/proc`; main resolves/caches the worktree root and reads Git `HEAD`, then React renders separate project/branch rows                                    | 🟢                                                          |
+| 13  | **Keyboard shortcuts** (new/close/split/focus/nav)                   | React keymap plus Left/Right/Home/End tab navigation; Linux Ctrl/Super equivalents                                                                                                   | 🟢                                                          |
+| 14  | **Semantic dark theme**                                              | shared CSS tokens for surfaces, content, focus, state, spacing, and motion across sidebar and terminal chrome; optionally map validated Ghostty colors (#20)                         | 🟢                                                          |
+| 15  | **PR status/number in sidebar**                                      | `gh pr view --json` (or GitHub API) per workspace branch                                                                                                                             | 🟡                                                          |
+| 16  | **Listening ports in sidebar**                                       | main scans `/proc/net` or `ss -tlnp` for the pane's process tree                                                                                                                     | 🟡                                                          |
+| 17  | **Status pills w/ icon/color/priority + progress bars**              | extend the sidebar renderer; the socket already carries these params                                                                                                                 | 🟡                                                          |
+| 18  | **Notification panel + jump-to-unread**                              | a React panel listing notifications; keybind to focus latest unread workspace                                                                                                        | 🟡                                                          |
+| 19  | **Command palette + project `shepherd.json` actions**                | a React command palette; read a repo-local `shepherd.json` for custom launch actions                                                                                                 | 🟡                                                          |
+| 20  | **Read Ghostty config** for theme/font/colors                        | parse `~/.config/ghostty/config` → apply to xterm theme (compat nicety)                                                                                                              | 🟡                                                          |
+| 21  | **Settings UI** (font, theme, shell, keybinds)                       | a React settings pane persisting to `~/.config/shepherd/config.json`                                                                                                                 | 🟡                                                          |
+| 22  | **In-app browser panels** + browser automation API                   | `Panel='browser'` via a `<webview>`/`BrowserView`; automation over the socket                                                                                                        | 🔵                                                          |
+| 23  | **Remote SSH workspaces** (`shepherd ssh`, remote tmux, routing)     | spawn `ssh`/attach `tmux` in a pane; network routing is hard — defer                                                                                                                 | 🔵                                                          |
+| 24  | **Claude Code Teams mode** (`claude-teams` → teammates as splits)    | orchestrate multiple agent panes via the socket API                                                                                                                                  | 🔵                                                          |
+| 25  | **Skills system** (reusable agent workflows)                         | ship prompt/workflow snippets invokable from the palette                                                                                                                             | 🔵                                                          |
+| 26  | **Git worktree-per-workspace**                                       | validated `new-worktree` socket/CLI flow creates or attaches a branch, then opens the canonical path as workspace cwd                                                                | 🟢                                                          |
+| 27  | **GPU rendering**                                                    | xterm.js **WebGL addon** (our closest equivalent to libghostty)                                                                                                                      | 🟢-ish                                                      |
+| 28  | **iOS companion / realtime sync**                                    | out of scope for a Linux desktop app                                                                                                                                                 | ⚪                                                          |
+| 29  | **libghostty rendering**                                             | we use xterm.js instead (see the decisions log)                                                                                                                                      | ⚪                                                          |
+| 30  | **Sparkle auto-update**                                              | use AppImage self-update or GitHub Releases instead                                                                                                                                  | ⚪                                                          |
+| 31  | **Reproducible performance diagnostics**                             | production harness, opt-in lifecycle traces, and readiness-driven deferred discovery; rendered/interaction suites follow                                                             | 🟢 foundation · 🟡 expanded suites                          |
+| 32  | **Bounded terminal output flow**                                     | 32 KiB/4 ms main-process batching, xterm write acknowledgements, interactive bypass, and PTY high/low-water backpressure                                                             | 🟢                                                          |
+| 33  | **Adaptive background observation**                                  | content-free activity acceleration, quiet/hidden recovery cadences, non-overlapping agent and metadata scans, and exact renderer lifecycle deadlines                                 | 🟢                                                          |
+| 34  | **Owned terminal lifecycle**                                         | creator-authorized PTY control, renderer-loss cleanup, explicit scrollback/capture/queue bounds, aggregate memory diagnostics, and scaling/recovery benchmarks                       | 🟢                                                          |
+| 35  | **Independent Shepherd identity**                                    | product constants, safe state selection, dual migration sockets, primary CLI, managed-hook upgrades, renderer/protocol identity, and Linux packaging                                 | 🟢                                                          |
 
 ---
 
@@ -191,8 +193,8 @@ channels** that converge on visible workspace and agent state:
 1. **Automatic** — cmux watches terminal output for **OSC 9 / 99 / 777** escape
    sequences (the standard "desktop notification" terminal codes). Any program
    (or agent) that emits one triggers a notification with no setup.
-2. **Explicit** — the `cmux notify` / `set-status` / `log` CLI. The compatibility
-   command `cmux hooks setup` installs the Claude Code integration.
+2. **Explicit** — the `shepherd notify` / `set-status` / `log` CLI. The
+   compatibility launcher still accepts old `cmux` invocations.
 3. **Structured lifecycle** — provider hooks/plugins call `agent-report` with a
    semantic state plus optional activity or blocked reason. This feeds the Agents
    section and exact terminal navigation without parsing terminal prose.
@@ -224,7 +226,7 @@ The semantic lifecycle path is separate but shares the same transport:
 
 ```text
 provider hook/plugin
-  → cmux agent-report
+  → shepherd agent-report
   → main validates + resolves workspace
   → renderer binds the real pane/surface
   → agent list + derived unread/attention
@@ -244,7 +246,7 @@ owned PTY + workspace/surface binding
 Automation can observe the same validated state without polling:
 
 ```text
-cmux watch-agents + query filters
+shepherd watch-agents + query filters
   → sequence-zero snapshot
   → ordered agent-update upserts/removal tombstones
   → reconnect snapshot after disconnect or sequence gap
@@ -277,8 +279,8 @@ which is 90% of why the screenshot looks the way it does.
    minimal socket server moves **into M3** (feeding the sidebar), then expands to
    the full control API in M5. File-watch is demoted to an optional fallback.
 3. **OSC 9/99/777 parsing is a first-class notification source** — added to M4.
-4. **Env injection into panes** (`CMUX_WORKSPACE_ID` / `CMUX_SURFACE_ID` /
-   `CMUX_SOCKET_PATH`) is required so in-pane commands can target the right
+4. **Env injection into panes** (`SHEPHERD_WORKSPACE_ID` / `SHEPHERD_SURFACE_ID` /
+   `SHEPHERD_SOCKET_PATH`) is required so in-pane commands can target the right
    workspace — added to M2/M4.
 
 ---
@@ -286,9 +288,9 @@ which is 90% of why the screenshot looks the way it does.
 ## v1 definition of done (the "it feels like cmux" bar)
 
 - [x] Left sidebar of workspaces: name + live status subtitle + active highlight
-- [x] Notification ring/flash + unread badge, from BOTH OSC parse and `cmux notify`
+- [x] Notification ring/flash + unread badge, from OSC parsing and `shepherd notify`
 - [x] Real terminals (node-pty + xterm.js/WebGL), split into panes, tabs (surfaces) per pane
-- [x] Socket API + `cmux` CLI driving workspaces/status/notifications
+- [x] Socket API + `shepherd` CLI driving workspaces/status/notifications
 - [x] Agents section automatically detects Codex, Claude Code, OpenCode, Kimi,
       other known CLIs, and safely named custom agents; lifecycle reporters add richer state
 - [x] Active workspace layout + cwd restored as the single workspace on relaunch

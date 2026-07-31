@@ -5,7 +5,7 @@ usually a dependency problem first. If a task does not contribute to the first
 useful interaction, running it early can consume event-loop time, CPU, filesystem
 bandwidth, or process slots without making the product feel ready.
 
-This chapter explains how cmux-linux moves automatic agent discovery and
+This chapter explains how Shepherd moves automatic agent discovery and
 workspace metadata observation behind a real first-terminal readiness boundary.
 The important ideas apply to any Electron application with a critical UI path
 and eventually consistent background services.
@@ -26,7 +26,7 @@ create browser windows. A terminal application still must:
 Starting every service at step zero makes the dependency graph look simple, but
 it puts unrelated work in the same scheduling window.
 
-cmux-linux now treats the graph as:
+Shepherd now treats the graph as:
 
 ```text
 Electron ready
@@ -253,7 +253,7 @@ pre-fetches, and cache maintenance. Bad candidates include input handlers,
 state restoration, authorization, crash recovery, and anything required to
 render an honest initial state.
 
-The next optimization in cmux-linux targets PTY output batching. That problem
+The next optimization in Shepherd targets PTY output batching. That problem
 has a different constraint: throughput can improve only if ordering, bounded
 memory, interactive latency, OSC parsing, and exit flushing remain correct. It
 belongs in its own branch and measurement cycle.
@@ -261,7 +261,7 @@ belongs in its own branch and measurement cycle.
 ## Checkpoint
 
 1. Why is Electron readiness too early to trigger observational work?
-2. Which facts are guaranteed by the cmux first-terminal handshake?
+2. Which facts are guaranteed by the Shepherd first-terminal handshake?
 3. Why is a latest-value latch correct for workspace sync but not every event?
 4. What does `setImmediate()` guarantee here, and what does it deliberately not
    guarantee?

@@ -11,9 +11,15 @@ content.
 A stylesheet that repeats literals is valid CSS:
 
 ```css
-.workspace:hover { background: #1d1f27; }
-.agent:hover { background: #1d1f27; }
-.tab:hover { background: #1d1f27; }
+.workspace:hover {
+  background: #1d1f27;
+}
+.agent:hover {
+  background: #1d1f27;
+}
+.tab:hover {
+  background: #1d1f27;
+}
 ```
 
 The problem is ownership. Each component now owns a copy of a design decision.
@@ -42,7 +48,7 @@ Semantic tokens describe intent:
 --color-info: #76aef8;
 ```
 
-cmux-linux uses semantic tokens directly because the UI is still one dark theme.
+Shepherd uses semantic tokens directly because the UI is still one dark theme.
 A larger multi-theme system could add primitives underneath and map semantic
 roles to different primitives per theme.
 
@@ -53,14 +59,14 @@ for `--color-danger`; it does not ask for red by shade number.
 
 The root boundary separates six concerns:
 
-| Group          | Examples                                         | Purpose                              |
-| -------------- | ------------------------------------------------ | ------------------------------------ |
-| Typography     | `--font-ui`, `--font-mono`                       | Stable interface and data text       |
-| Surfaces       | canvas, sidebar, hover, raised, borders          | Depth without excessive cards        |
-| Content        | primary, secondary, muted, subdued, faint        | Reading hierarchy                    |
-| Interaction    | accent, selection, focus, overlays               | Pointer and keyboard feedback        |
-| Semantic state | working, attention, danger, success, info, Git   | Meaning that stays consistent        |
-| Geometry       | spacing, radii, popover shadow, transition speed | Rhythm and control consistency       |
+| Group          | Examples                                         | Purpose                        |
+| -------------- | ------------------------------------------------ | ------------------------------ |
+| Typography     | `--font-ui`, `--font-mono`                       | Stable interface and data text |
+| Surfaces       | canvas, sidebar, hover, raised, borders          | Depth without excessive cards  |
+| Content        | primary, secondary, muted, subdued, faint        | Reading hierarchy              |
+| Interaction    | accent, selection, focus, overlays               | Pointer and keyboard feedback  |
+| Semantic state | working, attention, danger, success, info, Git   | Meaning that stays consistent  |
+| Geometry       | spacing, radii, popover shadow, transition speed | Rhythm and control consistency |
 
 This taxonomy prevents two common failures. First, semantic states do not borrow
 arbitrary surface colors. Second, muted content is not implemented with global
@@ -72,8 +78,12 @@ CSS custom properties are native to Chromium, inherit through the DOM, and are
 resolved at render time:
 
 ```css
-:root { --color-border: #282b34; }
-.pane { border-color: var(--color-border); }
+:root {
+  --color-border: #282b34;
+}
+.pane {
+  border-color: var(--color-border);
+}
 ```
 
 They need no runtime library, bundler plugin, React context, or generated class
@@ -154,7 +164,7 @@ Motion has two categories:
 1. short transitions that make hover/focus changes legible; and
 2. repeating animations that request attention.
 
-cmux-linux uses a shared fast transition for controls. Repeating workspace and
+Shepherd uses a shared fast transition for controls. Repeating workspace and
 agent animations are disabled under `prefers-reduced-motion: reduce`. Important
 states retain color, text, and structure when animation is removed.
 
@@ -218,7 +228,7 @@ The architecture enables later work without promising it today:
 - automated contrast checks against token pairs; and
 - component-scoped overrides for compact or spacious density.
 
-The next cmux-linux UI phases consume this contract to improve sidebar hierarchy
+The next Shepherd UI phases consume this contract to improve sidebar hierarchy
 and terminal focus without reopening palette ownership.
 
 ## Checkpoint

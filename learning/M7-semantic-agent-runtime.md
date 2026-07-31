@@ -32,8 +32,8 @@ lifecycle reports sent through the existing Unix socket.
 ```text
 provider lifecycle event
   → installed command hook or managed OpenCode plugin
-  → bin/agent-events.js maps provider vocabulary to the cmux contract
-  → cmux agent-report sends newline-delimited JSON over the Unix socket
+  → bin/agent-events.js maps provider vocabulary to the Shepherd contract
+  → shepherd agent-report sends newline-delimited JSON over the Unix socket
   → src/main/socket.ts resolves the workspace and validates the report
   → App.tsx receives the socket command through the preload bridge
   → appReducer binds the report to a real workspace/pane/surface
@@ -44,10 +44,10 @@ provider lifecycle event
 The reverse control direction is available too:
 
 ```text
-cmux list-agents
-cmux focus-agent <agent-id>
-cmux wait-agent <agent-id> --state blocked,done
-cmux agent-clear <agent-id> --source <reporter-source>
+shepherd list-agents
+shepherd focus-agent <agent-id>
+shepherd wait-agent <agent-id> --state blocked,done
+shepherd agent-clear <agent-id> --source <reporter-source>
 ```
 
 ## 3. `src/shared/agent.ts` — one provider-neutral contract
@@ -187,17 +187,17 @@ layout and cwd, not claims about processes that may no longer exist.
 
 The socket advertises nine agent methods.
 
-| Method           | Purpose                                                          |
-| ---------------- | ---------------------------------------------------------------- |
-| `agent-report`   | validate and apply one lifecycle observation                     |
-| `agent-clear`    | remove a record, optionally proving the reporter source          |
-| `list-agents`    | filter, bound, and summarize current records                     |
-| `agent-snapshot` | return a versioned workspace/agent snapshot for reconnecting     |
-| `focus-agent`    | ask the renderer to select an agent's exact terminal             |
-| `inspect-agent`  | return bounded terminal, cwd, and foreground-process context     |
-| `wait-agent`     | wait until an agent reaches one of the requested semantic states |
-| `agent-schema`   | return the machine-readable versioned wire contract              |
-| `agent-capabilities` | discover semantic, feature, limit, and adapter support       |
+| Method               | Purpose                                                          |
+| -------------------- | ---------------------------------------------------------------- |
+| `agent-report`       | validate and apply one lifecycle observation                     |
+| `agent-clear`        | remove a record, optionally proving the reporter source          |
+| `list-agents`        | filter, bound, and summarize current records                     |
+| `agent-snapshot`     | return a versioned workspace/agent snapshot for reconnecting     |
+| `focus-agent`        | ask the renderer to select an agent's exact terminal             |
+| `inspect-agent`      | return bounded terminal, cwd, and foreground-process context     |
+| `wait-agent`         | wait until an agent reaches one of the requested semantic states |
+| `agent-schema`       | return the machine-readable versioned wire contract              |
+| `agent-capabilities` | discover semantic, feature, limit, and adapter support           |
 
 Main keeps a read-only mirror of renderer workspace names, the active workspace,
 and current agents. This mirror lets external commands resolve targets and answer
@@ -260,26 +260,26 @@ against accidental cross-adapter cleanup. It is not authentication against
 another local process that can access the Unix socket; that stronger boundary is
 documented as future hardening.
 
-## 7. `bin/cmux.js` — the human and adapter interface
+## 7. `bin/shepherd.js` — the human and adapter interface
 
 The CLI adds:
 
 ```bash
-cmux agent-report --provider codex --state working \
+shepherd agent-report --provider codex --state working \
   --activity web-search --message "researching docs"
 
-cmux list-agents --provider codex,claude --state blocked,done --limit 50
-cmux agent-snapshot --updated-after 1784271000000
-cmux agent-schema
-cmux agent-capabilities codex
-cmux inspect-agent codex:hooks:term-1 --lines 25 --max-bytes 4096
-cmux focus-agent codex:hooks:term-1
-cmux wait-agent codex:hooks:term-1 --state blocked,done --timeout-ms 30000
-cmux agent-clear codex:hooks:term-1 --source codex:hooks
+shepherd list-agents --provider codex,claude --state blocked,done --limit 50
+shepherd agent-snapshot --updated-after 1784271000000
+shepherd agent-schema
+shepherd agent-capabilities codex
+shepherd inspect-agent codex:hooks:term-1 --lines 25 --max-bytes 4096
+shepherd focus-agent codex:hooks:term-1
+shepherd wait-agent codex:hooks:term-1 --state blocked,done --timeout-ms 30000
+shepherd agent-clear codex:hooks:term-1 --source codex:hooks
 ```
 
 Inside a pane, the existing environment injection supplies
-`CMUX_WORKSPACE_ID`, `CMUX_SURFACE_ID`, and `CMUX_SOCKET_PATH`. The CLI also
+`SHEPHERD_WORKSPACE_ID`, `SHEPHERD_SURFACE_ID`, and `SHEPHERD_SOCKET_PATH`. The CLI also
 defaults `source` to `cli:<provider>` for manual reports.
 
 `agent-hook` is an internal adapter entry point. It reads one JSON event from
@@ -320,36 +320,36 @@ presenting silence as current truth while preserving a bounded diagnostic record
 
 ## 9. Provider setup and configuration safety
 
-`cmux integrations setup` installs one provider or all three:
+`shepherd integrations setup` installs one provider or all three:
 
 ```bash
-cmux integrations setup codex
-cmux integrations setup claude
-cmux integrations setup opencode
-cmux integrations setup all
+shepherd integrations setup codex
+shepherd integrations setup claude
+shepherd integrations setup opencode
+shepherd integrations setup all
 ```
 
 The default paths are:
 
-| Provider    | Installed file                             |
-| ----------- | ------------------------------------------ |
-| Codex       | `~/.codex/hooks.json`                      |
-| Claude Code | `~/.claude/settings.json`                  |
-| OpenCode    | `~/.config/opencode/plugins/cmux-agent.js` |
+| Provider    | Installed file                                 |
+| ----------- | ---------------------------------------------- |
+| Codex       | `~/.codex/hooks.json`                          |
+| Claude Code | `~/.claude/settings.json`                      |
+| OpenCode    | `~/.config/opencode/plugins/shepherd-agent.js` |
 
 The JSON installers read the existing object, preserve unrelated settings and
-hooks, append only missing cmux groups, and atomically rename a temporary file.
+hooks, append only missing Shepherd groups, and atomically rename a temporary file.
 Running setup twice is idempotent and avoids a second rewrite.
 
-The generated command starts with `command -v cmux ...`. Global configuration is
-therefore harmless when the agent launches outside cmux-linux.
+The generated command starts with `command -v shepherd ...`. Global configuration is
+therefore harmless when the agent launches outside Shepherd.
 
 Codex requires the user to review and trust newly installed hooks through
 `/hooks`; the setup command prints that reminder. The OpenCode adapter is a
 generated managed plugin. Its marker lets setup update its own file while
 refusing to overwrite a file it does not own.
 
-`cmux hooks setup` remains as a compatibility alias for Claude Code setup.
+`shepherd hooks setup` remains as a compatibility alias for Claude Code setup.
 
 ## 10. OpenCode's direct plugin adapter
 
@@ -365,9 +365,9 @@ shape. `bin/integrations/opencode.js` writes a small managed plugin that reports
 - busy/retry status as working;
 - deleted sessions as clear.
 
-It launches `cmux` with `Bun.spawn`, ignores stdout/stderr, and catches failures.
+It launches `shepherd` with `Bun.spawn`, ignores stdout/stderr, and catches failures.
 Like the command hooks, it first checks for pane identity so it does nothing
-outside cmux-linux. The long-lived plugin emits monotonic revisions seeded from
+outside Shepherd. The long-lived plugin emits monotonic revisions seeded from
 `Date.now()`, so a plugin reload starts above revisions from its previous run.
 
 ## 11. `AgentList.tsx`, `agentView.ts`, and CSS — presentation
@@ -403,7 +403,7 @@ count and blocked count.
 Clicking an agent has two coordinated effects:
 
 1. `focusAgent` selects the owning workspace, pane, and surface in reducer state.
-2. On the next animation frame, `cmux:focus-surface` is dispatched with the
+2. On the next animation frame, `shepherd:focus-surface` is dispatched with the
    surface id.
 
 `TerminalHost` listens for that event, refits the terminal, and calls
@@ -438,7 +438,7 @@ The feature adds coverage at every meaningful boundary:
 - `bin/integrations.test.js`: config preservation, all installed events,
   idempotence, OpenCode sequencing, managed-plugin ownership, and
   unknown-provider rejection.
-- `bin/cmux.test.js`: real CLI requests, flag mapping, pane targeting, and a
+- `bin/shepherd.test.js`: real CLI requests, flag mapping, pane targeting, and a
   Codex permission event becoming `blocked / approval`.
 
 The completed stack was also checked with `npm test`, `npm run lint`,
@@ -467,7 +467,7 @@ an isolated install smoke test for all three provider integrations.
 5. Why does a stale transition preserve both `updatedAt` and `revision`?
 6. Why is lifecycle state omitted from the saved session?
 7. What happens between clicking an agent row and xterm receiving keyboard focus?
-8. Why do global provider hooks silently do nothing outside a cmux-linux pane?
+8. Why do global provider hooks silently do nothing outside a Shepherd pane?
 9. Why does a limited query summarize all matches instead of only returned rows?
 10. Why must capability discovery distinguish build support from local install state?
 11. Why does inspection resolve an agent id instead of accepting any surface id?

@@ -2,7 +2,7 @@
 
 ## The goal
 
-The benchmark harness can say that one cmux-linux launch took a certain amount
+The benchmark harness can say that one Shepherd launch took a certain amount
 of time, but it cannot explain where that time went. This first M17 increment
 adds an opt-in startup trace across Electron main, preload, React, xterm.js,
 WebGL fallback, node-pty, and the first terminal frame.
@@ -43,7 +43,7 @@ terminal chunk, path, argument, or environment value.
 `runtimePerformanceDiagnosticsEnabled()` accepts only:
 
 ```text
-CMUX_PERF_DIAGNOSTICS=1
+SHEPHERD_PERF_DIAGNOSTICS=1
 ```
 
 Values such as `true` are rejected. With no exact opt-in, the feature emits
@@ -73,7 +73,7 @@ either WebGL success or software fallback. After M18 it waits for
 user-facing readiness boundary and the observer lifecycle:
 
 ```text
-[cmux:perf] {"schemaVersion":1,"kind":"startup","complete":true,"events":[...]}
+[shepherd:perf] {"schemaVersion":1,"kind":"startup","complete":true,"events":[...]}
 ```
 
 If the app quits before completion, `before-quit` calls `flush()` and emits one

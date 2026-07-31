@@ -76,18 +76,15 @@ metadataState = appReducer(metadataState, {
   id: metadataWorkspace.id,
   metadata: {
     surfaceId: metadataPane.activeSurfaceId,
-    cwd: '/projects/cmux-linux/src',
-    projectName: 'cmux-linux',
-    gitRoot: '/projects/cmux-linux',
+    cwd: '/projects/shepherd/src',
+    projectName: 'shepherd',
+    gitRoot: '/projects/shepherd',
     gitBranch: 'main'
   }
 })
-assert(active(metadataState).projectName === 'cmux-linux', 'applies live project metadata')
+assert(active(metadataState).projectName === 'shepherd', 'applies live project metadata')
 assert(active(metadataState).gitBranch === 'main', 'applies a live Git branch')
-assert(
-  active(metadataState).cwd === '/projects/cmux-linux/src',
-  'updates the workspace cwd after cd'
-)
+assert(active(metadataState).cwd === '/projects/shepherd/src', 'updates the workspace cwd after cd')
 const metadataBeforeStale = active(metadataState)
 metadataState = appReducer(metadataState, {
   type: 'setWorkspaceMetadata',

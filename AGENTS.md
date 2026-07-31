@@ -8,9 +8,10 @@ restricted IPC bridge. The React renderer lives in `src/renderer/src/`; keep UI
 components in `components/`, layout-tree logic in `layout/`, and reducers in
 `state/`. Shared IPC contracts belong in `src/shared/`.
 
-The plain Node/CommonJS CLI is under `bin/`. Packaging configuration and assets
-are in `electron-builder.yml` and `build/`. Generated bundles and installers go
-to `out/` and `release/`; do not edit or commit them. Architecture notes live in
+The plain Node/CommonJS CLI is under `bin/`; `shepherd` is the primary command
+and `cmux` is compatibility-only. Packaging configuration and assets are in
+`electron-builder.yml` and `build/`. Generated bundles and installers go to
+`out/` and `release/`; do not edit or commit them. Architecture notes live in
 `textbook/`, milestone records in `learning/`, and plans in `ROADMAP.md` and
 `FEATURES.md`.
 

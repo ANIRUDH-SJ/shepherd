@@ -14,8 +14,9 @@ function assert(condition, message) {
   }
 }
 
-const socketPath = path.join(os.tmpdir(), `cmux-cli-test-${process.pid}.sock`)
-const cliPath = path.join(__dirname, 'cmux')
+const socketPath = path.join(os.tmpdir(), `shepherd-cli-test-${process.pid}.sock`)
+const cliPath = path.join(__dirname, 'shepherd')
+const compatibilityCliPath = path.join(__dirname, 'cmux')
 
 async function main() {
   const requests = []
@@ -36,14 +37,19 @@ async function main() {
     server.listen(socketPath, resolve)
   })
 
-  async function runCli(args, input) {
-    const child = spawn(cliPath, args, {
+  async function runCli(args, input, executable = cliPath, environment = {}) {
+    const child = spawn(executable, args, {
       env: {
         ...process.env,
+        SHEPHERD_ELECTRON: '',
         CMUX_ELECTRON: '',
+        SHEPHERD_SOCKET_PATH: socketPath,
         CMUX_SOCKET_PATH: socketPath,
+        SHEPHERD_WORKSPACE_ID: 'ws-test',
         CMUX_WORKSPACE_ID: 'ws-test',
-        CMUX_SURFACE_ID: 'term-test'
+        SHEPHERD_SURFACE_ID: 'term-test',
+        CMUX_SURFACE_ID: 'term-test',
+        ...environment
       }
     })
 
@@ -189,6 +195,20 @@ async function main() {
   const watch = requests[11]
   assert(watch?.method === 'subscribe-agents', 'maps watch-agents to a live subscription')
   assert(watch?.params.state === 'blocked', 'preserves subscription query filters')
+
+  await runCli(['ping'], undefined, compatibilityCliPath)
+  assert(requests[12]?.method === 'ping', 'keeps the cmux launcher as a compatibility alias')
+
+  await runCli(['ping'], undefined, cliPath, {
+    SHEPHERD_SOCKET_PATH: '',
+    SHEPHERD_WORKSPACE_ID: '',
+    SHEPHERD_SURFACE_ID: '',
+    CMUX_SOCKET_PATH: socketPath,
+    CMUX_WORKSPACE_ID: 'ws-legacy',
+    CMUX_SURFACE_ID: 'term-legacy'
+  })
+  assert(requests[13]?.params.workspace === 'ws-legacy', 'accepts legacy pane environment names')
+  assert(requests[13]?.params.surfaceId === 'term-legacy', 'accepts legacy surface identity')
 
   await new Promise((resolve) => server.close(resolve))
 

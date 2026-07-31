@@ -2,7 +2,7 @@
 
 ## Goal
 
-Measure cmux-linux against representative Linux terminals without collapsing
+Measure Shepherd against representative Linux terminals without collapsing
 startup, latency, throughput, memory, and scalability into one misleading score.
 The benchmark must be reproducible, retain raw samples, and distinguish pilot
 runs from publishable results.
@@ -12,7 +12,7 @@ are documented in `PERFORMANCE_ENHANCEMENT_PLAN.md`.
 
 ## Comparison set
 
-- cmux-linux production AppImage and unpacked production binary
+- Shepherd production AppImage and unpacked production binary
 - GNOME Terminal as the installed desktop baseline
 - Kitty as a purpose-built GPU terminal
 - Ghostty as a native, threaded GPU terminal
@@ -49,7 +49,7 @@ the comparison set.
 - [ ] Measure parser-oriented and visibly rendered output workloads separately
 - [ ] Measure automated scroll and resize behavior with frame/CPU observations
 - [ ] Measure 1, 2, 4, and 8 terminal scalability where equivalent layouts exist
-- [ ] Measure cmux-linux agent discovery overhead independently of terminal count
+- [ ] Measure Shepherd agent discovery overhead independently of terminal count
 - [ ] Run a redirected CPU workload as a terminal-independent control
 - [ ] Label software input-to-present latency separately from hardware latency
 

@@ -1,7 +1,7 @@
 # Chapter 16 — Glossary
 
 > **How to use this:** This is a quick-reference for every term the book uses —
-> alphabetized, each defined in plain English and tied back to cmux-linux where it
+> alphabetized, each defined in plain English and tied back to Shepherd where it
 > helps. Skim it anytime; when you want the full story, follow the
 > `(see NN-...md)` pointer to the chapter that covers the term in depth.
 > Cross-reference stubs (e.g. _TTY — see teletype_) just send you to the primary
@@ -46,8 +46,10 @@
 
 - **canonical vs raw mode** — Two modes of the terminal line discipline. In _canonical_ ("cooked") mode the kernel buffers a whole line and handles editing (backspace) before your program sees it; in _raw_ mode every keystroke is delivered instantly with no processing — which is what shells and full-screen apps (and our terminals) need. (see 02-how-terminals-work.md)
 - **Chromium** — The open-source browser engine behind Google Chrome. Electron embeds it to run the renderer process, so your UI is literally a web page with full HTML/CSS/JS — our React app — running inside it. (see 03-electron-architecture.md)
-- **cmux** — The macOS-only "terminal built for multitasking" we are recreating on Linux: a named-workspace sidebar, per-workspace agent-status lines, notification rings, split panes, and a socket API. We copy its _experience_, not its Swift code. (see 01-the-big-picture.md)
-- **cmux CLI** — The small `cmux` command agents and scripts run (e.g. `cmux notify ...`). It's a thin client that opens the unix socket, sends one JSON-RPC line, and prints the reply. (see 11-the-socket-api.md)
+- **cmux** — The macOS terminal whose absence on Linux originally motivated this
+  project. Shepherd is an independent implementation with its own identity and
+  direction; it does not use cmux's source. (see 01-the-big-picture.md)
+- **Shepherd CLI** — The small `shepherd` command agents and scripts run (e.g. `shepherd notify ...`). It's a thin client that opens the unix socket, sends one JSON-RPC line, and prints the reply. (see 11-the-socket-api.md)
 - **contextBridge** — The Electron API used inside a preload script to safely expose a chosen set of functions onto the renderer's `window` (as `window.api`), without leaking Node.js or Electron internals into the web page. (see 05-preload-and-context-isolation.md)
 - **contextIsolation** — An Electron security setting (on by default) that runs the preload script and the web page in separate JavaScript contexts, so the page can't reach into Node/Electron. The only crossing is what contextBridge explicitly exposes. (see 05-preload-and-context-isolation.md)
 - **CSI (Control Sequence Introducer) sequence** — The most common family of ANSI escape codes, those beginning `ESC [`, used for cursor movement, colors (SGR), and screen clearing — e.g. `ESC[31m` sets red text. (see 02-how-terminals-work.md)
@@ -68,10 +70,10 @@
 
 ## E
 
-- **Electron** — A framework for building desktop apps with web tech; it bundles Chromium (for the UI) and Node.js (for OS access) into one app. cmux-linux _is_ an Electron app. (see 03-electron-architecture.md)
+- **Electron** — A framework for building desktop apps with web tech; it bundles Chromium (for the UI) and Node.js (for OS access) into one app. Shepherd _is_ an Electron app. (see 03-electron-architecture.md)
 - **electron-builder** — The tool that packages our built app into installable artifacts (AppImage, `.deb`, Flatpak), handling icons, metadata, and native-module bundling. (see 15-packaging-and-distribution.md)
 - **electron-vite** — A thin integration of Vite tailored for Electron; it understands the three build targets (main, preload, renderer) and bundles each correctly, with HMR in dev. (see 14-build-tooling-and-vite.md)
-- **env injection** — Passing custom environment variables into a child process when you spawn it. We inject `CMUX_WORKSPACE_ID`, `CMUX_SURFACE_ID`, and `CMUX_SOCKET_PATH` into each terminal's shell via node-pty so commands run inside a pane know which workspace to talk to. (see 06-node-pty.md)
+- **env injection** — Passing custom environment variables into a child process when you spawn it. We inject `SHEPHERD_WORKSPACE_ID`, `SHEPHERD_SURFACE_ID`, and `SHEPHERD_SOCKET_PATH` into each terminal's shell via node-pty so commands run inside a pane know which workspace to talk to. (see 06-node-pty.md)
 - **escape sequence / escape code** — see _ANSI escape code_ (and _CSI sequence_, _OSC_).
 
 ## F
@@ -88,7 +90,7 @@
 - **HMR (Hot Module Replacement)** — A dev-server feature (Vite's) that swaps an edited module into the running app without a full reload, preserving state — so UI changes appear near-instantly while you code. (see 14-build-tooling-and-vite.md)
 - **hook (agent lifecycle hook)** — A configured command an agent runs at a
   lifecycle event such as a tool call, permission request, turn completion, or
-  session end. `cmux integrations setup` installs hooks that translate these
+  session end. `shepherd integrations setup` installs hooks that translate these
   events into semantic reports. (see 19-semantic-agent-runtime.md)
 
 ## I
@@ -144,6 +146,11 @@
 - **Panel** — The actual content rendered in a surface — a Terminal (v1) or, later, a Browser. It's the leaf of the object model. (see 09-typescript-and-the-data-model.md)
 - **preload script** — A special script Electron runs in the renderer _before_ the web page loads, with access to a limited bridge API. It's where we use contextBridge to build `window.api`. (see 05-preload-and-context-isolation.md)
 - **primary / subordinate (master / slave)** — The two ends of a pty pair. The controlling program (our app, via node-pty) holds the _primary_ end; the shell runs attached to the _subordinate_ end, which looks like a real terminal to it. (Older docs call these master/slave.) (see 02-how-terminals-work.md)
+- **product identity contract** — The coordinated set of human and machine
+  identifiers for an application: display name, package, app ID, executable,
+  socket, environment namespace, user-data path, protocol title, and repository.
+  Each boundary follows its own naming rules. (see
+  34-product-identity-and-compatible-rebranding.md)
 - **pseudo-terminal (PTY)** — A software emulation of a physical terminal: a kernel-provided pair of endpoints that lets one program feed input to, and read output from, another program (a shell) as if a human were sitting at a terminal. (see 02-how-terminals-work.md; the library that spawns them: 06-node-pty.md)
 - **PSS (proportional set size)** — Resident memory with each shared page divided
   among the processes mapping it. Summing PSS gives a fairer multi-process total
@@ -169,10 +176,14 @@
 - **sandbox** — A security restriction that limits what the renderer's web content can do (no direct filesystem or Node access), so a compromised page can't reach the OS. It works alongside contextIsolation. (see 05-preload-and-context-isolation.md)
 - **scrollback** — The buffer of past output lines xterm.js keeps above the visible area so you can scroll up. Its size is configurable. (see 07-xtermjs.md)
 - **serialization** — Turning in-memory objects into a storable/transmittable form (usually JSON) and back. We serialize the Window/Workspace tree to disk to persist sessions. (see 13-session-persistence.md)
+- **Shepherd** — This project's independent AI-native terminal workspace for
+  Linux. The name is used consistently across the UI, CLI, protocol, runtime,
+  Linux package, and repository. (see
+  34-product-identity-and-compatible-rebranding.md)
 - **shell** — The program (bash, zsh, fish) that reads your commands, runs them, and prints results — the thing actually running inside each terminal. node-pty spawns one per terminal. (see 02-how-terminals-work.md)
 - **signal (Unix signal)** — A small asynchronous notification the OS delivers to a process — e.g. `SIGTERM` to ask it to quit, `SIGKILL` to force-kill, `SIGWINCH` on resize. We send signals to control the shells we spawn. (see 06-node-pty.md)
 - **SIGWINCH** — The Unix signal ("window change") the kernel sends a program when its terminal's size changes, prompting it to re-query rows/cols and redraw. node-pty's `resize()` triggers it. (see 06-node-pty.md)
-- **socket (unix domain socket)** — An inter-process channel that looks like a file path (e.g. `/tmp/cmux-linux.sock`) instead of a network address — fast, local-only IPC. Our socket API server listens on one; the `cmux` CLI connects to it. (see 11-the-socket-api.md)
+- **socket (unix domain socket)** — An inter-process channel that looks like a file path (e.g. `/tmp/shepherd.sock`) instead of a network address — fast, local-only IPC. Our socket API server listens on one; the `shepherd` CLI connects to it. (see 11-the-socket-api.md)
 - **status pill** — A small colored label in a workspace's sidebar row (e.g. a green "build passing"), set via the socket `set-status` method. (see 12-notifications-and-osc.md)
 - **stdin / stdout / stderr** — The three standard streams every process has: input (fd 0), normal output (fd 1), and error output (fd 2). A shell reads keystrokes from stdin and writes results to stdout/stderr, which flow back to the terminal. (see 02-how-terminals-work.md)
 - **structured clone** — The algorithm Electron (and browsers) use to deep-copy a JS value when sending it across a boundary like IPC. It handles objects, arrays, Maps, and more — but not functions or class instances — so IPC payloads must be plain data. (see 04-ipc-inter-process-communication.md)
@@ -191,7 +202,7 @@
 
 ## U
 
-- **unread / attention state** — Two per-workspace booleans that drive the sidebar's alerts: `attention` rings/flashes a workspace that needs you now; `unread` keeps a badge until you look. Both are set by OSC parsing or a `cmux notify`. (see 12-notifications-and-osc.md)
+- **unread / attention state** — Two per-workspace booleans that drive the sidebar's alerts: `attention` rings/flashes a workspace that needs you now; `unread` keeps a badge until you look. Both are set by OSC parsing or a `shepherd notify`. (see 12-notifications-and-osc.md)
 
 ## V
 

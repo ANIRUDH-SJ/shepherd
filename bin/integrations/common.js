@@ -30,12 +30,22 @@ function installCommandHooks(file, provider, events) {
   }
   settings.hooks = settings.hooks && typeof settings.hooks === 'object' ? settings.hooks : {}
   // Global provider hooks must be harmless when the agent is launched outside
-  // cmux-linux, where the pane-injected CLI may not be on PATH.
-  const command = `command -v cmux >/dev/null 2>&1 && cmux agent-hook ${provider}`
+  // Shepherd, where the pane-injected CLI may not be on PATH.
+  const command = `command -v shepherd >/dev/null 2>&1 && shepherd agent-hook ${provider}`
+  const legacyCommand = `command -v cmux >/dev/null 2>&1 && cmux agent-hook ${provider}`
   let changed = false
 
   for (const event of events) {
     const groups = Array.isArray(settings.hooks[event]) ? settings.hooks[event] : []
+    for (const group of groups) {
+      if (!group || !Array.isArray(group.hooks)) continue
+      for (const hook of group.hooks) {
+        if (hook && hook.type === 'command' && hook.command === legacyCommand) {
+          hook.command = command
+          changed = true
+        }
+      }
+    }
     const installed = groups.some(
       (group) =>
         group &&

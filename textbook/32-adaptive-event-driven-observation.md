@@ -3,7 +3,7 @@
 Desktop applications often need to observe state that has no perfect event
 source. Linux can expose a terminal's foreground process and cwd through
 `/proc`, and Git exposes the current branch through `HEAD`, but neither gives
-cmux-linux one reliable subscription covering process replacement, shell cwd,
+Shepherd one reliable subscription covering process replacement, shell cwd,
 worktrees, `git init`, deletion, and permission races.
 
 A fixed poll is simple and self-healing:
@@ -16,14 +16,14 @@ Its weakness is proportional background work. A 750 ms check runs 80 times per
 minute whether the user switched branches or went to lunch. Suppressing an
 unchanged outgoing message does not remove the observation cost.
 
-This chapter develops the hybrid used by cmux-linux: events accelerate a
+This chapter develops the hybrid used by Shepherd: events accelerate a
 bounded recovery poll, quiet and hidden states back off, and exact renderer
 deadlines replace periodic checks where the future transition is already known.
 
 ## 1. Begin with freshness contracts
 
 Timer optimization is unsafe when “faster” and “eventually” are undefined.
-cmux-linux states the product bounds first:
+Shepherd states the product bounds first:
 
 | Observer           | Active | Quiet visible | Hidden | Activity window |
 | ------------------ | -----: | ------------: | -----: | --------------: |
@@ -68,7 +68,7 @@ polling makes the system self-healing after a missed hint.
 Calling an expensive scan for every output event simply replaces timer overhead
 with event overhead. A build can emit thousands of chunks per second.
 
-cmux-linux distinguishes two requests:
+Shepherd distinguishes two requests:
 
 - `trigger()` enters or extends an activity burst. The first event after quiet
   runs immediately; sustained events are capped by the active interval.
