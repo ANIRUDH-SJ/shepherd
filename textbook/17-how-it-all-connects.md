@@ -214,7 +214,8 @@ If you can do these from memory, you've understood the whole book:
 Shepherd is not a pile of separate technologies — it's two processes passing
 messages, with specialist libraries at the edges. **A keystroke** proves the
 renderer↔main spine: xterm.js (ch 7) → preload (ch 5) → IPC (ch 4) → node-pty
-(ch 6) → the real shell (ch 2), and back. **A notification** proves the cmux magic:
+(ch 6) → the real shell (ch 2), and back. **A notification** proves Shepherd's
+agent round-trip:
 an agent → the socket API or an OSC code (ch 11/12) → the main-process state (ch 9)
 → an IPC push → the React sidebar's ring (ch 8/12). Learn those two journeys and
 every file you open later has an obvious home.

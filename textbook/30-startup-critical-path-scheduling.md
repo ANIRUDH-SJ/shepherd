@@ -261,7 +261,7 @@ belongs in its own branch and measurement cycle.
 ## Checkpoint
 
 1. Why is Electron readiness too early to trigger observational work?
-2. Which facts are guaranteed by the cmux first-terminal handshake?
+2. Which facts are guaranteed by the Shepherd first-terminal handshake?
 3. Why is a latest-value latch correct for workspace sync but not every event?
 4. What does `setImmediate()` guarantee here, and what does it deliberately not
    guarantee?

@@ -32,7 +32,7 @@ lifecycle reports sent through the existing Unix socket.
 ```text
 provider lifecycle event
   → installed command hook or managed OpenCode plugin
-  → bin/agent-events.js maps provider vocabulary to the cmux contract
+  → bin/agent-events.js maps provider vocabulary to the Shepherd contract
   → shepherd agent-report sends newline-delimited JSON over the Unix socket
   → src/main/socket.ts resolves the workspace and validates the report
   → App.tsx receives the socket command through the preload bridge
@@ -46,7 +46,7 @@ The reverse control direction is available too:
 ```text
 shepherd list-agents
 shepherd focus-agent <agent-id>
-cmux wait-agent <agent-id> --state blocked,done
+shepherd wait-agent <agent-id> --state blocked,done
 shepherd agent-clear <agent-id> --source <reporter-source>
 ```
 
@@ -272,9 +272,9 @@ shepherd list-agents --provider codex,claude --state blocked,done --limit 50
 shepherd agent-snapshot --updated-after 1784271000000
 shepherd agent-schema
 shepherd agent-capabilities codex
-cmux inspect-agent codex:hooks:term-1 --lines 25 --max-bytes 4096
+shepherd inspect-agent codex:hooks:term-1 --lines 25 --max-bytes 4096
 shepherd focus-agent codex:hooks:term-1
-cmux wait-agent codex:hooks:term-1 --state blocked,done --timeout-ms 30000
+shepherd wait-agent codex:hooks:term-1 --state blocked,done --timeout-ms 30000
 shepherd agent-clear codex:hooks:term-1 --source codex:hooks
 ```
 
@@ -338,7 +338,7 @@ The default paths are:
 | OpenCode    | `~/.config/opencode/plugins/shepherd-agent.js` |
 
 The JSON installers read the existing object, preserve unrelated settings and
-hooks, append only missing cmux groups, and atomically rename a temporary file.
+hooks, append only missing Shepherd groups, and atomically rename a temporary file.
 Running setup twice is idempotent and avoids a second rewrite.
 
 The generated command starts with `command -v shepherd ...`. Global configuration is

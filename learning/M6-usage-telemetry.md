@@ -21,7 +21,7 @@ The implemented rule is therefore:
 
 ```text
 agent or script
-  → cmux report-usage --input-tokens 1200 --output-tokens 300 --accuracy exact
+  → shepherd report-usage --input-tokens 1200 --output-tokens 300 --accuracy exact
   → bin/shepherd converts kebab-case flags to camelCase JSON
   → /tmp/shepherd.sock receives { method: "report-usage", params: ... }
   → src/main/socket.ts validates and timestamps the report
@@ -96,7 +96,7 @@ automatically; `--workspace` can override it.
 Full example:
 
 ```bash
-cmux report-usage \
+shepherd report-usage \
   --input-tokens 1200 \
   --output-tokens 300 \
   --cached-tokens 800 \

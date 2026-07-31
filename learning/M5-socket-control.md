@@ -17,7 +17,7 @@ Everything speaks the M3 wire format — newline JSON `{id, method, params}` ove
 `/tmp/shepherd.sock` — and routes one of two ways:
 
 ```
- cmux <verb>  ──►  socket server (main)
+ shepherd <verb>  ──►  socket server (main)
                      │
       ┌──────────────┴───────────────┐
       │                              │
@@ -71,7 +71,7 @@ separate: `--workspace` identifies the current workspace and `--name` supplies i
 new label. Main resolves the old id/name before forwarding the normalized new name:
 
 ```bash
-cmux rename-workspace --workspace build --name "build and test"
+shepherd rename-workspace --workspace build --name "build and test"
 ```
 
 An empty `--name ""` removes the custom label, so the sidebar falls back to its
@@ -125,7 +125,7 @@ With the app running (`npm run dev`), from any pane:
 shepherd capabilities                 # → the method list
 shepherd identify                     # → this pane's workspace + the active one
 shepherd new-workspace --name demo
-cmux rename-workspace --workspace demo --name "demo agent"
+shepherd rename-workspace --workspace demo --name "demo agent"
 shepherd send-text "echo hello from a script"
 shepherd send-key enter
 ```

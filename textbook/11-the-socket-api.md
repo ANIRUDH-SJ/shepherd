@@ -18,7 +18,7 @@
 
 ## 11.1 The problem: how does something _outside_ the app talk to it?
 
-Go back to Loop C from Chapter 1 — the "cmux magic" round-trip:
+Go back to Loop C from Chapter 1 — the Shepherd control round-trip:
 
 ```
 Claude Code finishes → its hook runs `shepherd notify --body "waiting..."`
@@ -62,12 +62,13 @@ the sidebar comes alive — which is why `FEATURES.md` calls it _"the backbone."
 
 You already know how to let outside processes talk to a Node program — you'd spin
 up an Express server and have the agent `curl http://localhost:7777/notify`. That
-_would_ work. cmux (and we) deliberately don't, for four reasons:
+_would_ work. Shepherd deliberately does not, and cmux makes the same choice, for
+four reasons:
 
 1. **No port to allocate or collide on.** A TCP port is a global, numeric,
-   machine-wide resource. Two cmux windows, or cmux and some other app, could fight
-   over `:7777`. A socket is just a _file path_ — we pick a unique one and never
-   collide.
+   machine-wide resource. Two Shepherd windows, or Shepherd and another app,
+   could fight over `:7777`. A socket is just a _file path_ — we pick a unique
+   one and never collide.
 2. **Local-only by construction.** A unix socket has no network stack behind it.
    Nothing on your LAN, and certainly nothing on the internet, can reach it. An
    HTTP server bound to a port is at least theoretically reachable and needs you to
@@ -117,7 +118,7 @@ says "good luck." That sounds scary; it's actually liberating once you accept on
 responsibility (framing, §11.3).
 
 Here's the smallest possible UDS server and client, side by side, so the shapes
-land before we add cmux semantics:
+land before we add Shepherd semantics:
 
 ```ts
 // server.ts — the "backend"
@@ -318,7 +319,7 @@ export function startSocketServer() {
 ```
 
 > **⚠️ Gotcha — don't blindly unlink a live socket.** Unlinking the file removes the
-> _directory entry_, not a live listener bound to it. If another cmux is genuinely
+> _directory entry_, not a live listener bound to it. If another Shepherd instance is genuinely
 > running and owns that path, our subsequent `listen()` will still fail — which is
 > the behavior we want (it tells us "already running"). The `unlinkSync` only rescues
 > the _crashed-last-time_ case. If you wanted to be extra careful you'd first try to
@@ -923,7 +924,7 @@ be the dumb one-liner `shepherd notify --body "waiting"` and it _automatically_ 
 the correct sidebar row, because the pane it runs in was born knowing its identity.
 
 > **⚠️ Gotcha — env injection isn't retroactive.** These variables are baked in at
-> `pty.spawn` time. A shell that was already running before cmux started (e.g. you
+> `pty.spawn` time. A shell that was already running before Shepherd started (e.g. you
 > `ssh`'d somewhere and `shepherd` isn't in that env) won't have them, and `shepherd` there
 > will fall back to defaults or need explicit `--workspace`/`--socket` flags. This is
 > also why moving a surface between panes doesn't magically change its

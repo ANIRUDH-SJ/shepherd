@@ -209,7 +209,7 @@ it, resolves the target workspace, and forwards a normalized event.
 The CLI command is intentionally explicit:
 
 ```bash
-cmux report-usage \
+shepherd report-usage \
   --input-tokens 1200 \
   --output-tokens 300 \
   --cached-tokens 800 \
@@ -376,7 +376,7 @@ Important future cases include:
 - **Provider schema drift:** isolate mappings inside adapters and test fixtures.
 
 The MVP stores deltas, trusts local socket access consistently with the existing
-cmux API, and retains only totals plus the latest report.
+Shepherd API, and retains only totals plus the latest report.
 
 ## 18.15 Worked end-to-end example
 
@@ -392,7 +392,7 @@ cost:   $0.072
 It reports:
 
 ```bash
-cmux report-usage --input-tokens 8400 --output-tokens 1100 \
+shepherd report-usage --input-tokens 8400 --output-tokens 1100 \
   --cached-tokens 6000 --cost-usd 0.072 --accuracy exact \
   --provider example --model example-large
 ```

@@ -138,7 +138,7 @@ maintained when provider event schemas evolve.
 
 Notice the three different boundaries:
 
-- **Provider boundary:** provider event names become cmux semantics.
+- **Provider boundary:** provider event names become Shepherd semantics.
 - **Process boundary:** untrusted JSON becomes a normalized report in main.
 - **Layout boundary:** a claimed surface becomes a verified pane association in
   the renderer.
@@ -483,7 +483,7 @@ can require the stored reporter source.
 `wait-agent` accepts one or more semantic states and a timeout:
 
 ```bash
-cmux wait-agent codex:hooks:term-1 \
+shepherd wait-agent codex:hooks:term-1 \
   --state blocked,done \
   --timeout-ms 30000
 ```
@@ -504,7 +504,7 @@ needs a small amount of terminal context to diagnose a failure. The opt-in query
 is deliberately agent-scoped:
 
 ```bash
-cmux inspect-agent codex:hooks:term-1 --lines 25 --max-bytes 4096
+shepherd inspect-agent codex:hooks:term-1 --lines 25 --max-bytes 4096
 ```
 
 The socket resolves the current `AgentRecord` and uses its already-verified
@@ -671,7 +671,7 @@ Lifecycle reporting is observational; it must not break the agent being observed
 
 - Invalid hook stdin is ignored.
 - Unknown hook events degrade to `unknown` while retaining only their event name.
-- Hooks outside a cmux pane exit successfully.
+- Hooks outside a Shepherd pane exit successfully.
 - A missing socket or closed app is ignored by hook-mode CLI calls.
 - The OpenCode plugin catches spawn failures and discards output.
 - Invalid user-invoked CLI requests still return useful errors.
@@ -872,7 +872,7 @@ The architecture leaves clear places for future work:
 1. The provider launches in an ordinary terminal.
 2. Its global hook checks whether `shepherd` exists.
 3. If it does, `agent-hook` checks pane identity variables.
-4. With no cmux surface/socket identity, it exits successfully without reporting.
+4. With no Shepherd surface/socket identity, it exits successfully without reporting.
 5. The provider continues unaffected.
 ```
 

@@ -243,7 +243,7 @@ rounds, pressure gates, ownership, and raw result conventions:
 2. add a visual sentinel and presentation observer;
 3. automate identical scroll and resize sequences with frame/CPU capture;
 4. create equivalent 1/2/4/8-terminal layouts;
-5. compare cmux agent discovery enabled and disabled at each terminal count;
+5. compare Shepherd agent discovery enabled and disabled at each terminal count;
 6. run a redirected CPU workload as a terminal-independent control; and
 7. repeat with hardware GPU, software rendering, and GPU-unavailable fallback.
 

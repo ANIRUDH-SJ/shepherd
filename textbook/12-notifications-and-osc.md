@@ -17,7 +17,7 @@
 
 ## 12.1 Two doorbells, one bell
 
-This chapter is about the single feature that gives cmux its reason to exist: the
+This chapter is about the single feature that gives Shepherd its reason to exist: the
 moment a workspace **lights up because an agent needs you.** Go back to **Loop C**
 from Chapter 1 one more time — it's about to become fully concrete:
 
@@ -37,13 +37,13 @@ Part 4 calls them the _two input channels_:
 - **① Explicit (the front door).** An agent runs `shepherd notify …` (or
   `shepherd set-status …`). That travels the **socket API** you built in Chapter 11 —
   `notification.create` / `set-status`. This is a _deliberate_ push: the agent
-  _knows_ about cmux and calls its CLI, usually from a **hook** (`shepherd hooks setup`
+  _knows_ about Shepherd and calls its CLI, usually from a **hook** (`shepherd hooks setup`
   installs a Claude Code `Notification` hook — §12.2).
-- **② Automatic (the passive sensor).** cmux **watches the raw terminal output**
+- **② Automatic (the passive sensor).** Shepherd **watches the raw terminal output**
   streaming out of node-pty for special **OSC escape sequences** (OSC 9 / 99 / 777).
   _Any_ program that emits one — an agent, a `make` script, a bare
   `printf '\e]9;done\a'` — triggers a notification with **zero setup and zero
-  knowledge of cmux.** The terminal itself is the sensor.
+  knowledge of Shepherd.** The terminal itself is the sensor.
 
 Think of it like a building with **two doorbells wired to the same chime.** One is
 the front-door button a visitor presses on purpose (the socket). The other is a
@@ -113,11 +113,11 @@ the first maintains current agent state; the second creates a notification/statu
 signal.
 
 So why do we _also_ need to sniff escape codes? Because **not every program is an
-agent that knows about cmux.** A long `webpack` build, a test runner, a
+agent that knows about Shepherd.** A long `webpack` build, a test runner, a
 `brew upgrade`, a script a coworker wrote — none of them will ever run `shepherd notify`.
 But many of them _already_ emit a **desktop-notification escape code**, because
 that's a decades-old terminal convention that iTerm2, kitty, urxvt, and others all
-honor. If cmux listens for those codes, it inherits notifications from the entire
+honor. If Shepherd listens for those codes, it inherits notifications from the entire
 ecosystem **for free.** That's Channel ②. To understand it, we need to understand
 escape codes.
 
@@ -221,7 +221,7 @@ treats either as "the end."** Forgetting one is a top-three bug in this chapter.
 ### The four notification codes we care about
 
 Different terminals invented their own notification codes over the years. We support
-the common set so cmux "just works" no matter which convention a program follows:
+the common set so Shepherd "just works" no matter which convention a program follows:
 
 | OSC     | Origin                    | Format (string form)                 | What it means                                               |
 | ------- | ------------------------- | ------------------------------------ | ----------------------------------------------------------- |
@@ -1043,7 +1043,7 @@ Answer these before moving on (everything's in this chapter):
 A workspace lights up through **two doorbells wired to one bell.** The **explicit**
 channel (Chapter 11) is an agent running `shepherd notify` / `set-status` from a hook,
 travelling the socket API. The **automatic** channel — this chapter's new material —
-is cmux **watching the raw node-pty output** for **OSC escape sequences**: the
+is Shepherd **watching the raw node-pty output** for **OSC escape sequences**: the
 byte-level shape `ESC ] <code> ; <payload> <BEL or ST>`, where **OSC 9** (iTerm),
 **OSC 777** (urxvt), and **OSC 99** (kitty) mean "post a notification" and **OSC 9;4**
 means "progress." We scan the stream in the **main** process with a strict rule —

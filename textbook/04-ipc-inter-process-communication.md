@@ -416,7 +416,7 @@ That's the two-shape model from §4.2 made real: **requests flow in, pushes flow
 > **🔧 In Shepherd:** notice `workspace:update` and `notification:show` are the
 > _same push pattern_ as `pty:data`. The sidebar's "liveness" (Chapter 1's Loop C)
 > is not special machinery — it's `webContents.send` again, on different channels.
-> Once you see that, the "cmux magic" demystifies into: a socket server (Ch. 11)
+> Once you see that, Shepherd's agent round-trip demystifies into: a socket server (Ch. 11)
 > feeding the same IPC push you already use for terminal output.
 
 ---
