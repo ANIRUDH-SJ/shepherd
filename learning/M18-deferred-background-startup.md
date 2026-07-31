@@ -2,7 +2,7 @@
 
 ## The goal
 
-cmux-linux used to construct automatic agent discovery and live Git/workspace
+Shepherd used to construct automatic agent discovery and live Git/workspace
 metadata before creating its first `BrowserWindow`. Their initial scans run on
 timers, but those timers could expire while React, xterm, node-pty, and the first
 shell prompt were still competing for the same main-process event loop and host
@@ -122,7 +122,7 @@ at 779.838 ms, metadata discovery at 780.709 ms, and first-output
 not a before/after benchmark claim.
 
 The socket answered, the window was visible, and changing cwd updated the sidebar
-to `cmux-linux` and `perf/defer-background-services`. A temporary Kimi-named
+to `Shepherd` and `perf/defer-background-services`. A temporary Kimi-named
 foreground process appeared automatically as `working` and disappeared after
 exit. That proves deferral preserved both observer contracts.
 

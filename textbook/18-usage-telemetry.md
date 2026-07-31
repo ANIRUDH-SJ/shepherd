@@ -7,7 +7,7 @@ counter beside an agent response and add the values together. The hard part is
 not the arithmetic. The hard part is knowing **what was measured, who measured
 it, and whether the number means what the UI claims it means**.
 
-cmux-linux owns terminals and workspaces. It does not own the model request made
+Shepherd owns terminals and workspaces. It does not own the model request made
 by Claude Code, Codex, or another agent. A terminal shows a projection of the
 agent's activity, not its complete request envelope. This makes token usage an
 observability problem:
@@ -15,7 +15,7 @@ observability problem:
 ```text
 system being observed       → agent/provider API request
 measurement producer        → provider response or agent adapter
-transport                   → cmux CLI + Unix socket
+transport                   → Shepherd CLI + Unix socket
 collector                   → Electron main process
 aggregation                 → React reducer state
 presentation                → workspace sidebar
@@ -59,7 +59,7 @@ Do not turn unavailable into zero. Zero means the measured operation used no
 tokens; unavailable means it was not measured. Those facts lead to different
 product decisions.
 
-cmux-linux makes callers choose `exact` or `estimated`. If they cannot choose
+Shepherd makes callers choose `exact` or `estimated`. If they cannot choose
 honestly, they should not send a report. The UI uses `~` for cumulative totals
 that contain any estimate:
 
@@ -107,7 +107,7 @@ Provider terminology differs, but cached tokens commonly describe a portion of
 the input served through a cache. They are useful for billing and performance,
 yet adding them to input and output may double-count logical tokens.
 
-cmux-linux therefore displays total tokens as:
+Shepherd therefore displays total tokens as:
 
 ```text
 display total = inputTokens + outputTokens
@@ -147,7 +147,7 @@ A stale pricing table produces precise-looking misinformation. The MVP accepts
 `costUsd` only when the producer reports or calculates it with better knowledge.
 The UI calls it **reported cost**, not “your bill.”
 
-If cmux-linux later calculates estimates, the result should include a pricing
+If Shepherd later calculates estimates, the result should include a pricing
 source and version:
 
 ```ts
@@ -192,7 +192,7 @@ fully normalized `UsageReport`.
 
 ## 18.8 Transport over the existing Unix socket
 
-The feature reuses cmux-linux's newline-delimited JSON protocol:
+The feature reuses Shepherd's newline-delimited JSON protocol:
 
 ```json
 {
@@ -221,7 +221,7 @@ cmux report-usage \
 Shell conventions prefer kebab-case flags. JavaScript conventions prefer
 camelCase properties. The CLI maps between them before serializing JSON.
 
-Inside a pane, `CMUX_WORKSPACE_ID` supplies the default target. An adapter does
+Inside a pane, `SHEPHERD_WORKSPACE_ID` supplies the default target. An adapter does
 not need to discover which sidebar row owns its terminal.
 
 ## 18.9 Pure aggregation in a reducer
@@ -309,7 +309,7 @@ An adapter's responsibilities are deliberately narrow:
 1. Observe an authoritative provider or agent usage event.
 2. Map provider fields to the common contract.
 3. Choose exact or estimated honestly.
-4. Invoke `cmux report-usage` in the correct workspace environment.
+4. Invoke `shepherd report-usage` in the correct workspace environment.
 
 Pseudocode for an API client:
 
@@ -398,7 +398,7 @@ cmux report-usage --input-tokens 8400 --output-tokens 1100 \
 ```
 
 The CLI sends camelCase JSON. Main validates every value, stamps the event, and
-resolves the workspace from `CMUX_WORKSPACE_ID`. React receives `report-usage`.
+resolves the workspace from `SHEPHERD_WORKSPACE_ID`. React receives `report-usage`.
 The reducer adds the report. The sidebar shows:
 
 ```text

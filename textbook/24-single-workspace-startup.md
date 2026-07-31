@@ -9,7 +9,7 @@ Startup policy answers:
 
 > How much of that state should become live application state on launch?
 
-cmux-linux allows many workspaces during a running session, while deliberately
+Shepherd allows many workspaces during a running session, while deliberately
 starting each new process with exactly one. This chapter explains why the policy
 belongs in the renderer state boundary, how it stays compatible with older
 snapshots, and what is gained and lost by selecting the previously active
@@ -55,7 +55,7 @@ The nullish-coalescing expression chooses one source. It does not concatenate
 fresh and restored arrays. Other creation paths—keyboard shortcuts, sidebar
 buttons, and socket commands—run after startup in response to explicit events.
 
-This is a useful debugging method beyond cmux-linux: distinguish initialization,
+This is a useful debugging method beyond Shepherd: distinguish initialization,
 rehydration, and later event handling before assuming a UI framework mounted
 twice.
 

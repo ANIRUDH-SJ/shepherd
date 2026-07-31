@@ -13,7 +13,7 @@ difference between live leaks and allocator high-water pages.
 
 ## 1. Inventory the whole terminal
 
-One mounted cmux-linux terminal owns resources in three processes.
+One mounted Shepherd terminal owns resources in three processes.
 
 ### Renderer
 
@@ -177,7 +177,7 @@ live renderer, and removes the exact registry record.
 buffer needs either a numerical maximum or a proof that upstream backpressure
 prevents accumulation.
 
-cmux-linux uses:
+Shepherd uses:
 
 | Resource                |                Bound |
 | ----------------------- | -------------------: |
@@ -238,7 +238,7 @@ It does not need:
 - cwd or repository paths; or
 - environment values.
 
-cmux-linux reads `CMUX_MEMORY_DIAGNOSTICS` once at startup and enables logging
+Shepherd reads `SHEPHERD_MEMORY_DIAGNOSTICS` once at startup and enables logging
 only for the exact value `1`. A misspelled or ambiguous value cannot accidentally
 turn diagnostics on. Logging is confined to creation and cleanup boundaries,
 not the output hot path, and exceptions are swallowed so observability cannot
@@ -275,7 +275,7 @@ Intermediate 2- and 4-terminal points reveal nonlinear behavior. Process
 composition explains whether the slope comes from one shell per terminal,
 renderer allocations, GPU resources, or main-process captures.
 
-cmux-linux observed six fixed Electron processes and one Bash process per live
+Shepherd observed six fixed Electron processes and one Bash process per live
 terminal. That made the 7/8/10/14 total process counts at 1/2/4/8 terminals
 directly explainable.
 
@@ -312,7 +312,7 @@ pages were concentrated in Electron helpers, not extra shells.
 ## 10. Benchmark process ownership is a security boundary
 
 A benchmark that launches and kills process trees is itself privileged
-automation. A name match such as `pkill cmux-linux` is unacceptable because it
+automation. A name match such as `pkill Shepherd` is unacceptable because it
 can terminate the user's real app.
 
 The lifecycle harness uses:

@@ -2,9 +2,9 @@
 
 ## The goal
 
-An agent running in a cmux-linux terminal should appear in the Agents sidebar
+An agent running in a Shepherd terminal should appear in the Agents sidebar
 without asking the user to install a hook, edit a provider config, or run
-`cmux agent-report`.
+`shepherd agent-report`.
 
 M7 already gave us a rich semantic agent protocol. Its provider integrations are
 still useful because they can report exact states such as `blocked`, `done`, and
@@ -62,7 +62,7 @@ interface TerminalProcessContext {
 }
 ```
 
-This keeps discovery attached to a real cmux-linux terminal. We do not scan all
+This keeps discovery attached to a real Shepherd terminal. We do not scan all
 of `/proc` and then guess which workspace owns an unrelated process.
 
 ## 2. Why process ancestry matters
@@ -198,7 +198,7 @@ The automated tests cover:
 - the protocol capability flag.
 
 The live smoke test used an isolated app socket and launched a harmless process
-whose argument-zero was `kimi`. `cmux list-agents` showed a Kimi record from
+whose argument-zero was `kimi`. `shepherd list-agents` showed a Kimi record from
 `process:auto` without setup. Sending Ctrl-C removed it on the next scan.
 
 ## Intentional limits
@@ -209,7 +209,7 @@ whose argument-zero was `kimi`. `cmux list-agents` showed a Kimi record from
   would fill the sidebar with shells, editors, servers, and build tools.
 - Process discovery reports presence and activity. Provider lifecycle signals
   remain the authoritative source for semantic details.
-- Discovery is scoped to terminals owned by cmux-linux, so every detected row has
+- Discovery is scoped to terminals owned by Shepherd, so every detected row has
   an exact workspace and surface to focus.
 
 ## Checkpoint

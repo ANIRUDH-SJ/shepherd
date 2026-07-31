@@ -2,7 +2,7 @@
 
 ## Goal
 
-Make cmux-linux easier to scan during multi-agent work while keeping the terminal
+Make Shepherd easier to scan during multi-agent work while keeping the terminal
 as the visual focus. The series is intentionally split into independent PRs so
 palette infrastructure, information architecture, and terminal interaction can
 be reviewed and reverted separately.

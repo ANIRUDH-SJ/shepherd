@@ -1,10 +1,11 @@
 # Chapter 12 — Notifications & OSC Escape Codes
 
 > **What you'll learn**
-> - The **two ways** a workspace lights up — *automatic* OSC detection and *explicit* socket notifications — and why they funnel into a single pipeline
+>
+> - The **two ways** a workspace lights up — _automatic_ OSC detection and _explicit_ socket notifications — and why they funnel into a single pipeline
 > - What an **OSC (Operating System Command)** escape sequence is at the byte level: `ESC ] <code> ; <payload> <BEL or ST>`
 > - The specific notification codes: **OSC 9** (iTerm-style), **OSC 777** (urxvt notify), **OSC 99** (kitty), and **OSC 9;4** (progress)
-> - How to **scan the node-pty output stream** for these in the *main* process **without corrupting** the bytes xterm.js draws
+> - How to **scan the node-pty output stream** for these in the _main_ process **without corrupting** the bytes xterm.js draws
 > - Why an escape sequence can be **split across two `data` chunks**, and the buffering that fixes it (the same framing lesson as Chapter 11)
 > - The unified **attention pipeline**: `markWorkspaceAttention(...)` → state → `webContents.send('workspace:update')` → the ring/flash/badge + a desktop toast
 > - The **visual layer**: CSS `@keyframes` rings, flashing sidebar rows, unread badges, the notification panel, jump-to-latest-unread, and the green/yellow/red color convention
@@ -21,8 +22,8 @@ moment a workspace **lights up because an agent needs you.** Go back to **Loop C
 from Chapter 1 one more time — it's about to become fully concrete:
 
 ```
-Claude Code finishes → its hook runs `cmux notify --body "waiting..."`
-  → the cmux CLI connects to the unix socket (main)
+Claude Code finishes → its hook runs `shepherd notify --body "waiting..."`
+  → the Shepherd CLI connects to the unix socket (main)
   → main marks that workspace "needs attention"
   → webContents.send("workspace-update", ...)   (IPC → renderer)
   → React lights up the sidebar row + rings the pane
@@ -31,22 +32,22 @@ Claude Code finishes → its hook runs `cmux notify --body "waiting..."`
 
 Here's the twist this chapter adds: **there are two completely different ways the
 "needs attention" state gets set, and they meet in the middle.** `FEATURES.md`
-Part 4 calls them the *two input channels*:
+Part 4 calls them the _two input channels_:
 
-- **① Explicit (the front door).** An agent runs `cmux notify …` (or
-  `cmux set-status …`). That travels the **socket API** you built in Chapter 11 —
-  `notification.create` / `set-status`. This is a *deliberate* push: the agent
-  *knows* about cmux and calls its CLI, usually from a **hook** (`cmux hooks setup`
+- **① Explicit (the front door).** An agent runs `shepherd notify …` (or
+  `shepherd set-status …`). That travels the **socket API** you built in Chapter 11 —
+  `notification.create` / `set-status`. This is a _deliberate_ push: the agent
+  _knows_ about cmux and calls its CLI, usually from a **hook** (`shepherd hooks setup`
   installs a Claude Code `Notification` hook — §12.2).
 - **② Automatic (the passive sensor).** cmux **watches the raw terminal output**
   streaming out of node-pty for special **OSC escape sequences** (OSC 9 / 99 / 777).
-  *Any* program that emits one — an agent, a `make` script, a bare
+  _Any_ program that emits one — an agent, a `make` script, a bare
   `printf '\e]9;done\a'` — triggers a notification with **zero setup and zero
   knowledge of cmux.** The terminal itself is the sensor.
 
 Think of it like a building with **two doorbells wired to the same chime.** One is
 the front-door button a visitor presses on purpose (the socket). The other is a
-motion sensor on the porch that fires whenever *anything* moves (the OSC scanner).
+motion sensor on the porch that fires whenever _anything_ moves (the OSC scanner).
 Press the button or trip the sensor — the same chime rings inside. In cmux, that
 "chime" is one function, **`markWorkspaceAttention(wsId, payload)`**, and both
 channels call it:
@@ -55,7 +56,7 @@ channels call it:
    ┌─────────────────────────────────────────────┐
    │  CHANNEL ①  EXPLICIT (Chapter 11)            │
    │                                              │
-   │  agent hook → `cmux notify` → socket API →   │
+   │  agent hook → `shepherd notify` → socket API →   │
    │  HANDLERS['notification.create'] ────────────┼──┐
    └─────────────────────────────────────────────┘  │
                                                      │   both call the
@@ -81,7 +82,7 @@ Everything below is a zoom into one box of that picture. We spend the first half
 material), then reunite both channels at `markWorkspaceAttention` and build the
 visual payoff.
 
-> **🔧 In cmux-linux:** Channel ① is *already done* — you built it in Chapter 11.
+> **🔧 In Shepherd:** Channel ① is _already done_ — you built it in Chapter 11.
 > `notification.create` mutates `ws.notifications` and calls
 > `markWorkspaceAttention` (you saw the stub in §11.6). Channel ②, the OSC scanner,
 > is what M4 adds. The genius of routing both through one function is that the
@@ -97,7 +98,7 @@ depends on: **how a real agent presses the front-door button.** You saw this in
 Chapter 11 §11.7, but it's the reason automatic detection even matters, so it earns
 a recap.
 
-AI agents expose lifecycle extension points. `cmux integrations setup` installs
+AI agents expose lifecycle extension points. `shepherd integrations setup` installs
 guarded command hooks for Codex and Claude Code and a managed event plugin for
 OpenCode. Those adapters convert tool, permission, completion, failure, and
 session events into the semantic `agent-report` protocol described in Chapter 19.
@@ -105,16 +106,16 @@ The pane environment from §11.9 already identifies the owning workspace and
 terminal.
 
 The older explicit path remains useful: an agent or script can run
-`cmux notify …` itself, and `cmux hooks setup` remains a compatibility alias for
+`shepherd notify …` itself, and `shepherd hooks setup` remains a compatibility alias for
 Claude Code integration setup. Structured lifecycle reports and explicit
 notifications both cross the Unix socket, but they remain separate state models:
 the first maintains current agent state; the second creates a notification/status
 signal.
 
-So why do we *also* need to sniff escape codes? Because **not every program is an
+So why do we _also_ need to sniff escape codes? Because **not every program is an
 agent that knows about cmux.** A long `webpack` build, a test runner, a
-`brew upgrade`, a script a coworker wrote — none of them will ever run `cmux notify`.
-But many of them *already* emit a **desktop-notification escape code**, because
+`brew upgrade`, a script a coworker wrote — none of them will ever run `shepherd notify`.
+But many of them _already_ emit a **desktop-notification escape code**, because
 that's a decades-old terminal convention that iTerm2, kitty, urxvt, and others all
 honor. If cmux listens for those codes, it inherits notifications from the entire
 ecosystem **for free.** That's Channel ②. To understand it, we need to understand
@@ -124,12 +125,12 @@ escape codes.
 
 ## 12.3 What is an escape code, really? (a Node dev's primer)
 
-Here's the mental unlock. When bash prints something, it doesn't send *only* the
+Here's the mental unlock. When bash prints something, it doesn't send _only_ the
 letters you see. **It sends a single byte stream that interleaves two kinds of
 bytes:**
 
 1. **Visible bytes** — the actual characters (`f`, `i`, `l`, `e`).
-2. **Invisible control bytes** — instructions *to the terminal*: "turn the text
+2. **Invisible control bytes** — instructions _to the terminal_: "turn the text
    red now," "move the cursor up two lines," "set the window title," "post a
    desktop notification."
 
@@ -137,7 +138,7 @@ You already know this pattern from the web, you just call it something else:
 
 - An **HTML document** interleaves content (`Hello`) with markup the browser acts on
   but doesn't literally print (`<b>`, `<!-- comment -->`). The `<b>` isn't shown; it
-  *changes how the next text is shown.*
+  _changes how the next text is shown._
 - A **log stream** might interleave human text with `\n`, `\t`, or ANSI color codes.
 
 Terminal escape codes are the terminal's version of `<b>`: **inline, out-of-band
@@ -149,18 +150,18 @@ Every escape code starts with the **ESC** byte — hex `0x1B`, which shows up in
 strings as `\x1b`, `\e`, `\033`, or `^[`. ESC means "the next few bytes are an
 instruction, not text." What follows ESC splits into families:
 
-| Family | Starts with | Job | Example |
-|---|---|---|---|
-| **CSI** (Control Sequence Introducer) | `ESC [` | cursor movement, colors, erase | `\x1b[31m` = "text is red now" |
-| **OSC** (Operating System Command) | `ESC ]` | talk to the *window system*: title, clipboard, hyperlinks, **notifications** | `\x1b]0;My Title\x07` = "set window title" |
+| Family                                | Starts with | Job                                                                          | Example                                    |
+| ------------------------------------- | ----------- | ---------------------------------------------------------------------------- | ------------------------------------------ |
+| **CSI** (Control Sequence Introducer) | `ESC [`     | cursor movement, colors, erase                                               | `\x1b[31m` = "text is red now"             |
+| **OSC** (Operating System Command)    | `ESC ]`     | talk to the _window system_: title, clipboard, hyperlinks, **notifications** | `\x1b]0;My Title\x07` = "set window title" |
 
 Notice the one-character difference: **`ESC [` is CSI, `ESC ]` is OSC.** CSI is for
-*drawing*; OSC is for *asking the operating system / window for something*. Desktop
+_drawing_; OSC is for _asking the operating system / window for something_. Desktop
 notifications are inherently an "ask the OS" operation — so they live in **OSC.**
 That's the family we sniff for.
 
 > **⚠️ Gotcha — the escape byte is invisible, not absent.** When you `console.log`
-> a chunk of pty output in Node, ANSI-aware terminals will *act on* the escape bytes
+> a chunk of pty output in Node, ANSI-aware terminals will _act on_ the escape bytes
 > instead of showing them, so your logs look "clean" and you'll swear there are no
 > escape codes in there. There are — they're just being interpreted. To actually see
 > them, print `JSON.stringify(chunk)` (which renders ``) or pipe through
@@ -200,10 +201,10 @@ Four parts, in order:
 4. **`<terminator>`** — the byte(s) that say "the OSC is over." **There are two legal
    terminators, and you must accept both:**
 
-| Terminator | Name | Bytes | As a string |
-|---|---|---|---|
-| **BEL** | Bell | `0x07` | `\x07` (also written `\a` or `^G`) |
-| **ST** | String Terminator | `0x1B 0x5C` (`ESC \`) | `\x1b\\` |
+| Terminator | Name              | Bytes                 | As a string                        |
+| ---------- | ----------------- | --------------------- | ---------------------------------- |
+| **BEL**    | Bell              | `0x07`                | `\x07` (also written `\a` or `^G`) |
+| **ST**     | String Terminator | `0x1B 0x5C` (`ESC \`) | `\x1b\\`                           |
 
 Why two? History. The original, spec-correct terminator is **ST** (`ESC \`). But
 early terminals accepted the **BEL** character (`0x07` — the byte that used to
@@ -214,7 +215,7 @@ treats either as "the end."** Forgetting one is a top-three bug in this chapter.
 > **Analogy:** think of `ESC ]` as `{` (start of an object), the code+payload as its
 > contents, and BEL/ST as `}` (end of the object). Just like you can't parse JSON
 > without finding the matching `}`, you can't extract an OSC without finding its
-> terminator — and, just like a socket, that terminator might not have *arrived yet*
+> terminator — and, just like a socket, that terminator might not have _arrived yet_
 > when your `data` handler fires. Hold that thought for §12.5.
 
 ### The four notification codes we care about
@@ -222,12 +223,12 @@ treats either as "the end."** Forgetting one is a top-three bug in this chapter.
 Different terminals invented their own notification codes over the years. We support
 the common set so cmux "just works" no matter which convention a program follows:
 
-| OSC | Origin | Format (string form) | What it means |
-|---|---|---|---|
-| **9** | iTerm2 | `\x1b]9;<message>\x07` | Post a desktop notification; the payload **is** the message |
-| **777** | urxvt (rxvt-unicode) | `\x1b]777;notify;<title>;<body>\x07` | Notification with a **title and body** |
-| **99** | kitty | `\x1b]99;<metadata>;<body>\x1b\\` | Rich notification (id, urgency…); metadata before the body |
-| **9;4** | ConEmu / Windows Terminal | `\x1b]9;4;<state>;<percent>\x07` | Not a notification — a **progress bar** update |
+| OSC     | Origin                    | Format (string form)                 | What it means                                               |
+| ------- | ------------------------- | ------------------------------------ | ----------------------------------------------------------- |
+| **9**   | iTerm2                    | `\x1b]9;<message>\x07`               | Post a desktop notification; the payload **is** the message |
+| **777** | urxvt (rxvt-unicode)      | `\x1b]777;notify;<title>;<body>\x07` | Notification with a **title and body**                      |
+| **99**  | kitty                     | `\x1b]99;<metadata>;<body>\x1b\\`    | Rich notification (id, urgency…); metadata before the body  |
+| **9;4** | ConEmu / Windows Terminal | `\x1b]9;4;<state>;<percent>\x07`     | Not a notification — a **progress bar** update              |
 
 Real bytes for each, so you can recognize them in a hex dump:
 
@@ -252,19 +253,19 @@ Two of these have a wrinkle worth pre-empting now, because the parser has to han
 them:
 
 - **OSC 9 is overloaded.** iTerm uses bare `9;<text>` for notifications, but ConEmu
-  uses `9;4;…` for *progress*. So when you see OSC code `9`, you must **peek at the
+  uses `9;4;…` for _progress_. So when you see OSC code `9`, you must **peek at the
   payload**: if it starts with `4;`, it's a progress update (route it to the progress
-  bar — the same one `cmux set-progress` drives in Chapter 11); otherwise it's a
+  bar — the same one `shepherd set-progress` drives in Chapter 11); otherwise it's a
   notification. We handle exactly this branch in §12.6.
 - **OSC 777 sub-commands.** `777` was urxvt's catch-all extension channel; the first
-  payload field is a *sub-command*. We only care about `notify`. Anything else
+  payload field is a _sub-command_. We only care about `notify`. Anything else
   (`777;something-else;…`) we ignore.
 - **OSC 99 metadata.** kitty's protocol puts optional `key=value` metadata (like
-  `i=1:d=0`) *before* the body and can even chunk one notification across several OSC
+  `i=1:d=0`) _before_ the body and can even chunk one notification across several OSC
   99s. For v1 we take the body after the first `;` and ignore the metadata/chunking.
   (An honest scope cut — see the gotcha in §12.6.)
 
-> **🔧 In cmux-linux:** we treat **OSC 9 / 777 / 99** as three dialects of "post a
+> **🔧 In Shepherd:** we treat **OSC 9 / 777 / 99** as three dialects of "post a
 > notification" and normalize all of them to one internal shape,
 > `{ title, body }`, before they ever reach `markWorkspaceAttention`. Downstream code
 > never sees an escape code — it sees a clean `{title, body}` object, identical to
@@ -285,23 +286,23 @@ bash prints bytes
   → term.write(data)                                 ← xterm.js paints it (Chapter 7)
 ```
 
-The OSC notification codes are riding *inside* that same `data`. We want to **notice
+The OSC notification codes are riding _inside_ that same `data`. We want to **notice
 them in the main process** — but the bytes are also on their way to xterm.js, which
-is a *real terminal emulator* that will parse the same stream. This creates the
+is a _real terminal emulator_ that will parse the same stream. This creates the
 prime directive of the whole feature:
 
 > **The golden rule: OBSERVE, don't CONSUME.** The bytes we forward to xterm.js must
-> be **byte-for-byte identical** to what the shell emitted. We scan a *copy* for
+> be **byte-for-byte identical** to what the shell emitted. We scan a _copy_ for
 > notifications; we never mutate, strip, reorder, or re-buffer the stream on its way
 > to the renderer.
 
 Why so strict? Two reasons:
 
 1. **xterm.js needs the full, exact stream.** A terminal emulator is a state machine.
-   If you delete bytes mid-stream — even bytes you *think* are "just a notification"
+   If you delete bytes mid-stream — even bytes you _think_ are "just a notification"
    — you can desync its parser: split a color code in half, truncate a cursor move,
    drop a UTF-8 continuation byte, and the display corrupts (garbage characters,
-   wrong colors, a stuck cursor). Some OSCs xterm.js legitimately *wants* (OSC 0/2 =
+   wrong colors, a stuck cursor). Some OSCs xterm.js legitimately _wants_ (OSC 0/2 =
    window title, OSC 8 = clickable hyperlinks). A blanket "strip OSC codes" pass
    would break those. **Don't be a middleman that edits the mail.**
 2. **We don't need to strip them anyway.** xterm.js **safely ignores OSC codes it
@@ -309,7 +310,7 @@ Why so strict? Two reasons:
    skips them — no visible artifact. Leaving them in costs nothing; removing them
    risks everything.
 
-So the shape is a **tee**: one stream in, forwarded unchanged, with a *branch* that
+So the shape is a **tee**: one stream in, forwarded unchanged, with a _branch_ that
 feeds a scanner.
 
 ```
@@ -326,16 +327,16 @@ right where Chapter 6 wires up node-pty:
 
 ```ts
 // main/spawnPane.ts  (extending the pty setup from Chapter 6)
-import { oscScanner } from './oscScanner';
+import { oscScanner } from './oscScanner'
 
 ptyProcess.onData((data: string) => {
   // 1) Forward the RAW bytes to the renderer, untouched. This is Loop B.
   //    xterm.js is the real terminal; it must see exactly what the shell wrote.
-  mainWindow.webContents.send('pty-data', { paneId, data });
+  mainWindow.webContents.send('pty-data', { paneId, data })
 
   // 2) Separately, feed a COPY into the OSC scanner. This never mutates `data`.
-  oscScanner.push(paneId, data);
-});
+  oscScanner.push(paneId, data)
+})
 ```
 
 That's the whole tee. `data` is a string; strings in JS are immutable, so passing it
@@ -343,7 +344,7 @@ to two functions can't accidentally let one corrupt the other. The order doesn't
 matter — we could scan first — because neither call changes `data`.
 
 > **⚠️ Gotcha — never forward the scanner's buffer.** The scanner (next section)
-> keeps its own *accumulator* to reassemble split sequences. The single most
+> keeps its own _accumulator_ to reassemble split sequences. The single most
 > destructive bug in this feature is to accidentally send **that accumulator** to
 > xterm.js instead of the raw `data` argument — you'll duplicate bytes (the buffer
 > still holds a chunk you already forwarded) and paint garbage. **The renderer only
@@ -351,12 +352,12 @@ matter — we could scan first — because neither call changes `data`.
 > only structure. Keep the two variables in different functions so you can't confuse
 > them.
 
-> **🔧 In cmux-linux:** an alternative exists — xterm.js lets the *renderer* register
+> **🔧 In Shepherd:** an alternative exists — xterm.js lets the _renderer_ register
 > `term.parser.registerOscHandler(9, cb)`. Why do we scan in **main** instead? Because
 > the things a notification triggers — mutating the `Workspace` store, firing an
 > Electron **`Notification`** (a main-process API), broadcasting over IPC — **all
-> live in main.** Detecting in the renderer would mean bouncing every hit *back* to
-> main over IPC anyway. Main also sees the pty stream *first*, before the IPC hop.
+> live in main.** Detecting in the renderer would mean bouncing every hit _back_ to
+> main over IPC anyway. Main also sees the pty stream _first_, before the IPC hop.
 > So we detect where the consequences live: the main process, on `pty.onData`.
 
 ---
@@ -365,7 +366,7 @@ matter — we could scan first — because neither call changes `data`.
 
 Here is the gotcha that makes this more than a one-line regex. **A `data` event is
 not a message.** You learned this exact lesson in Chapter 11 §11.3 for the socket:
-the kernel hands you *whatever bytes happened to be ready*, with no respect for where
+the kernel hands you _whatever bytes happened to be ready_, with no respect for where
 a logical unit begins or ends. node-pty's `onData` has the identical property. So a
 single notification escape sequence can be **split across two (or more) `data`
 events:**
@@ -379,15 +380,15 @@ events:**
       data #2:  " passed\x07$ "               ← the rest + terminator + shell prompt
 ```
 
-If your detector runs a regex on each chunk *independently*, it sees `\x1b]9;Tests`
-in chunk #1 (no terminator → no match, dropped) and ` passed\x07$ ` in chunk #2 (no
+If your detector runs a regex on each chunk _independently_, it sees `\x1b]9;Tests`
+in chunk #1 (no terminator → no match, dropped) and `passed\x07$` in chunk #2 (no
 introducer → no match, dropped). **The notification vanishes.** It works perfectly in
 dev with short messages that fit one chunk, then silently fails in production under
 real output volume. Sound familiar? It's the same trap as `JSON.parse(chunk)` on the
 socket.
 
 The fix is the same tool: a **per-pane buffer.** Accumulate bytes, extract every
-*complete* OSC sequence, and **retain any unterminated tail** for the next event.
+_complete_ OSC sequence, and **retain any unterminated tail** for the next event.
 
 ```
    data #1 → buffer = "...ok\r\n\x1b]9;Tests"
@@ -402,100 +403,106 @@ socket connection had its own buffer in Chapter 11). Here's the complete scanner
 
 ```ts
 // main/oscScanner.ts
-import { markWorkspaceAttention } from './attention';
-import { setWorkspaceProgress } from './progress';
-import { workspaceIdForPane } from './store';
+import { markWorkspaceAttention } from './attention'
+import { setWorkspaceProgress } from './progress'
+import { workspaceIdForPane } from './store'
 
-const OSC_START = '\x1b]';   // ESC ]
-const BEL = '\x07';          // one-byte terminator
-const ST  = '\x1b\\';        // two-byte terminator: ESC \
+const OSC_START = '\x1b]' // ESC ]
+const BEL = '\x07' // one-byte terminator
+const ST = '\x1b\\' // two-byte terminator: ESC \
 
 // A stray "\x1b]" in binary output (e.g. `cat somefile.bin`) has no terminator and
 // would grow the buffer forever. Real notifications are short; cap and bail.
-const MAX_OSC_LEN = 4096;
+const MAX_OSC_LEN = 4096
 
 class OscScanner {
-  private buffers = new Map<string, string>();   // paneId → leftover bytes
+  private buffers = new Map<string, string>() // paneId → leftover bytes
 
   push(paneId: string, chunk: string) {
-    let buf = (this.buffers.get(paneId) ?? '') + chunk;
+    let buf = (this.buffers.get(paneId) ?? '') + chunk
 
     while (true) {
-      const start = buf.indexOf(OSC_START);
+      const start = buf.indexOf(OSC_START)
       if (start === -1) {
         // No OSC introducer at all. Keep only a trailing lone ESC — it might be
         // the first half of an "\x1b]" whose "]" arrives in the next chunk.
-        buf = buf.endsWith('\x1b') ? '\x1b' : '';
-        break;
+        buf = buf.endsWith('\x1b') ? '\x1b' : ''
+        break
       }
 
       // Everything before the introducer is ordinary terminal text we don't care
       // about (xterm.js already got the real copy). Drop it.
-      buf = buf.slice(start);
+      buf = buf.slice(start)
 
       // Find the terminator: BEL (\x07) or ST (\x1b\\), whichever comes first.
-      const bel = buf.indexOf(BEL);
-      const st  = buf.indexOf(ST, 2);   // start at 2 to skip the opening ESC of "\x1b]"
-      let end = -1, termLen = 0;
-      if (bel !== -1 && (st === -1 || bel < st)) { end = bel; termLen = 1; }
-      else if (st !== -1)                        { end = st;  termLen = 2; }
+      const bel = buf.indexOf(BEL)
+      const st = buf.indexOf(ST, 2) // start at 2 to skip the opening ESC of "\x1b]"
+      let end = -1,
+        termLen = 0
+      if (bel !== -1 && (st === -1 || bel < st)) {
+        end = bel
+        termLen = 1
+      } else if (st !== -1) {
+        end = st
+        termLen = 2
+      }
 
       if (end === -1) {
         // Terminator hasn't arrived yet → PARTIAL sequence. Keep it and wait...
         // ...unless it's absurdly long, in which case it isn't a real OSC — bail.
-        if (buf.length > MAX_OSC_LEN) buf = '';
-        break;
+        if (buf.length > MAX_OSC_LEN) buf = ''
+        break
       }
 
-      const payload = buf.slice(2, end);   // between "\x1b]" and the terminator
-      this.handleOsc(paneId, payload);
-      buf = buf.slice(end + termLen);      // consume it; keep scanning for more
+      const payload = buf.slice(2, end) // between "\x1b]" and the terminator
+      this.handleOsc(paneId, payload)
+      buf = buf.slice(end + termLen) // consume it; keep scanning for more
     }
 
-    this.buffers.set(paneId, buf);
+    this.buffers.set(paneId, buf)
   }
 
   private handleOsc(paneId: string, payload: string) {
     // payload looks like "<code>;<rest>"  (e.g. "9;Build done")
-    const semi = payload.indexOf(';');
-    const code = semi === -1 ? payload : payload.slice(0, semi);
-    const rest = semi === -1 ? ''      : payload.slice(semi + 1);
+    const semi = payload.indexOf(';')
+    const code = semi === -1 ? payload : payload.slice(0, semi)
+    const rest = semi === -1 ? '' : payload.slice(semi + 1)
 
     switch (code) {
       case '9': {
         // OSC 9 is overloaded: "9;4;…" is ConEmu PROGRESS, not a notification.
         if (rest.startsWith('4;')) {
-          const [, state, pct] = rest.split(';');   // "4;<state>;<pct>"
-          return setWorkspaceProgress(paneId, Number(state), Number(pct));
+          const [, state, pct] = rest.split(';') // "4;<state>;<pct>"
+          return setWorkspaceProgress(paneId, Number(state), Number(pct))
         }
         // iTerm-style: the whole payload after "9;" is the message.
-        return this.notify(paneId, { title: 'Terminal', body: rest });
+        return this.notify(paneId, { title: 'Terminal', body: rest })
       }
       case '777': {
         // urxvt: "777;notify;<title>;<body>"
-        const [sub, title = '', body = ''] = rest.split(';');
-        if (sub === 'notify') return this.notify(paneId, { title, body });
-        return;   // some other 777 sub-command — not ours
+        const [sub, title = '', body = ''] = rest.split(';')
+        if (sub === 'notify') return this.notify(paneId, { title, body })
+        return // some other 777 sub-command — not ours
       }
       case '99': {
         // kitty: "99;<metadata>;<body>". v1: ignore metadata, take the body.
-        const semi2 = rest.indexOf(';');
-        const body = semi2 === -1 ? rest : rest.slice(semi2 + 1);
-        return this.notify(paneId, { title: 'Terminal', body });
+        const semi2 = rest.indexOf(';')
+        const body = semi2 === -1 ? rest : rest.slice(semi2 + 1)
+        return this.notify(paneId, { title: 'Terminal', body })
       }
       default:
-        return;   // OSC 0/2 (title), 8 (hyperlink), 52 (clipboard)… not ours; ignore
+        return // OSC 0/2 (title), 8 (hyperlink), 52 (clipboard)… not ours; ignore
     }
   }
 
   private notify(paneId: string, n: { title: string; body: string }) {
-    const wsId = workspaceIdForPane(paneId);   // pane → surface → workspace (Ch. 9/10)
-    if (!wsId) return;
-    markWorkspaceAttention(wsId, { title: n.title, body: n.body, source: 'osc' });
+    const wsId = workspaceIdForPane(paneId) // pane → surface → workspace (Ch. 9/10)
+    if (!wsId) return
+    markWorkspaceAttention(wsId, { title: n.title, body: n.body, source: 'osc' })
   }
 }
 
-export const oscScanner = new OscScanner();
+export const oscScanner = new OscScanner()
 ```
 
 Let's walk the split example through it to prove it holds:
@@ -532,7 +539,7 @@ loop was to Chapter 11: the load-bearing beam.
 > `cat` slowly eats memory for that pane's whole lifetime.
 
 > **⚠️ Gotcha — kitty chunking is out of scope for v1.** kitty's OSC 99 can split
-> *one* logical notification across *several* OSC 99 escapes (using `d=0`/`d=1`
+> _one_ logical notification across _several_ OSC 99 escapes (using `d=0`/`d=1`
 > "done" flags in the metadata) for long or base64-encoded payloads. Our parser
 > treats each OSC 99 as one complete notification. That's fine for the short "Build
 > done"-style messages agents actually send; just know it's a deliberate simplification,
@@ -548,37 +555,38 @@ main-process function** with a normalized payload. This is the funnel:
 
 ```ts
 // main/attention.ts
-import { workspaceStore } from './store';
-import { broadcastWorkspace } from './ipcBridge';   // Chapter 11 §11.8
-import { fireDesktopNotification } from './desktopNotify';
+import { workspaceStore } from './store'
+import { broadcastWorkspace } from './ipcBridge' // Chapter 11 §11.8
+import { fireDesktopNotification } from './desktopNotify'
 
 export type AttentionPayload = {
-  title: string;
-  body: string;
-  color?: 'green' | 'yellow' | 'red' | string;   // §12.9 color convention
-  source: 'osc' | 'socket';                       // for debugging/telemetry only
-};
+  title: string
+  body: string
+  color?: 'green' | 'yellow' | 'red' | string // §12.9 color convention
+  source: 'osc' | 'socket' // for debugging/telemetry only
+}
 
 export function markWorkspaceAttention(wsId: string, payload: AttentionPayload) {
-  const ws = workspaceStore.get(wsId);
-  if (!ws) return;
+  const ws = workspaceStore.get(wsId)
+  if (!ws) return
 
   // 1) Mutate the SINGLE SOURCE OF TRUTH: the main-process Workspace store.
-  ws.attention = true;                 // → drives the pane RING + sidebar FLASH
-  ws.unread = true;                    // → drives the unread BADGE
-  ws.notifications.push({              // → feeds the notification PANEL
+  ws.attention = true // → drives the pane RING + sidebar FLASH
+  ws.unread = true // → drives the unread BADGE
+  ws.notifications.push({
+    // → feeds the notification PANEL
     id: `n_${Date.now()}`,
     title: payload.title,
     body: payload.body,
     color: payload.color,
-    ts: Date.now(),
-  });
+    ts: Date.now()
+  })
 
   // 2) Push the fresh snapshot to the renderer over IPC (Chapter 11 §11.8).
-  broadcastWorkspace(ws);              // webContents.send('workspace:update', ws)
+  broadcastWorkspace(ws) // webContents.send('workspace:update', ws)
 
   // 3) Fire an OS desktop toast — but DEBOUNCED so we don't spam (§12.10).
-  fireDesktopNotification(ws, payload);
+  fireDesktopNotification(ws, payload)
 }
 ```
 
@@ -594,7 +602,7 @@ Three steps, and they map one-to-one onto three parts of the UI:
   mirror of the store).
 - **`fireDesktopNotification(...)`** → the OS-level toast (§12.10).
 
-Notice what's *not* here: no CSS, no React, no escape-code knowledge. The funnel only
+Notice what's _not_ here: no CSS, no React, no escape-code knowledge. The funnel only
 touches **state** and delegates the rest. That's why adding OSC detection didn't
 require touching any visual code — Channel ② just learned to call this function.
 
@@ -606,45 +614,45 @@ when you focus the workspace — it's a textbook `useReducer` (Chapter 8):
 
 ```ts
 // renderer/state/workspacesReducer.ts
-type WsState = Record<string, Workspace>;   // keyed by id
+type WsState = Record<string, Workspace> // keyed by id
 
 type Action =
-  | { type: 'sync'; ws: Workspace }                    // a workspace:update snapshot
-  | { type: 'clearAttention'; wsId: string };          // user focused the workspace
+  | { type: 'sync'; ws: Workspace } // a workspace:update snapshot
+  | { type: 'clearAttention'; wsId: string } // user focused the workspace
 
 export function workspacesReducer(state: WsState, action: Action): WsState {
   switch (action.type) {
     case 'sync': {
       // Main is the source of truth; trust its attention/unread flags verbatim.
-      return { ...state, [action.ws.id]: action.ws };
+      return { ...state, [action.ws.id]: action.ws }
     }
     case 'clearAttention': {
       // The user looked at it → stop ringing/flashing and mark it read.
-      const ws = state[action.wsId];
-      if (!ws || (!ws.attention && !ws.unread)) return state;   // no-op guard
-      return { ...state, [action.wsId]: { ...ws, attention: false, unread: false } };
+      const ws = state[action.wsId]
+      if (!ws || (!ws.attention && !ws.unread)) return state // no-op guard
+      return { ...state, [action.wsId]: { ...ws, attention: false, unread: false } }
     }
     default:
-      return state;
+      return state
   }
 }
 ```
 
 Wiring it up: subscribe to `workspace:update` (dispatch `sync`), and dispatch
-`clearAttention` when a row is focused — *and* tell main to clear its copy too, so the
+`clearAttention` when a row is focused — _and_ tell main to clear its copy too, so the
 next restart doesn't resurrect a stale ring (Chapter 13, session persistence):
 
 ```ts
 // renderer/hooks/useWorkspaces.ts
-const [workspaces, dispatch] = useReducer(workspacesReducer, {});
+const [workspaces, dispatch] = useReducer(workspacesReducer, {})
 
 useEffect(() => {
-  return window.api.onWorkspaceUpdate((ws) => dispatch({ type: 'sync', ws }));
-}, []);
+  return window.api.onWorkspaceUpdate((ws) => dispatch({ type: 'sync', ws }))
+}, [])
 
 function focusWorkspace(wsId: string) {
-  dispatch({ type: 'clearAttention', wsId });   // instant UI feedback
-  window.api.selectWorkspace(wsId);             // → main clears ws.attention too
+  dispatch({ type: 'clearAttention', wsId }) // instant UI feedback
+  window.api.selectWorkspace(wsId) // → main clears ws.attention too
 }
 ```
 
@@ -658,9 +666,9 @@ function focusWorkspace(wsId: string) {
 
 ## 12.8 The visual payoff: rings, flashes, badges
 
-Now the fun part — turning `ws.attention` and `ws.unread` into the look that makes
-cmux *cmux*. It's all driven by two boolean flags plus an optional color, so the CSS
-is refreshingly simple. Four visual elements:
+Now the fun part: turning `ws.attention` and `ws.unread` into Shepherd's visual
+attention language. It is driven by two boolean flags plus an optional color, so
+the CSS is refreshingly simple. Four visual elements:
 
 ```
    SIDEBAR (renderer)                          THE TILED PANES (renderer)
@@ -680,7 +688,7 @@ is refreshingly simple. Four visual elements:
 ### The pane ring (a CSS `@keyframes` pulse)
 
 The ring is a **pulsing box-shadow** — an expanding halo that fades, then repeats.
-`box-shadow` is perfect because it draws *outside* the element's box, so it never
+`box-shadow` is perfect because it draws _outside_ the element's box, so it never
 shifts the terminal's layout (unlike `border`, which would nudge everything a pixel):
 
 ```css
@@ -688,16 +696,28 @@ shifts the terminal's layout (unlike `border`, which would nudge everything a pi
 
 /* the ring color is a CSS variable so status can recolor it (green/yellow/red) */
 .pane {
-  --ring-color: 234 179 8;   /* yellow (waiting) — space-separated RGB for rgb() alpha */
+  --ring-color: 234 179 8; /* yellow (waiting) — space-separated RGB for rgb() alpha */
 }
-.pane[data-status="done"]    { --ring-color: 34 197 94; }   /* green */
-.pane[data-status="waiting"] { --ring-color: 234 179 8; }   /* yellow */
-.pane[data-status="error"]   { --ring-color: 239 68 68; }   /* red */
+.pane[data-status='done'] {
+  --ring-color: 34 197 94;
+} /* green */
+.pane[data-status='waiting'] {
+  --ring-color: 234 179 8;
+} /* yellow */
+.pane[data-status='error'] {
+  --ring-color: 239 68 68;
+} /* red */
 
 @keyframes cmux-ring-pulse {
-  0%   { box-shadow: 0 0 0 0    rgb(var(--ring-color) / 0.7); }  /* tight, bright */
-  70%  { box-shadow: 0 0 0 8px  rgb(var(--ring-color) / 0);   }  /* expanded, gone */
-  100% { box-shadow: 0 0 0 0    rgb(var(--ring-color) / 0);   }  /* reset */
+  0% {
+    box-shadow: 0 0 0 0 rgb(var(--ring-color) / 0.7);
+  } /* tight, bright */
+  70% {
+    box-shadow: 0 0 0 8px rgb(var(--ring-color) / 0);
+  } /* expanded, gone */
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--ring-color) / 0);
+  } /* reset */
 }
 
 /* the class React toggles from ws.attention */
@@ -711,8 +731,13 @@ shifts the terminal's layout (unlike `border`, which would nudge everything a pi
 // the pane wrapper reads the two pieces of state
 <div
   className={`pane ${ws.attention ? 'attention' : ''}`}
-  data-status={ws.status.at(-1)?.color === 'green' ? 'done'
-             : ws.status.at(-1)?.color === 'red'   ? 'error' : 'waiting'}
+  data-status={
+    ws.status.at(-1)?.color === 'green'
+      ? 'done'
+      : ws.status.at(-1)?.color === 'red'
+        ? 'error'
+        : 'waiting'
+  }
 >
   <XtermPane paneId={pane.id} />
 </div>
@@ -730,18 +755,25 @@ then hold):
 
 ```css
 @keyframes cmux-row-flash {
-  0%, 100% { background: transparent; }
-  50%      { background: rgb(var(--ring-color) / 0.18); }
+  0%,
+  100% {
+    background: transparent;
+  }
+  50% {
+    background: rgb(var(--ring-color) / 0.18);
+  }
 }
 .workspace-row.attention {
   /* flash 3 times (~1.5s) then STOP — the steady highlight below takes over */
   animation: cmux-row-flash 0.5s ease-in-out 3;
 }
 .workspace-row.unread {
-  background: rgb(var(--ring-color) / 0.10);   /* steady, quiet highlight until read */
+  background: rgb(var(--ring-color) / 0.1); /* steady, quiet highlight until read */
   font-weight: 600;
 }
-.workspace-row.unread .badge { display: inline-flex; }   /* reveal the count badge */
+.workspace-row.unread .badge {
+  display: inline-flex;
+} /* reveal the count badge */
 ```
 
 ### The unread badge and notification panel
@@ -754,7 +786,7 @@ React list rendered from every workspace's `notifications`, newest first:
 function NotificationPanel({ workspaces }: { workspaces: Workspace[] }) {
   const items = workspaces
     .flatMap((ws) => ws.notifications.map((n) => ({ ...n, ws })))
-    .sort((a, b) => b.ts - a.ts);   // newest first
+    .sort((a, b) => b.ts - a.ts) // newest first
 
   return (
     <ul className="notif-panel">
@@ -766,7 +798,7 @@ function NotificationPanel({ workspaces }: { workspaces: Workspace[] }) {
         </li>
       ))}
     </ul>
-  );
+  )
 }
 ```
 
@@ -781,8 +813,8 @@ function jumpToLatestUnread(workspaces: Workspace[]) {
   const target = workspaces
     .filter((ws) => ws.unread)
     .map((ws) => ({ ws, latest: ws.notifications.at(-1)?.ts ?? 0 }))
-    .sort((a, b) => b.latest - a.latest)[0]?.ws;      // most recent ping wins
-  if (target) focusWorkspace(target.id);              // focus → clears its attention (§12.7)
+    .sort((a, b) => b.latest - a.latest)[0]?.ws // most recent ping wins
+  if (target) focusWorkspace(target.id) // focus → clears its attention (§12.7)
 }
 ```
 
@@ -795,14 +827,14 @@ the chime, hit one key, land on the exact workspace that needs you.
 `FEATURES.md` Part 4 pins down the palette, and it's driven end-to-end by the
 `--color` you already plumbed through `set-status`/`notify` in Chapter 11:
 
-| Color | Convention | Set by |
-|---|---|---|
-| 🟢 **green** | done / success | `cmux set-status build passing --color green` |
-| 🟡 **yellow** | waiting for input (the default) | `cmux notify …` (no color) or `--color yellow` |
-| 🔴 **red** | error / needs intervention | `cmux set-status build failing --color red` |
+| Color         | Convention                      | Set by                                             |
+| ------------- | ------------------------------- | -------------------------------------------------- |
+| 🟢 **green**  | done / success                  | `shepherd set-status build passing --color green`  |
+| 🟡 **yellow** | waiting for input (the default) | `shepherd notify …` (no color) or `--color yellow` |
+| 🔴 **red**    | error / needs intervention      | `shepherd set-status build failing --color red`    |
 
 The `color` field rides the socket message → the store → the `workspace:update`
-snapshot → the `data-status` attribute → the `--ring-color` variable → the *same*
+snapshot → the `data-status` attribute → the `--ring-color` variable → the _same_
 keyframes recolor themselves. One value, set once by the agent, tints the ring, the
 flash, and the badge in unison. **That's why the color lives on the data, not in the
 CSS** — the agent decides the meaning; the CSS just renders it.
@@ -811,42 +843,42 @@ CSS** — the agent decides the meaning; the CSS just renders it.
 
 ## 12.9 Firing the OS desktop toast (Electron's `Notification`)
 
-The in-app ring is great when you're *looking* at cmux. But the whole point is that
+The in-app ring is great when you're _looking_ at cmux. But the whole point is that
 you've **looked away** — you're in a browser, another window, another workspace. For
 that, we need a real **OS desktop notification** (a "toast" in the corner of your
 screen, routed through your Linux desktop's notification server via libnotify).
 
-Electron gives us this in the *main* process with the **`Notification`** class — one
+Electron gives us this in the _main_ process with the **`Notification`** class — one
 more reason we detect OSC codes in main (§12.5):
 
 ```ts
 // main/desktopNotify.ts
-import { Notification } from 'electron';
-import { focusWorkspaceWindow } from './windows';
+import { Notification } from 'electron'
+import { focusWorkspaceWindow } from './windows'
 
 // --- debounce state: at most one toast per workspace per window of time ---
-const lastToastAt = new Map<string, number>();
-const DEBOUNCE_MS = 3000;
+const lastToastAt = new Map<string, number>()
+const DEBOUNCE_MS = 3000
 
 export function fireDesktopNotification(ws: Workspace, payload: AttentionPayload) {
-  if (!Notification.isSupported()) return;   // headless/CI or no notif server
+  if (!Notification.isSupported()) return // headless/CI or no notif server
 
   // --- spam guard (see the gotcha) ---
-  const now = Date.now();
-  if (now - (lastToastAt.get(ws.id) ?? 0) < DEBOUNCE_MS) return;
-  lastToastAt.set(ws.id, now);
+  const now = Date.now()
+  if (now - (lastToastAt.get(ws.id) ?? 0) < DEBOUNCE_MS) return
+  lastToastAt.set(ws.id, now)
 
   const toast = new Notification({
     title: payload.title || ws.name,
-    body:  payload.body  || 'needs your attention',
-    urgency: payload.color === 'red' ? 'critical' : 'normal',   // Linux-only field
-    silent: false,
-  });
+    body: payload.body || 'needs your attention',
+    urgency: payload.color === 'red' ? 'critical' : 'normal', // Linux-only field
+    silent: false
+  })
 
   // Clicking the toast jumps you to the workspace — the OS-level "jump to unread".
-  toast.on('click', () => focusWorkspaceWindow(ws.id));
+  toast.on('click', () => focusWorkspaceWindow(ws.id))
 
-  toast.show();
+  toast.show()
 }
 ```
 
@@ -866,18 +898,18 @@ A few Linux-specific notes:
 > loop, a chatty build tool, or a `for` loop with `printf '\e]9;tick\a'` can emit a
 > notification **many times a second.** Without a guard, your desktop drowns in
 > toasts and users disable notifications entirely — which kills the one feature the
-> whole app is *for.* The `DEBOUNCE_MS` window above coalesces bursts: the **OS
+> whole app is _for._ The `DEBOUNCE_MS` window above coalesces bursts: the **OS
 > toast** fires at most once per workspace per 3 seconds. Note we debounce **only the
 > toast** — the in-app state (`ws.unread`, the notification panel) can still record
 > every event, because updating React state is cheap and non-intrusive; it's the
-> *interruptive* OS toast we rate-limit. Choose *what* to debounce by how disruptive
+> _interruptive_ OS toast we rate-limit. Choose _what_ to debounce by how disruptive
 > it is.
 
 ---
 
 ## 12.10 End-to-end worked example: a bare `printf` lights up the sidebar
 
-Let's trace the **automatic** channel end-to-end — no agent, no `cmux` CLI, just a
+Let's trace the **automatic** channel end-to-end — no agent, no `shepherd` CLI, just a
 shell command — to prove Channel ② stands on its own. This is the payoff of the whole
 chapter.
 
@@ -935,7 +967,7 @@ the **notification panel**.
     │        └──⑧ new Notification({...}).show()               ──►    OS desktop toast (click → focus ws_42)
 ```
 
-Compare this to §11.10's trace of `cmux set-status`: **the last four steps are
+Compare this to §11.10's trace of `shepherd set-status`: **the last four steps are
 identical.** Different doorbell (a `printf` escape code instead of a socket call),
 same bell (`markWorkspaceAttention` → IPC → React + toast). That convergence is the
 entire architectural point of the chapter.
@@ -951,12 +983,12 @@ across two `pty.onData` chunks (or arrive glued to the next line of output). Nev
 a regex per-chunk; accumulate per-pane and retain the unterminated tail (§12.6). Same
 lesson as Chapter 11's socket framing.
 
-**2. Accept both terminators.** OSC ends with **BEL (`\x07`)** *or* **ST (`\x1b\\`)**.
+**2. Accept both terminators.** OSC ends with **BEL (`\x07`)** _or_ **ST (`\x1b\\`)**.
 Handle only one and you'll silently miss every notification from terminals that use
 the other (kitty loves ST). (§12.4, §12.6.)
 
 **3. Observe, never consume.** Forward the **raw** `data` to xterm.js untouched; scan
-a *copy*. Editing the stream desyncs the terminal's parser (garbled colors, wrong
+a _copy_. Editing the stream desyncs the terminal's parser (garbled colors, wrong
 cursor, dropped UTF-8) and can break OSCs xterm.js legitimately wants (title,
 hyperlinks). (§12.5.)
 
@@ -969,15 +1001,15 @@ argument. (§12.5.)
 grow a per-pane buffer forever. `MAX_OSC_LEN` (a few KB) discards non-OSC junk.
 (§12.6.)
 
-**6. OSC 9 is overloaded.** `9;<text>` is an iTerm *notification*; `9;4;…` is a ConEmu
-*progress* update. Peek at the payload before routing. (§12.4, §12.6.)
+**6. OSC 9 is overloaded.** `9;<text>` is an iTerm _notification_; `9;4;…` is a ConEmu
+_progress_ update. Peek at the payload before routing. (§12.4, §12.6.)
 
-**7. Clear attention on focus, or it rings forever.** The pipeline *sets*
-`attention`/`unread`; the user *looking at* the workspace must clear them, in the
+**7. Clear attention on focus, or it rings forever.** The pipeline _sets_
+`attention`/`unread`; the user _looking at_ the workspace must clear them, in the
 renderer **and** in the main store (so a restart doesn't resurrect it). (§12.7.)
 
 **8. Debounce the desktop toast.** A retry loop or chatty tool can emit dozens of
-notifications a second. Rate-limit the *interruptive* OS toast (per workspace), even
+notifications a second. Rate-limit the _interruptive_ OS toast (per workspace), even
 if you still record every event in-app. Un-debounced toasts make users disable
 notifications — killing the app's headline feature. (§12.10.)
 
@@ -988,13 +1020,13 @@ notifications — killing the app's headline feature. (§12.10.)
 Answer these before moving on (everything's in this chapter):
 
 1. Name the **two input channels** that both end in a lit-up workspace. Which one
-   requires the program to know about cmux, and which works for *any* program?
+   requires the program to know about cmux, and which works for _any_ program?
 2. Write out the **four parts** of an OSC sequence in byte order, and give the two
    legal terminators (name + bytes).
 3. A shell emits `"\x1b]9;4;1;60\x07"`. Is that a notification? What should the parser
    do with it, and how does it tell it apart from an OSC 9 notification?
 4. You scan each `pty.onData` chunk with a fresh regex and notifications
-   *intermittently* go missing under load. What's the bug, and what's the fix?
+   _intermittently_ go missing under load. What's the bug, and what's the fix?
 5. Why must the bytes forwarded to xterm.js be **identical** to what the shell emitted?
    Give two concrete things that break if you strip "just the notification codes."
 6. Both channels call one function. Name it, and name the three pieces of `Workspace`
@@ -1009,14 +1041,14 @@ Answer these before moving on (everything's in this chapter):
 ## Summary
 
 A workspace lights up through **two doorbells wired to one bell.** The **explicit**
-channel (Chapter 11) is an agent running `cmux notify` / `set-status` from a hook,
+channel (Chapter 11) is an agent running `shepherd notify` / `set-status` from a hook,
 travelling the socket API. The **automatic** channel — this chapter's new material —
 is cmux **watching the raw node-pty output** for **OSC escape sequences**: the
 byte-level shape `ESC ] <code> ; <payload> <BEL or ST>`, where **OSC 9** (iTerm),
 **OSC 777** (urxvt), and **OSC 99** (kitty) mean "post a notification" and **OSC 9;4**
 means "progress." We scan the stream in the **main** process with a strict rule —
 **observe, don't consume** — teeing the raw bytes to xterm.js untouched while feeding
-a *copy* to a **per-pane buffer** that reassembles sequences **split across `data`
+a _copy_ to a **per-pane buffer** that reassembles sequences **split across `data`
 chunks** (the same framing lesson as the socket). Both channels normalize to
 `{title, body}` and call **one funnel**, `markWorkspaceAttention(wsId, payload)`,
 which mutates `attention` / `unread` / `notifications`, hands off over IPC
@@ -1026,11 +1058,12 @@ renders the payoff: a CSS `@keyframes` **ring** on the pane, a **flashing then s
 row**, an **unread badge**, a **notification panel**, and **jump-to-latest-unread** —
 all recolored by one **green/yellow/red** convention the agent sets via `--color`.
 Master the buffer-and-scan loop, the observe-don't-consume tee, and the one-funnel
-pipeline, and you own the feature that *is* cmux.
+pipeline, and you own the feature that _is_ cmux.
 
 ## Where this shows up next
+
 - The `pty.onData` stream we tee and scan → `06-node-pty.md`
-- The socket half of the pipeline (`notification.create` / `set-status`, `cmux hooks setup`) → `11-the-socket-api.md`
+- The socket half of the pipeline (`notification.create` / `set-status`, `shepherd hooks setup`) → `11-the-socket-api.md`
 - The `webContents.send('workspace:update')` IPC handoff both channels use → `04-ipc-inter-process-communication.md`
 - Escape-code fundamentals (ESC, CSI vs OSC) in depth → `02-how-terminals-work.md`
 - xterm.js rendering the raw stream (and its own OSC handlers) → `07-xtermjs.md`
@@ -1040,6 +1073,7 @@ pipeline, and you own the feature that *is* cmux.
 - The full keystroke-and-notification synthesis, end to end → `17-how-it-all-connects.md`
 
 ## Further reading
+
 - XTerm control sequences — the canonical OSC reference: https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 - iTerm2 proprietary escape codes (OSC 9 / 1337): https://iterm2.com/documentation-escape-codes.html
 - kitty desktop notification protocol (OSC 99): https://sw.kovidgoyal.net/kitty/desktop-notifications/

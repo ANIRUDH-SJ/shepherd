@@ -16,14 +16,14 @@ A process marked “sleeping” may be waiting for a model response, waiting for
 user, or completely idle. CPU and process status are therefore the wrong semantic
 layer.
 
-cmux-linux adds a small **semantic agent runtime**. Agents or their integrations
+Shepherd adds a small **semantic agent runtime**. Agents or their integrations
 publish structured lifecycle observations. The application validates those
 observations, maintains current state, exposes control operations, and renders a
 provider-neutral view.
 
 The central design rule is:
 
-> Providers describe events; cmux-linux owns the normalized state model and its
+> Providers describe events; Shepherd owns the normalized state model and its
 > relationship to workspaces and terminals.
 
 ## 19.2 Requirements and non-goals
@@ -118,7 +118,7 @@ maintained when provider event schemas evolve.
                                       │
                              provider event mapping
                                       │
-                         cmux agent-report / agent-clear
+                         shepherd agent-report / agent-clear
                                       │ newline-delimited JSON
                                       ▼
 ┌──────────────────────── ELECTRON MAIN ────────────────────────────────────┐
@@ -240,7 +240,7 @@ that looks like a terminal id is not proof that the terminal exists.
 A manual report looks like:
 
 ```bash
-cmux agent-report \
+shepherd agent-report \
   --provider codex \
   --state working \
   --activity web-search \
@@ -416,7 +416,7 @@ First, the reducer:
 5. selects the surface within that pane;
 6. acknowledges unread/attention markers.
 
-Then the UI dispatches a `cmux:focus-surface` browser event on the next animation
+Then the UI dispatches a `shepherd:focus-surface` browser event on the next animation
 frame. The matching `TerminalHost` refits xterm.js and calls `term.focus()`.
 
 Why not call `focus()` immediately? React may not yet have made the workspace and
@@ -441,7 +441,7 @@ update time. Values within one enum field are comma-separated OR choices; filter
 dimensions combine with AND:
 
 ```bash
-cmux list-agents \
+shepherd list-agents \
   --provider codex,claude \
   --state blocked,done \
   --updated-after 1784271000000 \
@@ -468,7 +468,7 @@ working or blocked agent.
 `generatedAt`, active workspace id, and workspace identities:
 
 ```bash
-cmux agent-snapshot --session-id session-1
+shepherd agent-snapshot --session-id session-1
 ```
 
 This is a versioned current-state bootstrap for reconnecting clients. It is not a
@@ -546,9 +546,9 @@ need to discover the exact enum values, accepted wire shapes, bounds, and method
 of the running build. Two query methods provide that contract:
 
 ```bash
-cmux agent-schema
-cmux agent-capabilities
-cmux agent-capabilities codex
+shepherd agent-schema
+shepherd agent-capabilities
+shepherd agent-capabilities codex
 ```
 
 `agent-schema` returns a JSON Schema Draft 2020-12 document with protocol version,
@@ -624,19 +624,19 @@ name.
 
 The installer adds lifecycle commands to `~/.claude/settings.json`, including
 notification, failure, stop, and session-end coverage. The older
-`cmux hooks setup` command remains a compatibility alias for this integration.
+`shepherd hooks setup` command remains a compatibility alias for this integration.
 
 ### OpenCode
 
 OpenCode plugins receive tool, permission, session, and status events. The
 generated plugin uses `Bun.spawn` to call the same CLI contract. A marker declares
-the file managed by cmux-linux; setup updates only a marked file and refuses to
+the file managed by Shepherd; setup updates only a marked file and refuses to
 overwrite an unrelated plugin. Its session-local monotonic revision counter lets
 the reducer reject late reports.
 
 ### Custom reporters
 
-Any process inside a pane can call `cmux agent-report --provider custom`. It gets
+Any process inside a pane can call `shepherd agent-report --provider custom`. It gets
 the same validation, rendering, focus, clear, TTL, and wait behavior as built-in
 adapters.
 
@@ -655,11 +655,11 @@ configuration, it:
 The installed command is guarded:
 
 ```sh
-command -v cmux >/dev/null 2>&1 && cmux agent-hook <provider>
+command -v shepherd >/dev/null 2>&1 && shepherd agent-hook <provider>
 ```
 
-The CLI itself also checks `CMUX_SOCKET_PATH` and `CMUX_SURFACE_ID`. Therefore a
-global hook is a no-op when the provider runs outside a cmux-linux terminal.
+The CLI itself also checks `SHEPHERD_SOCKET_PATH` and `SHEPHERD_SURFACE_ID`. Therefore a
+global hook is a no-op when the provider runs outside a Shepherd terminal.
 
 Idempotence is operational safety, not merely convenience. Setup commands are
 often rerun during upgrades. Duplicate hooks would emit duplicate lifecycle
@@ -742,7 +742,7 @@ The session snapshot therefore excludes:
 Layout and cwd still restore. New provider events repopulate current truth.
 
 Live terminal exit is another cleanup boundary. `TerminalHost` publishes a local
-`cmux:terminal-exit` event when main reports that the PTY ended. `App.tsx` converts
+`shepherd:terminal-exit` event when main reports that the PTY ended. `App.tsx` converts
 it into `clearAgentsForSurface`; the reducer removes every agent on that surface
 and derives attention again. This covers a shell that exits while its tab remains
 open, which layout cleanup alone cannot detect.
@@ -802,20 +802,20 @@ the pure modules.
 
 ## 19.19 Alternatives and tradeoffs
 
-| Choice                          | Benefit                       | Cost / reason not selected                                                 |
-| ------------------------------- | ----------------------------- | -------------------------------------------------------------------------- |
-| Parse terminal text             | requires no provider setup    | fragile, localized, decorated, and semantically incomplete                 |
-| Inspect OS process state        | universal                     | cannot distinguish approval, input, web search, or done turns              |
-| Watch state files               | durable and inspectable       | awkward event ordering, cleanup, focus requests, and waits                 |
-| Put canonical state in main     | socket queries become direct  | duplicates layout ownership or requires main to understand renderer layout |
-| Free-form status strings        | easy to add labels            | unreliable automation and inconsistent urgency semantics                   |
-| Provider-specific React records | preserves all provider detail | spreads schema churn through core state and UI                             |
-| Persist live records            | survives restart              | displays stale claims about dead processes                                 |
-| Remove as soon as state is stale | smallest live projection       | loses the useful identity and last-observed context before retention ends  |
-| Return full terminal scrollback | maximum debugging context      | unbounded memory/reply size and unnecessary sensitive-data exposure         |
-| Event-driven waiter registry    | efficient at scale            | more race, cancellation, and cleanup complexity for little current gain    |
-| Overwrite integration files     | simplest installer            | destroys user configuration and breaks trust                               |
-| Fail hook calls loudly          | easier adapter diagnosis      | provider work could fail because the observer/app is unavailable           |
+| Choice                           | Benefit                       | Cost / reason not selected                                                 |
+| -------------------------------- | ----------------------------- | -------------------------------------------------------------------------- |
+| Parse terminal text              | requires no provider setup    | fragile, localized, decorated, and semantically incomplete                 |
+| Inspect OS process state         | universal                     | cannot distinguish approval, input, web search, or done turns              |
+| Watch state files                | durable and inspectable       | awkward event ordering, cleanup, focus requests, and waits                 |
+| Put canonical state in main      | socket queries become direct  | duplicates layout ownership or requires main to understand renderer layout |
+| Free-form status strings         | easy to add labels            | unreliable automation and inconsistent urgency semantics                   |
+| Provider-specific React records  | preserves all provider detail | spreads schema churn through core state and UI                             |
+| Persist live records             | survives restart              | displays stale claims about dead processes                                 |
+| Remove as soon as state is stale | smallest live projection      | loses the useful identity and last-observed context before retention ends  |
+| Return full terminal scrollback  | maximum debugging context     | unbounded memory/reply size and unnecessary sensitive-data exposure        |
+| Event-driven waiter registry     | efficient at scale            | more race, cancellation, and cleanup complexity for little current gain    |
+| Overwrite integration files      | simplest installer            | destroys user configuration and breaks trust                               |
+| Fail hook calls loudly           | easier adapter diagnosis      | provider work could fail because the observer/app is unavailable           |
 
 The chosen design optimizes for stable semantics, safe local operation, and small
 reviewable boundaries rather than maximal provider detail.
@@ -844,7 +844,7 @@ The architecture leaves clear places for future work:
 
 ```text
 1. Codex emits PermissionRequest with session and tool metadata.
-2. The installed hook pipes JSON to `cmux agent-hook codex`.
+2. The installed hook pipes JSON to `shepherd agent-hook codex`.
 3. `mapAgentEvent` returns blocked / approval and "Approve <tool>".
 4. The CLI supplies workspace and surface ids from its pane environment.
 5. Main resolves the workspace, validates the report, and stamps local time.
@@ -863,14 +863,14 @@ The architecture leaves clear places for future work:
 4. The provider emits Stop.
 5. The same derived agent id is updated to done.
 6. The working animation stops; an inactive workspace gets an unread marker.
-7. `cmux wait-agent <id> --state done` returns the current record.
+7. `shepherd wait-agent <id> --state done` returns the current record.
 ```
 
-### A provider outside cmux-linux
+### A provider outside Shepherd
 
 ```text
 1. The provider launches in an ordinary terminal.
-2. Its global hook checks whether `cmux` exists.
+2. Its global hook checks whether `shepherd` exists.
 3. If it does, `agent-hook` checks pane identity variables.
 4. With no cmux surface/socket identity, it exits successfully without reporting.
 5. The provider continues unaffected.

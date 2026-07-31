@@ -1,6 +1,7 @@
 # Chapter 17 — How It All Connects
 
 > **What you'll learn**
+>
 > - How every technology in this book cooperates to make one feature work
 > - A byte-by-byte trace of a single keystroke, across every layer
 > - A step-by-step trace of an agent notification lighting up the sidebar
@@ -20,10 +21,10 @@ React (ch 8), the data model (ch 9), tiling (ch 10), the socket API (ch 11),
 notifications (ch 12), persistence (ch 13), and how it's all built and shipped
 (ch 14–15).
 
-Understanding each part is necessary but not sufficient. The *insight* is in how
+Understanding each part is necessary but not sufficient. The _insight_ is in how
 they hand off to each other. So we'll follow **two complete journeys** through the
 whole system, naming the chapter behind every hop. If you can narrate these two
-traces from memory, you understand cmux-linux.
+traces from memory, you understand Shepherd.
 
 ---
 
@@ -57,7 +58,7 @@ You're focused on a terminal pane. You type the letter `l`. Watch it travel.
                                                         └───────────────────────────┘
 ```
 
-Nothing visible has happened yet — bash has just received one byte. In *raw mode*
+Nothing visible has happened yet — bash has just received one byte. In _raw mode_
 (ch 2) the shell (via its line editor) decides to echo it back so you can see what
 you typed. That echo is **output**, which begins Journey 1's return leg.
 
@@ -83,6 +84,7 @@ runs it, and the command prints its result. Now the **output** flows back:
 ```
 
 **Key realizations from Journey 1:**
+
 - The terminal you see is a **puppet** (ch 7); the real shell is in the backend
   (ch 6). This is chapter 1's core sentence, made concrete.
 - Your keystroke crossed the IPC bridge **twice** (once out as input, the echo/
@@ -90,7 +92,7 @@ runs it, and the command prints its result. Now the **output** flows back:
 - Step 8 quietly does double duty: the same output bytes that go to xterm are also
   scanned for OSC notification codes (ch 12). That's the hook for Journey 2.
 
-> **🔧 In cmux-linux:** this exact path is milestone **M1** in `ROADMAP.md` — "one
+> **🔧 In Shepherd:** this exact path is milestone **M1** in `ROADMAP.md` — "one
 > terminal you can type in." Now you can see why the roadmap calls it make-or-break:
 > it exercises the entire renderer↔preload↔IPC↔main↔node-pty spine at once.
 
@@ -103,11 +105,11 @@ reaches a permission request.
 
 ```text
  STEP 1  Claude Code emits a PermissionRequest lifecycle event as JSON.
-         A hook installed by `cmux integrations setup claude` runs:
-           command -v cmux >/dev/null 2>&1 && cmux agent-hook claude
+         A hook installed by `shepherd integrations setup claude` runs:
+           command -v shepherd >/dev/null 2>&1 && shepherd agent-hook claude
 
  STEP 2  The hook runs inside the pane, so its environment has:
-           CMUX_WORKSPACE_ID, CMUX_SURFACE_ID, CMUX_SOCKET_PATH
+           SHEPHERD_WORKSPACE_ID, SHEPHERD_SURFACE_ID, SHEPHERD_SOCKET_PATH
 
  STEP 3  bin/agent-events.js maps the provider event to:
            state=blocked, blockReason=approval
@@ -141,7 +143,7 @@ workspace for any compatible program, but it does not manufacture a structured
 agent identity or semantic state. Explicit notifications and semantic lifecycle
 reports share the socket/IPC infrastructure while keeping different contracts.
 
-> **🔧 In cmux-linux:** the socket and notification foundation comes from M3/M4;
+> **🔧 In Shepherd:** the socket and notification foundation comes from M3/M4;
 > the semantic contract, lifecycle controls, exact focus, and provider adapters
 > are M7 and Chapter 19.
 
@@ -152,7 +154,7 @@ reports share the socket/IPC infrastructure while keeping different contracts.
 Every chapter, placed on the map:
 
 ```
-                         cmux-linux
+                         Shepherd
    ┌──────────────────────────────────────────────────────────────┐
    │ RENDERER (Chromium)                    MAIN (Node.js)         │
    │                                                                │
@@ -199,7 +201,7 @@ If you can do these from memory, you've understood the whole book:
 1. Narrate Journey 1 (a keystroke → visible output) naming every process boundary
    it crosses and which library owns each end.
 2. Narrate Journey 2 (an agent notification → a glowing sidebar row) including the
-   **two** different on-ramps (the `cmux` CLI vs an OSC escape code).
+   **two** different on-ramps (the `shepherd` CLI vs an OSC escape code).
 3. Point to where in Journey 1 the notification system secretly gets its input.
 4. For each of these, say which process it lives in: node-pty, xterm.js, the socket
    server, the React sidebar, the OSC scanner, `window.api`.
@@ -209,7 +211,7 @@ If you can do these from memory, you've understood the whole book:
 
 ## Summary
 
-cmux-linux is not a pile of separate technologies — it's two processes passing
+Shepherd is not a pile of separate technologies — it's two processes passing
 messages, with specialist libraries at the edges. **A keystroke** proves the
 renderer↔main spine: xterm.js (ch 7) → preload (ch 5) → IPC (ch 4) → node-pty
 (ch 6) → the real shell (ch 2), and back. **A notification** proves the cmux magic:
@@ -218,10 +220,12 @@ an agent → the socket API or an OSC code (ch 11/12) → the main-process state
 every file you open later has an obvious home.
 
 ## Where this shows up next
+
 - Turn understanding into building: `ROADMAP.md` (M0 → M6).
 - Refresh any single hop: jump to its chapter via `00-INDEX.md`.
 - Look up any unfamiliar word: `16-glossary.md`.
 
 ## Further reading
+
 - Re-read `01-the-big-picture.md` — it will now read completely differently.
 - cmux, for comparison with the real thing: https://cmux.com and https://github.com/manaflow-ai/cmux

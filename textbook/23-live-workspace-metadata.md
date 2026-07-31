@@ -9,7 +9,7 @@ Which version of the code am I changing?
 ```
 
 On a Git project, those answers are the project root and checked-out branch. This
-chapter develops the architecture behind live workspace metadata in cmux-linux:
+chapter develops the architecture behind live workspace metadata in Shepherd:
 how terminal state maps to UI state, how Linux exposes shell cwd, how to inspect
 Git without excessive subprocesses, how to handle multiple terminals, and how to
 persist useful state without restoring stale state.
@@ -19,12 +19,12 @@ persist useful state without restoring stale state.
 It is tempting to call everything “the cwd,” but the feature has four different
 values:
 
-| Value        | Example                     | Meaning                                                |
-| ------------ | --------------------------- | ------------------------------------------------------ |
-| Shell cwd    | `/work/cmux-linux/src/main` | Current directory of the interactive shell             |
-| Git root     | `/work/cmux-linux`          | Top-level directory of the current repository/worktree |
-| Project name | `cmux-linux`                | Compact label derived from Git root or shell cwd       |
-| Git branch   | `feat/sidebar`              | Symbolic branch referenced by Git `HEAD`               |
+| Value        | Example                   | Meaning                                                |
+| ------------ | ------------------------- | ------------------------------------------------------ |
+| Shell cwd    | `/work/shepherd/src/main` | Current directory of the interactive shell             |
+| Git root     | `/work/shepherd`          | Top-level directory of the current repository/worktree |
+| Project name | `Shepherd`                | Compact label derived from Git root or shell cwd       |
+| Git branch   | `feat/sidebar`            | Symbolic branch referenced by Git `HEAD`               |
 
 The shell cwd changes when the user runs `cd`. The Git root normally remains
 stable while moving within a repository. The branch can change without the cwd
@@ -49,7 +49,7 @@ Workspace
 Two terminals in one workspace can legitimately be in different repositories.
 There is no single directory that describes all of them.
 
-cmux-linux defines the sidebar metadata as the context of the workspace's active
+Shepherd defines the sidebar metadata as the context of the workspace's active
 terminal:
 
 ```text
@@ -204,8 +204,8 @@ After a successful Git probe, the service caches:
 
 ```ts
 {
-  root: '/work/cmux-linux',
-  gitDir: '/work/cmux-linux/.git'
+  root: '/work/shepherd',
+  gitDir: '/work/shepherd/.git'
 }
 ```
 
@@ -354,7 +354,7 @@ The final layout uses two rows:
 
 ```text
 workspace 1
-cmux-linux
+Shepherd
 git: feat/sidebar
 ```
 

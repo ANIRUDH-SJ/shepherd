@@ -1,6 +1,7 @@
 # Chapter 6 — node-pty: Running Real Shells
 
 > **What you'll learn**
+>
 > - What a PTY is, recapped fast from Chapter 2, and why every real shell needs one
 > - `node-pty`: a Node binding that spawns a process wired to a pseudo-terminal
 > - `pty.spawn(shell, args, opts)` with **every** option explained
@@ -9,7 +10,7 @@
 > - Exit handling (`onExit`, `kill`) and how to **not** leak zombie shells
 > - Why node-pty is a **native C++ module** that must run in the **main** process
 > - Managing many terminals with a `Map<ptyId, IPty>` and cleaning them up
-> - Injecting `CMUX_WORKSPACE_ID` / `CMUX_SURFACE_ID` / `CMUX_SOCKET_PATH` into each pane
+> - Injecting `SHEPHERD_WORKSPACE_ID` / `SHEPHERD_SURFACE_ID` / `SHEPHERD_SOCKET_PATH` into each pane
 > - A full worked example: the **backend half of Loops A & B**
 >
 > **Prerequisites:** Chapter 2 (`02-how-terminals-work.md`) for TTY/PTY and escape
@@ -53,7 +54,7 @@ wiser — it thinks it's talking to a real screen and keyboard. It will happily
 emit the color codes, cursor moves, and screen-clears from Chapter 2, because a
 PTY reports itself as a genuine terminal.
 
-> **🔧 In cmux-linux:** our whole terminal experience is "hold the master end of a
+> **🔧 In Shepherd:** our whole terminal experience is "hold the master end of a
 > PTY in the main process, and shuttle its bytes to a picture of a terminal in the
 > renderer." node-pty is the thing that creates the PTY pair and hands us the
 > master end. The **picture** — drawing those bytes — is `xterm.js`, and it's the
@@ -66,7 +67,7 @@ tear the whole thing down.
 
 ---
 
-## 6.2 What node-pty is (and what it is *not*)
+## 6.2 What node-pty is (and what it is _not_)
 
 Creating a PTY pair and launching a process attached to the slave end is a dance
 of low-level OS calls — `openpty`, `fork`, `setsid`, `ioctl`, `execvp` on Linux
@@ -79,18 +80,18 @@ that wraps all of it. You hand it a shell to run; it does the OS dance and hands
 you back a tidy JavaScript object representing the master end:
 
 ```ts
-import * as pty from 'node-pty';
+import * as pty from 'node-pty'
 
 const shell = pty.spawn('bash', [], {
   name: 'xterm-256color',
   cols: 80,
   rows: 24,
   cwd: process.env.HOME,
-  env: process.env,
-});
+  env: process.env
+})
 
-shell.onData((chunk) => process.stdout.write(chunk)); // bash's output
-shell.write('ls\r');                                  // type "ls" + Enter
+shell.onData((chunk) => process.stdout.write(chunk)) // bash's output
+shell.write('ls\r') // type "ls" + Enter
 ```
 
 Run that in a plain Node script and you'll see a real `ls` listing print out.
@@ -99,7 +100,7 @@ are driving it through a real pseudo-terminal.
 
 > **⚠️ Gotcha — node-pty is not `child_process`.** Node's built-in
 > `child_process.spawn` also launches programs, and you may reach for it out of
-> habit. It gives the child a plain **pipe** for stdout, *not* a terminal. A pipe
+> habit. It gives the child a plain **pipe** for stdout, _not_ a terminal. A pipe
 > is not a TTY, so the child's `isatty()` check returns false. Interactive shells
 > then disable their prompt, colors, and line editing ("am I being piped into a
 > file? I'll behave like a dumb filter"), and full-screen apps like `vim` refuse
@@ -109,10 +110,10 @@ are driving it through a real pseudo-terminal.
 > (e.g. `git branch --show-current` — see `REFRESHER.md`); use node-pty for
 > anything a human is supposed to interact with.
 
-| Tool | What the child's stdin/stdout is | Good for |
-|---|---|---|
-| `child_process.spawn` | a pipe (not a TTY) | run a command, capture output, exit |
-| **node-pty** | a real PTY (a TTY) | interactive shells, agents, `vim`, `htop` |
+| Tool                  | What the child's stdin/stdout is | Good for                                  |
+| --------------------- | -------------------------------- | ----------------------------------------- |
+| `child_process.spawn` | a pipe (not a TTY)               | run a command, capture output, exit       |
+| **node-pty**          | a real PTY (a TTY)               | interactive shells, agents, `vim`, `htop` |
 
 ---
 
@@ -121,7 +122,7 @@ are driving it through a real pseudo-terminal.
 This one call is the heart of the chapter. Its shape:
 
 ```ts
-const ptyProcess = pty.spawn(file, args, options);
+const ptyProcess = pty.spawn(file, args, options)
 ```
 
 - **`file`** — the program to run. For us, a shell: `'bash'`, `'zsh'`, or better,
@@ -135,17 +136,17 @@ const ptyProcess = pty.spawn(file, args, options);
 
 ```ts
 const ptyProcess = pty.spawn(process.env.SHELL ?? 'bash', [], {
-  name: 'xterm-256color',   // (1) the value of $TERM inside the shell
-  cols: 80,                 // (2) initial width  in character columns
-  rows: 24,                 // (3) initial height in character rows
-  cwd: workspace.cwd,       // (4) starting working directory
-  env: { ...process.env },  // (5) the environment variables
-  encoding: 'utf8',         // (6) how onData decodes bytes → strings
-});
+  name: 'xterm-256color', // (1) the value of $TERM inside the shell
+  cols: 80, // (2) initial width  in character columns
+  rows: 24, // (3) initial height in character rows
+  cwd: workspace.cwd, // (4) starting working directory
+  env: { ...process.env }, // (5) the environment variables
+  encoding: 'utf8' // (6) how onData decodes bytes → strings
+})
 ```
 
 **(1) `name` — what `$TERM` is set to.** Inside the shell, programs read the
-`TERM` environment variable to decide *which* escape codes are safe to emit. A
+`TERM` environment variable to decide _which_ escape codes are safe to emit. A
 program seeing `TERM=xterm-256color` knows it may use the full 256-color palette
 (and usually 24-bit "truecolor") from Chapter 2; a program seeing a bare
 `TERM=dumb` will avoid colors entirely. node-pty defaults this to a conservative
@@ -153,12 +154,12 @@ value, so we set it explicitly. **Pass `'xterm-256color'`** — it must name a
 terminal type that our renderer (xterm.js) can actually draw, and xterm.js
 understands the xterm family.
 
-> **⚠️ Gotcha:** `name` is *not* cosmetic. If you leave `$TERM` at something
+> **⚠️ Gotcha:** `name` is _not_ cosmetic. If you leave `$TERM` at something
 > primitive, agents and tools will print washed-out, colorless output and you'll
 > wonder why cmux "looks broken" compared to your normal terminal. The colors you
 > see are a negotiation, and `name` is your opening offer.
 
-**(2)/(3) `cols` and `rows` — the initial size.** The PTY has to report *some*
+**(2)/(3) `cols` and `rows` — the initial size.** The PTY has to report _some_
 size the instant bash starts, before the UI has even measured itself. 80×24 is
 the ancient, safe default (it's the size of a VT100 screen). We'll immediately
 correct it once the real terminal has laid out and measured its container —
@@ -180,12 +181,12 @@ becomes the shell's environment. This is enormously important and has one classi
 trap:
 
 > **⚠️ Gotcha — never pass a bare `{ ... }` as `env`.** Whatever object you pass
-> *replaces* the environment entirely; it is not merged. If you write
-> `env: { CMUX_WORKSPACE_ID: id }`, the shell launches with **only** that one
+> _replaces_ the environment entirely; it is not merged. If you write
+> `env: { SHEPHERD_WORKSPACE_ID: id }`, the shell launches with **only** that one
 > variable — no `PATH`, no `HOME`, no `LANG`. `PATH` being gone means the shell
 > can't find `ls`, `git`, or anything else, and the pane looks broken. **Always
-> spread `process.env` first:** `env: { ...process.env, CMUX_WORKSPACE_ID: id }`.
-> §6.8 builds exactly this for our three `CMUX_*` variables.
+> spread `process.env` first:** `env: { ...process.env, SHEPHERD_WORKSPACE_ID: id }`.
+> §6.8 builds exactly this for our three `SHEPHERD_*` variables.
 
 **(6) `encoding` — bytes to strings.** node-pty reads raw bytes off the PTY.
 With `encoding: 'utf8'` (the default) it decodes them into JavaScript strings for
@@ -205,17 +206,17 @@ pane, so the defaults are fine. Know they exist; don't touch them yet.
 `pty.spawn` returns an object typed `IPty`. These are the members you'll actually
 use:
 
-| Member | Kind | What it does |
-|---|---|---|
-| `pid` | property | the OS process id of the spawned shell |
-| `cols`, `rows` | property | its current size (updated by `resize`) |
-| `process` | property | the shell's current foreground process name |
-| `onData(cb)` | event | fires with each chunk of **output** (§6.4) |
-| `onExit(cb)` | event | fires once, when the shell **exits** (§6.7) |
-| `write(data)` | method | send **input** (keystrokes) to the shell (§6.5) |
-| `resize(cols, rows)` | method | change the terminal size (§6.6) |
-| `kill(signal?)` | method | terminate the shell (§6.7) |
-| `pause()` / `resume()` | method | pause/resume the output stream (back-pressure) |
+| Member                 | Kind     | What it does                                    |
+| ---------------------- | -------- | ----------------------------------------------- |
+| `pid`                  | property | the OS process id of the spawned shell          |
+| `cols`, `rows`         | property | its current size (updated by `resize`)          |
+| `process`              | property | the shell's current foreground process name     |
+| `onData(cb)`           | event    | fires with each chunk of **output** (§6.4)      |
+| `onExit(cb)`           | event    | fires once, when the shell **exits** (§6.7)     |
+| `write(data)`          | method   | send **input** (keystrokes) to the shell (§6.5) |
+| `resize(cols, rows)`   | method   | change the terminal size (§6.6)                 |
+| `kill(signal?)`        | method   | terminate the shell (§6.7)                      |
+| `pause()` / `resume()` | method   | pause/resume the output stream (back-pressure)  |
 
 The two events (`onData`, `onExit`) are how the shell talks **to** us; the two
 methods (`write`, `resize`) plus `kill` are how we talk **to** it. That's the
@@ -233,8 +234,8 @@ const disposable = ptyProcess.onData((chunk: string) => {
   // `chunk` is a piece of the shell's raw output stream, escape codes and all.
   // It is NOT line-buffered: you might get "ls\r\n", or "l", "s", "\r\n",
   // or a 4KB blob — whatever the OS handed over this tick.
-  console.log(JSON.stringify(chunk));
-});
+  console.log(JSON.stringify(chunk))
+})
 ```
 
 Three things to internalize about this stream:
@@ -252,10 +253,10 @@ Three things to internalize about this stream:
    that unsubscribes this one listener. You'll call it during cleanup so you don't
    leak listeners when a pane closes.
 
-> **🔧 In cmux-linux:** `onData` is the source end of **Loop B** ("the shell
+> **🔧 In Shepherd:** `onData` is the source end of **Loop B** ("the shell
 > prints output") from Chapter 1. In the full example (§6.9) we do two things with
 > every chunk: (a) forward it to the renderer with `webContents.send('pty:data',
-> …)` so xterm.js can paint it, and (b) let the **OSC parser** peek at it to catch
+…)` so xterm.js can paint it, and (b) let the **OSC parser** peek at it to catch
 > notification escape codes. That second consumer is why the main process reads
 > the stream at all instead of piping the PTY straight to the window — it's the
 > hook for `12-notifications-and-osc.md`.
@@ -280,9 +281,9 @@ Input flows the other way. When the user types, you send those bytes into the
 shell with `write`:
 
 ```ts
-ptyProcess.write('l');       // the user pressed the "l" key
-ptyProcess.write('s');       // then "s"
-ptyProcess.write('\r');      // then Enter — carriage return runs the command
+ptyProcess.write('l') // the user pressed the "l" key
+ptyProcess.write('s') // then "s"
+ptyProcess.write('\r') // then Enter — carriage return runs the command
 ```
 
 Some subtleties that trip people up:
@@ -291,7 +292,7 @@ Some subtleties that trip people up:
   You feed the shell the exact bytes a keyboard would produce, one keystroke at a
   time, and the shell's own line editor assembles them into a command line. To
   "run `ls`," you write the characters `l`, `s`, and then `\r` (Enter). This is
-  liberating: it means *every* key works — arrows, `Ctrl-C`, `Tab` completion,
+  liberating: it means _every_ key works — arrows, `Ctrl-C`, `Tab` completion,
   history — because you're just relaying the raw keyboard.
 - **Enter is `\r` (carriage return, `0x0D`), not `\n`.** A real terminal sends
   `\r` when you press Return; the terminal line discipline is what turns that into
@@ -302,9 +303,9 @@ Some subtleties that trip people up:
   these — xterm.js does it for you (Chapter 7) and you forward whatever it gives
   you — but it's good to know that `write` is byte-for-byte the keyboard.
 
-> **🔧 In cmux-linux:** `write` is the destination end of **Loop A** ("you type a
+> **🔧 In Shepherd:** `write` is the destination end of **Loop A** ("you type a
 > command"). xterm.js's `onData` (confusingly named the same, but it's the
-> *renderer's* keystroke event) fires with the encoded bytes for whatever you
+> _renderer's_ keystroke event) fires with the encoded bytes for whatever you
 > pressed; we ship those over IPC; the main process calls `ptyProcess.write` with
 > them. Renderer keystroke → IPC → `pty.write`. That's the entire input path.
 
@@ -313,13 +314,13 @@ Some subtleties that trip people up:
 ## 6.6 Resizing: `resize(cols, rows)` and why it matters
 
 A terminal has a size measured in **character cells** — columns and rows — and
-programs running inside it *depend* on that size to lay themselves out. When the
+programs running inside it _depend_ on that size to lay themselves out. When the
 window resizes, or the user drags a split divider, or the sidebar collapses, the
 terminal's pixel dimensions change, which means a different number of character
 cells now fit. You must tell node-pty:
 
 ```ts
-ptyProcess.resize(120, 40); // now 120 columns wide, 40 rows tall
+ptyProcess.resize(120, 40) // now 120 columns wide, 40 rows tall
 ```
 
 Here's the machinery this kicks off, and why skipping it produces garbage:
@@ -341,7 +342,7 @@ vim / htop / less catch SIGWINCH, re-read the size, and REDRAW at 120×40
 ```
 
 The load-bearing concept is **`SIGWINCH`** — the "window change" signal. A
-full-screen program (an editor, a pager, a TUI) draws itself *once* to fill the
+full-screen program (an editor, a pager, a TUI) draws itself _once_ to fill the
 size it thinks it has, then only redraws when something changes. It finds out the
 size changed exactly one way: the kernel sends it `SIGWINCH`, and it responds by
 asking the terminal for the new dimensions and repainting. `ptyProcess.resize` is
@@ -356,9 +357,9 @@ what makes the kernel send that signal.
 > size change **must** end in a `ptyProcess.resize` call. This is one of the most
 > common bugs when wiring a terminal for the first time.
 
-> **🔧 In cmux-linux:** the renderer owns the *measuring* (xterm's FitAddon turns
+> **🔧 In Shepherd:** the renderer owns the _measuring_ (xterm's FitAddon turns
 > the container's pixel size into cols/rows — see `07-xtermjs.md`), and the main
-> process owns the *applying* (`ptyProcess.resize`). They're joined by an IPC
+> process owns the _applying_ (`ptyProcess.resize`). They're joined by an IPC
 > message carrying `{ paneId, cols, rows }`. Keep that division clear: renderer
 > measures, main applies.
 
@@ -374,18 +375,18 @@ program you spawned finishes. `onExit` fires once:
 ```ts
 ptyProcess.onExit(({ exitCode, signal }) => {
   // exitCode: 0 = clean; nonzero = error. signal: set if killed by a signal.
-  console.log(`shell exited: code=${exitCode} signal=${signal}`);
+  console.log(`shell exited: code=${exitCode} signal=${signal}`)
   // → tell the renderer the pane's shell is gone, remove it from our Map, etc.
-});
+})
 ```
 
 **You kill it.** When the user closes a pane, closes the window, or quits the
-app, *you* end the shell:
+app, _you_ end the shell:
 
 ```ts
-ptyProcess.kill();          // terminate the shell (POSIX: a hang-up, like
-                            // closing a real terminal window)
-ptyProcess.kill('SIGKILL'); // or force it, if it won't go quietly
+ptyProcess.kill() // terminate the shell (POSIX: a hang-up, like
+// closing a real terminal window)
+ptyProcess.kill('SIGKILL') // or force it, if it won't go quietly
 ```
 
 Now the important part — **the zombie problem** — because getting this wrong is
@@ -396,7 +397,7 @@ something stops it. If a pane is closed (its React component unmounts, its
 xterm.js instance is disposed) but you **forget to call `kill`**, that shell
 keeps running headless, forever, holding memory and file descriptors. Do that a
 few dozen times across a work session and you've got a pile of orphaned `bash`
-processes eating RAM, plus any agents *they* spawned still churning in the
+processes eating RAM, plus any agents _they_ spawned still churning in the
 background.
 
 ```
@@ -411,7 +412,7 @@ Close a pane WITH kill() + Map cleanup:
 > **⚠️ Gotcha — "zombie" precisely.** Two distinct failures hide under that word.
 > (1) A **leaked/orphaned** process: a shell you never killed, still running —
 > this is the common one, caused by forgetting `kill()`. (2) A true **zombie
-> (defunct)** process: one that *has* exited but whose parent never read its exit
+> (defunct)** process: one that _has_ exited but whose parent never read its exit
 > status, so the kernel keeps a husk in the process table. node-pty reaps its own
 > children when they exit (that's part of what fires `onExit`), so as long as you
 > (a) `kill()` shells you no longer want and (b) let `onExit` clean up your
@@ -423,7 +424,7 @@ Close a pane WITH kill() + Map cleanup:
 
 ## 6.8 node-pty is a **native module** (and what that forces)
 
-Here is a fact that shapes *where* all of the above must live: **node-pty is a
+Here is a fact that shapes _where_ all of the above must live: **node-pty is a
 native module.** It's not pure JavaScript — a chunk of it is C++ that gets
 compiled into a binary (`.node` file) when you install it, because talking to the
 OS's PTY layer requires calling C functions JavaScript can't reach.
@@ -431,11 +432,11 @@ OS's PTY layer requires calling C functions JavaScript can't reach.
 Three consequences follow, and each is a gotcha someone hits:
 
 **1. It must be rebuilt for Electron's ABI.** A native module is compiled against
-a specific version of Node's C++ interface (its "ABI"). Electron ships its *own*
+a specific version of Node's C++ interface (its "ABI"). Electron ships its _own_
 build of Node, often a different version than the one on your `PATH`. So a
 node-pty compiled by plain `npm install` may refuse to load inside Electron with
-an error like *"was compiled against a different Node.js version"* or *"invalid
-ELF header."* The fix is to recompile it against Electron's ABI:
+an error like _"was compiled against a different Node.js version"_ or _"invalid
+ELF header."_ The fix is to recompile it against Electron's ABI:
 
 ```bash
 # recompile native modules (node-pty) for the Electron version in this project
@@ -443,7 +444,7 @@ npx electron-rebuild        # the @electron/rebuild tool
 # electron-builder does this for you at package time via install-app-deps
 ```
 
-> **🔧 In cmux-linux:** we'll wire `electron-rebuild` into a `postinstall`
+> **🔧 In Shepherd:** we'll wire `electron-rebuild` into a `postinstall`
 > script so this happens automatically, and let `electron-builder` handle it at
 > packaging time (`15-packaging-and-distribution.md`). If terminals mysteriously
 > fail to open right after an `npm install` or an Electron version bump, this is
@@ -478,66 +479,66 @@ compiled binary must be included in the packaged app.
 
 ## 6.9 Managing MANY ptys: a `Map<ptyId, IPty>`
 
-One terminal is easy — hold it in a variable. But cmux-linux has *many*
+One terminal is easy — hold it in a variable. But Shepherd has _many_
 terminals: every Surface with a Terminal panel owns its own shell (recall the
 object model, `09-typescript-and-the-data-model.md`). We need to route each
-chunk of output to the *right* pane and, later, route each keystroke to the
-*right* shell. The clean way is a registry keyed by a pane/pty id:
+chunk of output to the _right_ pane and, later, route each keystroke to the
+_right_ shell. The clean way is a registry keyed by a pane/pty id:
 
 ```ts
 // main/pty-manager.ts  — the main process's terminal registry
-import * as pty from 'node-pty';
-import type { IPty } from 'node-pty';
-import type { WebContents } from 'electron';
+import * as pty from 'node-pty'
+import type { IPty } from 'node-pty'
+import type { WebContents } from 'electron'
 
-const ptys = new Map<string, IPty>();   // ptyId → the live shell
+const ptys = new Map<string, IPty>() // ptyId → the live shell
 
 export function createPty(
   ptyId: string,
   opts: { cwd: string; cols: number; rows: number; env: NodeJS.ProcessEnv },
-  webContents: WebContents,
+  webContents: WebContents
 ): void {
   const shell = pty.spawn(process.env.SHELL ?? 'bash', [], {
     name: 'xterm-256color',
     cols: opts.cols,
     rows: opts.rows,
     cwd: opts.cwd,
-    env: opts.env,
-  });
+    env: opts.env
+  })
 
-  ptys.set(ptyId, shell);
+  ptys.set(ptyId, shell)
 
   // OUTPUT: forward every chunk to the renderer, tagged with which pane it's for.
   shell.onData((data) => {
-    webContents.send('pty:data', { ptyId, data });
+    webContents.send('pty:data', { ptyId, data })
     // (the OSC parser from ch 12 also gets a look at `data` here)
-  });
+  })
 
   // EXIT: tell the UI, then clean up our bookkeeping so nothing leaks.
   shell.onExit(({ exitCode }) => {
-    webContents.send('pty:exit', { ptyId, exitCode });
-    ptys.delete(ptyId);
-  });
+    webContents.send('pty:exit', { ptyId, exitCode })
+    ptys.delete(ptyId)
+  })
 }
 
 export function writeToPty(ptyId: string, data: string): void {
-  ptys.get(ptyId)?.write(data);        // ?. → ignore input to a dead pane
+  ptys.get(ptyId)?.write(data) // ?. → ignore input to a dead pane
 }
 
 export function resizePty(ptyId: string, cols: number, rows: number): void {
-  ptys.get(ptyId)?.resize(cols, rows);
+  ptys.get(ptyId)?.resize(cols, rows)
 }
 
 export function killPty(ptyId: string): void {
-  const shell = ptys.get(ptyId);
-  if (!shell) return;
-  shell.kill();
-  ptys.delete(ptyId);
+  const shell = ptys.get(ptyId)
+  if (!shell) return
+  shell.kill()
+  ptys.delete(ptyId)
 }
 
 export function killAllPtys(): void {
-  for (const shell of ptys.values()) shell.kill();
-  ptys.clear();
+  for (const shell of ptys.values()) shell.kill()
+  ptys.clear()
 }
 ```
 
@@ -554,12 +555,12 @@ Walking through the design choices:
   outlives the app:
 
 ```ts
-import { app } from 'electron';
-app.on('before-quit', killAllPtys);       // quitting the app
+import { app } from 'electron'
+app.on('before-quit', killAllPtys) // quitting the app
 // and when a pane closes, call killPty(ptyId) from that pane's teardown
 ```
 
-> **🔧 In cmux-linux:** this `Map<ptyId, IPty>` is the main-process mirror of the
+> **🔧 In Shepherd:** this `Map<ptyId, IPty>` is the main-process mirror of the
 > renderer's tree of terminal components. For every Terminal panel the UI shows,
 > there's exactly one entry here holding its real shell. When a pane closes, two
 > things must happen in lockstep: the renderer disposes the xterm.js instance
@@ -571,44 +572,44 @@ app.on('before-quit', killAllPtys);       // quitting the app
 
 ## 6.10 Env injection: making in-pane commands find cmux
 
-Recall from `FEATURES.md` that the sidebar comes alive because agents *send
-messages to a unix socket*. But an agent — say Claude Code — running **inside** a
+Recall from `FEATURES.md` that the sidebar comes alive because agents _send
+messages to a unix socket_. But an agent — say Claude Code — running **inside** a
 pane needs to know two things to do that: **which socket** to talk to, and **which
 workspace** it belongs to. We tell it by injecting three environment variables
 into that pane's shell at spawn time:
 
 ```ts
 const paneEnv = {
-  ...process.env,                              // ← keep PATH, HOME, LANG, …
-  CMUX_WORKSPACE_ID: workspace.id,             // which sidebar row this pane is under
-  CMUX_SURFACE_ID: surface.id,                 // which tab within the pane
-  CMUX_SOCKET_PATH: '/tmp/cmux-linux.sock',    // where our socket server listens
-};
+  ...process.env, // ← keep PATH, HOME, LANG, …
+  SHEPHERD_WORKSPACE_ID: workspace.id, // which sidebar row this pane is under
+  SHEPHERD_SURFACE_ID: surface.id, // which tab within the pane
+  SHEPHERD_SOCKET_PATH: '/tmp/shepherd.sock' // where our socket server listens
+}
 
-createPty(ptyId, { cwd: workspace.cwd, cols, rows, env: paneEnv }, webContents);
+createPty(ptyId, { cwd: workspace.cwd, cols, rows, env: paneEnv }, webContents)
 ```
 
 Now any command run in that pane inherits those variables. So when Claude Code
-finishes and its hook runs `cmux notify --body "waiting for input"`, the `cmux`
-CLI reads `CMUX_SOCKET_PATH` to find the socket and `CMUX_WORKSPACE_ID` to stamp
+finishes and its hook runs `shepherd notify --body "waiting for input"`, the `shepherd`
+CLI reads `SHEPHERD_SOCKET_PATH` to find the socket and `SHEPHERD_WORKSPACE_ID` to stamp
 the message with the right workspace — **no arguments needed**, because the pane's
 environment already carries its identity.
 
-| Variable | Answers the question | Consumed by |
-|---|---|---|
-| `CMUX_WORKSPACE_ID` | "which sidebar row am I?" | the `cmux` CLI → socket server → the right workspace lights up |
-| `CMUX_SURFACE_ID` | "which tab within the pane am I?" | targeting a specific surface for input/focus |
-| `CMUX_SOCKET_PATH` | "where do I send messages?" | the `cmux` CLI, to connect to the server |
+| Variable                | Answers the question              | Consumed by                                                        |
+| ----------------------- | --------------------------------- | ------------------------------------------------------------------ |
+| `SHEPHERD_WORKSPACE_ID` | "which sidebar row am I?"         | the `shepherd` CLI → socket server → the right workspace lights up |
+| `SHEPHERD_SURFACE_ID`   | "which tab within the pane am I?" | targeting a specific surface for input/focus                       |
+| `SHEPHERD_SOCKET_PATH`  | "where do I send messages?"       | the `shepherd` CLI, to connect to the server                       |
 
 ```
    main process spawns pane's shell with env:
-   { …process.env, CMUX_WORKSPACE_ID, CMUX_SURFACE_ID, CMUX_SOCKET_PATH }
+   { …process.env, SHEPHERD_WORKSPACE_ID, SHEPHERD_SURFACE_ID, SHEPHERD_SOCKET_PATH }
         │
         ▼
-   inside the pane, an agent finishes and runs:  cmux notify --body "waiting"
-        │  the CLI reads CMUX_SOCKET_PATH + CMUX_WORKSPACE_ID from its env
+   inside the pane, an agent finishes and runs:  shepherd notify --body "waiting"
+        │  the CLI reads SHEPHERD_SOCKET_PATH + SHEPHERD_WORKSPACE_ID from its env
         ▼
-   connects to /tmp/cmux-linux.sock, sends a JSON message tagged with the workspace
+   connects to /tmp/shepherd.sock, sends a JSON message tagged with the workspace
         │
         ▼
    main updates that workspace → IPC → renderer lights up the sidebar row  🔔
@@ -620,8 +621,8 @@ API that drives the sidebar" (`11-the-socket-api.md`) and "notifications"
 identity so the rest of the system can find it.
 
 > **⚠️ Gotcha (worth repeating):** the injection only works because of the
-> `...process.env` spread. Injecting *just* the three `CMUX_*` vars would strip
-> `PATH` and the pane couldn't even find the `cmux` binary to call. Merge, never
+> `...process.env` spread. Injecting _just_ the three `SHEPHERD_*` vars would strip
+> `PATH` and the pane couldn't even find the `shepherd` binary to call. Merge, never
 > replace.
 
 ---
@@ -635,31 +636,31 @@ and with the renderer side in `07-xtermjs.md`.
 
 ```ts
 // main/index.ts (excerpt) — the backend half of the terminal
-import { app, BrowserWindow, ipcMain } from 'electron';
-import * as pty from 'node-pty';
-import type { IPty } from 'node-pty';
-import os from 'node:os';
+import { app, BrowserWindow, ipcMain } from 'electron'
+import * as pty from 'node-pty'
+import type { IPty } from 'node-pty'
+import os from 'node:os'
 
-const ptys = new Map<string, IPty>();
+const ptys = new Map<string, IPty>()
 
 function createWindow() {
   const win = new BrowserWindow({
     webPreferences: {
       preload: /* path to preload.js */ '',
-      contextIsolation: true,     // renderer stays sandboxed
-      nodeIntegration: false,     // renderer cannot touch node-pty directly
-    },
-  });
+      contextIsolation: true, // renderer stays sandboxed
+      nodeIntegration: false // renderer cannot touch node-pty directly
+    }
+  })
 
   // ── LOOP A (input): renderer keystroke → main → pty.write ──────────────
   ipcMain.on('pty:input', (_event, { ptyId, data }) => {
-    ptys.get(ptyId)?.write(data);
-  });
+    ptys.get(ptyId)?.write(data)
+  })
 
   // ── resize: renderer measured a new size → main → pty.resize ───────────
   ipcMain.on('pty:resize', (_event, { ptyId, cols, rows }) => {
-    ptys.get(ptyId)?.resize(cols, rows);
-  });
+    ptys.get(ptyId)?.resize(cols, rows)
+  })
 
   // ── spawn a terminal for a pane ────────────────────────────────────────
   ipcMain.handle('pty:create', (_event, { ptyId, cwd, cols, rows, workspaceId, surfaceId }) => {
@@ -667,54 +668,55 @@ function createWindow() {
       name: 'xterm-256color',
       cols: cols ?? 80,
       rows: rows ?? 24,
-      cwd: cwd ?? os.homedir(),                 // guard against a missing dir
+      cwd: cwd ?? os.homedir(), // guard against a missing dir
       env: {
-        ...process.env,                          // keep PATH/HOME/LANG
-        CMUX_WORKSPACE_ID: workspaceId,
-        CMUX_SURFACE_ID: surfaceId,
-        CMUX_SOCKET_PATH: '/tmp/cmux-linux.sock',
-      },
-    });
+        ...process.env, // keep PATH/HOME/LANG
+        SHEPHERD_WORKSPACE_ID: workspaceId,
+        SHEPHERD_SURFACE_ID: surfaceId,
+        SHEPHERD_SOCKET_PATH: '/tmp/shepherd.sock'
+      }
+    })
 
-    ptys.set(ptyId, shell);
+    ptys.set(ptyId, shell)
 
     // ── LOOP B (output): pty.onData → main → renderer paints it ──────────
     shell.onData((data) => {
-      win.webContents.send('pty:data', { ptyId, data });
+      win.webContents.send('pty:data', { ptyId, data })
       // NOTE: this same `data` is where ch 12's OSC parser watches for
       // notification escape codes (OSC 9 / 99 / 777) before/while forwarding.
-    });
+    })
 
     // ── exit: tell the UI, drop the bookkeeping (no zombie) ──────────────
     shell.onExit(({ exitCode }) => {
-      win.webContents.send('pty:exit', { ptyId, exitCode });
-      ptys.delete(ptyId);
-    });
+      win.webContents.send('pty:exit', { ptyId, exitCode })
+      ptys.delete(ptyId)
+    })
 
-    return { ptyId, pid: shell.pid };
-  });
+    return { ptyId, pid: shell.pid }
+  })
 
   // ── close a single pane's shell ──────────────────────────────────────
   ipcMain.on('pty:kill', (_event, { ptyId }) => {
-    ptys.get(ptyId)?.kill();
-    ptys.delete(ptyId);
-  });
+    ptys.get(ptyId)?.kill()
+    ptys.delete(ptyId)
+  })
 
-  win.loadURL(/* renderer URL */ '');
+  win.loadURL(/* renderer URL */ '')
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(createWindow)
 
 // ── safety net: never let a shell outlive the app ──────────────────────
 app.on('before-quit', () => {
-  for (const shell of ptys.values()) shell.kill();
-  ptys.clear();
-});
+  for (const shell of ptys.values()) shell.kill()
+  ptys.clear()
+})
 ```
 
 Trace the two loops through this code so the shape is unmistakable:
 
 **Loop A — you type `l` in a pane:**
+
 1. xterm.js (renderer) encodes the keystroke and calls
    `window.api.sendInput(ptyId, 'l')` (preload).
 2. That's an IPC message on `'pty:input'`; `ipcMain.on('pty:input', …)` receives
@@ -722,6 +724,7 @@ Trace the two loops through this code so the shape is unmistakable:
 3. `ptys.get(ptyId)?.write('l')` sends the byte into the real bash.
 
 **Loop B — bash echoes and later prints output:**
+
 1. bash writes to its PTY; node-pty fires `shell.onData(data)` in the main
    process.
 2. `win.webContents.send('pty:data', { ptyId, data })` pushes the chunk to the
@@ -730,11 +733,11 @@ Trace the two loops through this code so the shape is unmistakable:
    xterm.js paints it (Chapter 7).
 
 That round-trip — keystroke down, output up — is the beating heart of the app,
-and this file is its backend half. Everything else cmux-linux does (splits, the
-sidebar, notifications, persistence) is built *around* this loop, not instead of
+and this file is its backend half. Everything else Shepherd does (splits, the
+sidebar, notifications, persistence) is built _around_ this loop, not instead of
 it.
 
-> **🔧 In cmux-linux:** notice how little is here. The "hard" terminal work is
+> **🔧 In Shepherd:** notice how little is here. The "hard" terminal work is
 > node-pty's; our main-process job is just **routing** — spawn on request, forward
 > output out, forward input/resize in, and kill on the way out. Keep this file
 > boring and mechanical; the interesting product logic lives in the sidebar and
@@ -750,8 +753,8 @@ Answer these before moving on (all answers are in this chapter):
    and why does that difference make `vim` work in one and not the other?
 2. In `pty.spawn(shell, args, opts)`, what does the `name` option actually
    control, and what breaks if you leave it too primitive?
-3. Why must you write `env: { ...process.env, CMUX_WORKSPACE_ID: id }` instead of
-   `env: { CMUX_WORKSPACE_ID: id }`? What concretely breaks otherwise?
+3. Why must you write `env: { ...process.env, SHEPHERD_WORKSPACE_ID: id }` instead of
+   `env: { SHEPHERD_WORKSPACE_ID: id }`? What concretely breaks otherwise?
 4. Explain the chain from "user drags a split divider" to "`vim` redraws at the
    new size." Which signal is the linchpin, and which call triggers it?
 5. Give two distinct meanings of "zombie" here and the single rule that prevents
@@ -771,24 +774,26 @@ output with `onData`, **write** keystrokes with `write`, keep the size honest
 with `resize` (which triggers `SIGWINCH` so full-screen apps redraw), and **tear
 down** with `kill` while watching `onExit`. Because it's a **native C++ module**,
 it must be rebuilt for Electron's ABI and can run **only in the main process** —
-the renderer reaches it exclusively over IPC. cmux-linux holds every shell in a
+the renderer reaches it exclusively over IPC. Shepherd holds every shell in a
 `Map<ptyId, IPty>`, cleans each up on pane close and app quit to avoid **zombie**
-processes, and injects `CMUX_WORKSPACE_ID` / `CMUX_SURFACE_ID` /
-`CMUX_SOCKET_PATH` into each pane so in-pane agents can find the socket. All told,
+processes, and injects `SHEPHERD_WORKSPACE_ID` / `SHEPHERD_SURFACE_ID` /
+`SHEPHERD_SOCKET_PATH` into each pane so in-pane agents can find the socket. All told,
 node-pty is the **backend half of Loops A & B** and the stream the OSC parser
 listens on — the "real shell" end of the wire whose other end is xterm.js.
 
 ## Where this shows up next
+
 - The **picture** of the shell that consumes `onData` and produces the keystrokes we `write` → `07-xtermjs.md`
 - Mounting that picture in React, and disposing it in lockstep with `killPty` → `08-react-in-this-app.md`
 - The `ptyId` / Workspace / Surface identities the Map is keyed on → `09-typescript-and-the-data-model.md`
-- What the injected `CMUX_SOCKET_PATH` connects to → `11-the-socket-api.md`
+- What the injected `SHEPHERD_SOCKET_PATH` connects to → `11-the-socket-api.md`
 - The OSC codes the main process scans `onData` for → `12-notifications-and-osc.md`
 - Re-spawning saved shells in saved `cwd`s on relaunch → `13-session-persistence.md`
 - Rebuilding the native module for a shipped app → `15-packaging-and-distribution.md`
 - The full keystroke trace, end to end → `17-how-it-all-connects.md`
 
 ## Further reading
+
 - node-pty (README + the TypeScript declaration file, the authoritative API): https://github.com/microsoft/node-pty
 - Electron — Using Native Node Modules: https://www.electronjs.org/docs/latest/tutorial/using-native-node-modules
 - @electron/rebuild (recompile native modules for Electron's ABI): https://github.com/electron/rebuild

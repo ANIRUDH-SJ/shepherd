@@ -1,8 +1,9 @@
-# cmux-linux — Build Roadmap
+# Shepherd — Build Roadmap
 
-A Linux desktop recreation of [cmux](https://cmux.com/) (Mac-only) — the terminal
-built for running multiple AI coding agents side by side, with a vertical named
-sidebar, status subtitles, notification rings, split panes, and a socket API.
+Shepherd is an AI-native terminal workspace for Linux, originally motivated by
+the absence of [cmux](https://cmux.com/) on Linux. It combines a vertical
+workspace sidebar, agent state, split panes, and a socket automation API, while
+now evolving under an independent product identity.
 
 **Stack:** Electron + xterm.js + node-pty + React + TypeScript + Vite.
 
@@ -24,9 +25,9 @@ frontend", IPC = "the API calls between them".
 - [x] **M0** — Project setup & scaffolding ✓
 - [x] **M1** — Window shell: sidebar + one live terminal ✓
 - [x] **M2** — Multiple terminals, tabs & split panes ✓
-- [x] **M3** — The cmux sidebar (workspaces, status, notification rings) ✓
+- [x] **M3** — Workspace sidebar, status, and notification rings ✓
 - [x] **M4** — Agent integration & session persistence ✓
-- [x] **M5** — Socket API & automation (a real cmux feature) ✓
+- [x] **M5** — Socket API and automation ✓
 - [ ] **M6** — Polish, theming & packaging/distribution
 - [x] **M7** — Semantic agent runtime, sidebar, control API, and provider integrations ✓
 - [x] **M8** — Git worktree workspace creation and cwd propagation ✓
@@ -43,12 +44,13 @@ frontend", IPC = "the API calls between them".
 - [x] **M19** — Bounded, acknowledged terminal output batching ✓
 - [x] **M20** — Adaptive event-driven runtime observation ✓
 - [x] **M21** — Renderer-owned terminal lifecycle and memory accounting ✓
+- [x] **M22** — Shepherd product, CLI, packaging, and compatibility identity ✓
 
 ---
 
-> **Companion doc:** [`FEATURES.md`](./FEATURES.md) — the full cmux feature parity
-> map, the real object model (Window→Workspace→Pane→Surface→Panel), and the socket
-> API this roadmap now reflects. Read it alongside these milestones.
+> **Companion doc:** [`FEATURES.md`](./FEATURES.md) — the feature map, object
+> model (Window→Workspace→Pane→Surface→Panel), and socket API this roadmap now
+> reflects. Read it alongside these milestones.
 
 ## M0 — Project setup & scaffolding
 
@@ -90,7 +92,7 @@ splits inside a tab — like cmux's panes._
 - [ ] Refactor: a `Terminal` React component keyed by a unique `paneId`
 - [ ] Main process: manage a **map of ptyId → pty process** (not just one)
 - [ ] IPC: include `paneId` in all pty messages so data routes correctly
-- [ ] Inject `CMUX_WORKSPACE_ID` / `CMUX_SURFACE_ID` / `CMUX_SOCKET_PATH` into each pane's env
+- [ ] Inject `SHEPHERD_WORKSPACE_ID` / `SHEPHERD_SURFACE_ID` / `SHEPHERD_SOCKET_PATH` into each pane's env
 - [ ] App state model: **Workspace → Pane → Surface → Panel** tree (see FEATURES.md Part 1)
 - [ ] Add a per-pane tab bar = **surfaces** (create / switch / close)
 - [ ] Integrate a tiling layout for splits (`react-mosaic` or hand-rolled flex)
@@ -101,7 +103,7 @@ splits inside a tab — like cmux's panes._
 - [ ] Resize splits with the mouse (draggable dividers)
 - [ ] Commit
 
-## M3 — The cmux sidebar (the signature look)
+## M3 — Workspace sidebar
 
 _Goal: the left sidebar matches the screenshot — named workspaces, a status
 subtitle per item, active highlight, and notification markers._
@@ -130,17 +132,17 @@ restart._
 
 - [ ] Define the status protocol: what an agent signals
       "waiting / running / done / needs attention"
-- [ ] Ship the `cmux` CLI client (thin socket client) + a `cmux notify` shortcut
+- [ ] Ship the `shepherd` CLI client (thin socket client) + a `shepherd notify` shortcut
 - [ ] **OSC 9/99/777 parser:** scan pty output in main → auto-fire notifications
-- [ ] Wire Claude Code's `Notification` hook → `cmux notify` (via `cmux hooks setup`)
-- [ ] Map incoming notifications to the right workspace (by `CMUX_WORKSPACE_ID` / cwd)
+- [ ] Wire Claude Code's `Notification` hook through `shepherd integrations setup`
+- [ ] Map incoming notifications to the right workspace (by `SHEPHERD_WORKSPACE_ID` / cwd)
 - [ ] Trigger the ring/flash + unread badge + a desktop notification (`Notification` API)
 - [ ] **Persistence:** serialize tabs/panes/cwds + workspace list to JSON on change
 - [ ] Restore the full layout on next launch (re-spawn shells in saved cwds)
 - [ ] "Restore previous session?" vs fresh-start handling
 - [ ] Commit
 
-## M5 — Full socket control API (real cmux feature)
+## M5 — Full socket control API
 
 _Goal: expand the M3 socket server from status-only to full programmatic control,
 mirroring cmux's method surface. Easier in Node than cmux's Swift version._
@@ -151,7 +153,7 @@ mirroring cmux's method surface. Easier in Node than cmux's Swift version._
 - [ ] `surface.send_text` / `surface.send_key` — drive a pane programmatically
 - [ ] `set-progress` / `clear-progress`, `list-status`, `list-log`, `sidebar-state`
 - [ ] `ping` / `capabilities` / `identify` utility methods
-- [ ] Round out the `cmux` CLI to cover all methods; document the protocol
+- [ ] Round out the `shepherd` CLI to cover all methods; document the protocol
 - [ ] Commit
 
 ## M6 — Polish, theming & packaging/distribution
@@ -235,7 +237,7 @@ _Goal: let automation observe filtered semantic state without polling or scrapin
 
 ## M10 — Automatic terminal-agent discovery
 
-_Goal: list agents started in cmux-linux terminals without requiring hooks,
+_Goal: list agents started in Shepherd terminals without requiring hooks,
 configuration edits, or manual lifecycle reports._
 
 - [x] Anchor discovery to registered PTYs for exact workspace/surface ownership
@@ -341,7 +343,7 @@ machine-readable, safe, and repeatable measurement protocol._
 - [x] Randomize subject order and distinguish warmups from measured rounds
 - [x] Reject pressured hosts unless the run is explicitly and permanently a pilot
 - [x] Separate broad measurement ownership from marker-verified cleanup authority
-- [x] Validate cmux-linux, Kitty, Ghostty, and GNOME Terminal in a live pilot
+- [x] Validate Shepherd, Kitty, Ghostty, and GNOME Terminal in a live pilot
 - [x] Document usage, actual code, architecture, security, alternatives, and tradeoffs
 
 ## M17 — Expanded terminal performance suites
@@ -428,6 +430,22 @@ loss, make retention limits explicit, and explain terminal-count memory growth._
 - [x] Repeat matched 8→1 close cycles and classify allocator high-water behavior
 - [x] Verify exact terminal, owner, inspection, queue, and process-count recovery
 - [x] Prove benchmark cleanup with direct-child ownership and PID start ticks
+- [x] Document implementation, architecture, security, alternatives, and tradeoffs
+
+## M22 — Shepherd product identity and compatibility migration
+
+_Goal: establish Shepherd as the complete product and repository identity
+without discarding existing sessions, automation, or managed integrations._
+
+- [x] Centralize current and legacy product constants and environment precedence
+- [x] Select legacy user data only when it contains app-owned state and the new path does not
+- [x] Publish `/tmp/shepherd.sock` while serving the legacy default socket during migration
+- [x] Make `shepherd` the primary CLI and retain a tested compatibility launcher
+- [x] Inject new pane environment variables alongside compatibility aliases
+- [x] Upgrade exact managed provider hooks and OpenCode plugins without touching user code
+- [x] Rename renderer, schema, diagnostics, benchmarks, package, executable, and desktop identity
+- [x] Migrate the persisted font-size key without resetting the user preference
+- [x] Build and inspect a real unpacked Shepherd production artifact
 - [x] Document implementation, architecture, security, alternatives, and tradeoffs
 
 ---

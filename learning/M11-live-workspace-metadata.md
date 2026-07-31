@@ -13,7 +13,7 @@ questions:
 M11 replaces that placeholder with two live sidebar rows:
 
 ```text
-cmux-linux
+Shepherd
 git: feat/live-workspace-git-metadata
 ```
 
@@ -58,7 +58,7 @@ TypeScript interface protects code during compilation; the runtime guard protect
 the application boundary after the types have disappeared.
 
 `workspaceProjectName()` uses the repository root basename when Git exists. If
-the shell is in `cmux-linux/src/renderer`, the project remains `cmux-linux`.
+the shell is in `shepherd/src/renderer`, the project remains `shepherd`.
 Outside Git it uses the current directory basename, and the home directory is
 shown as `Home` rather than `~` or the account name.
 

@@ -1,13 +1,14 @@
 # Chapter 2 — How Terminals Really Work
 
 > **What you'll learn**
+>
 > - Why a modern terminal still pretends to be a 1960s teletype, and the three
 >   layers that fiction is built from
 > - `stdin`/`stdout`/`stderr` as plain byte streams — the same idea as
 >   `process.stdin` in Node, but at the OS level
 > - The difference between a **terminal** (the screen/keyboard) and a **shell**
->   (bash/zsh) — they are *not* the same thing, and confusing them will hurt
-> - The **PTY**: a fake serial cable the kernel builds so a *program* (a terminal
+>   (bash/zsh) — they are _not_ the same thing, and confusing them will hurt
+> - The **PTY**: a fake serial cable the kernel builds so a _program_ (a terminal
 >   emulator) can impersonate hardware for another program (the shell)
 > - How raw bytes become **colors, cursor moves, and cleared screens** via
 >   ANSI/CSI escape sequences — with `printf` examples you can run right now
@@ -19,17 +20,17 @@
 >   from drawing garbage when you resize
 >
 > **Prerequisites:** Chapter 1 (`01-the-big-picture.md`). You should already know
-> that cmux-linux is one Electron app split into a Node **main** process and a
+> that Shepherd is one Electron app split into a Node **main** process and a
 > React **renderer**, that **node-pty** runs the real shell in the backend, and
-> that **xterm.js** paints it in the frontend. This chapter is the *physics* under
+> that **xterm.js** paints it in the frontend. This chapter is the _physics_ under
 > those two libraries — the rules of the universe that the rest of the app obeys.
 
 ---
 
 ## 2.0 Why this chapter is the soul of the app
 
-Here is a promise: everything strange, surprising, or "why is it done *this* way?"
-about cmux-linux traces back to facts in this one chapter. Colors made of gibberish
+Here is a promise: everything strange, surprising, or "why is it done _this_ way?"
+about Shepherd traces back to facts in this one chapter. Colors made of gibberish
 characters. A shell that keeps running when you close the window it was in. A
 "terminal" that's really two programs pretending to be a wire. Passwords that
 vanish as you type. Notifications that appear because bash printed a magic string.
@@ -53,7 +54,7 @@ something like `/dev/pts/3`?**
 The answer is a 60-year-old ghost.
 
 **The 1960s — real, physical terminals.** Early computers were expensive
-room-sized machines shared by many people. You didn't sit *at* the computer; you
+room-sized machines shared by many people. You didn't sit _at_ the computer; you
 sat at a **terminal** — a separate physical device wired to the computer, often
 far away, over a serial cable. The iconic one is the **Teletype Model 33** (the
 "TTY" — that abbreviation is where the whole vocabulary comes from). It was
@@ -70,7 +71,7 @@ essentially an electric typewriter bolted to a communications line:
 ```
 
 You typed a character; the terminal sent that byte down the wire. The computer's
-program read the byte, did something, and sent bytes *back*, which the terminal
+program read the byte, did something, and sent bytes _back_, which the terminal
 **printed onto a roll of paper** (later, onto a screen). The computer had no idea
 what was on the far end of the cable — it just did `read()` and `write()` on a
 serial port. The terminal was **dumb**: it knew nothing about the program, only
@@ -85,11 +86,11 @@ copied that **we still emit the exact same bytes today** (section 2.6). A VT100
 died decades ago; its language is immortal.
 
 **The 1980s onward — the terminal disappears, but its software doesn't.** Personal
-computers and workstations had their *own* screen and keyboard built in. The
+computers and workstations had their _own_ screen and keyboard built in. The
 separate terminal on the end of a cable was gone. But there was a catch:
 **thousands of programs — including every shell — were written to talk to a
 terminal over a serial line.** Rewriting them all was unthinkable. So instead we
-faked it. We wrote a *program* that behaves exactly like a VT100: it draws a grid
+faked it. We wrote a _program_ that behaves exactly like a VT100: it draws a grid
 of characters in a window, sends your keystrokes as bytes, and interprets the
 escape codes to move a cursor and paint colors. That program is a **terminal
 emulator**.
@@ -100,8 +101,8 @@ emulator**.
 > Alacritty, the macOS Terminal, and — crucially for us — **xterm.js** are all
 > VT100 impersonators.
 
-> **🔧 In cmux-linux:** the terminals you see in the app are drawn by **xterm.js**,
-> a terminal emulator written in TypeScript that runs *inside a web page*. It is a
+> **🔧 In Shepherd:** the terminals you see in the app are drawn by **xterm.js**,
+> a terminal emulator written in TypeScript that runs _inside a web page_. It is a
 > direct descendant of that 1978 VT100 — it accepts the same escape codes and
 > paints the same grid. Chapter `07-xtermjs.md` is entirely about it.
 
@@ -146,18 +147,18 @@ Say it in one breath: **a terminal emulator (a) and a shell (c) never touch each
 other; they only ever read and write bytes to a kernel device in the middle (b)
 that pretends to be an old serial terminal.**
 
-The genius — and the source of every confusion — is that layer (c) *cannot tell*
+The genius — and the source of every confusion — is that layer (c) _cannot tell_
 that layer (a) is software. As far as bash is concerned, it is talking to a real
 VT100 over a real cable, exactly like 1978. That illusion is maintained by
 layer (b), and building layer (b) in software is what a **PTY** is (2.5).
 
 A web analogy to anchor it:
 
-| Terminal world | Web-dev world you know |
-|---|---|
-| Terminal emulator (a) | The **browser tab** — the rendering surface + input |
-| The TTY/PTY device (b) | The **network socket / connection** between them |
-| The shell (c) | The **server-side app** that reads requests and writes responses |
+| Terminal world         | Web-dev world you know                                           |
+| ---------------------- | ---------------------------------------------------------------- |
+| Terminal emulator (a)  | The **browser tab** — the rendering surface + input              |
+| The TTY/PTY device (b) | The **network socket / connection** between them                 |
+| The shell (c)          | The **server-side app** that reads requests and writes responses |
 
 Just like a Node server never touches the browser directly — it reads and writes a
 socket, and something else paints the pixels — bash never touches xterm.js. Both
@@ -167,7 +168,7 @@ sides talk to a byte channel in the middle and trust the other end to behave.
 
 ## 2.3 Everything is a byte stream: stdin, stdout, stderr
 
-Before we build the wire, let's nail down *what flows through it*: **bytes**, via
+Before we build the wire, let's nail down _what flows through it_: **bytes**, via
 three channels that every Unix program is born with.
 
 When the OS starts any process, it hands it three already-open **file
@@ -187,18 +188,18 @@ three fds are connected to the terminal device** (layer b). So:
 
 - `read(0)` returns the bytes you type.
 - `write(1)` puts bytes on the screen.
-- `write(2)` *also* puts bytes on the screen — but through a separate channel, so
+- `write(2)` _also_ puts bytes on the screen — but through a separate channel, so
   they can be redirected independently.
 
 > **You already know these three.** In Node they're `process.stdin`,
 > `process.stdout`, and `process.stderr`. `console.log` writes to fd 1;
-> `console.error` writes to fd 2. That's not an analogy — they are *literally* the
+> `console.error` writes to fd 2. That's not an analogy — they are _literally_ the
 > same file descriptors 0/1/2 this section is describing. Systems programming
 > often feels like discovering that Node was a thin coat of paint over the OS all
 > along.
 
-**Why two output streams (stdout vs stderr)?** So you can separate the *data* a
-program produces from its *diagnostics*. Consider:
+**Why two output streams (stdout vs stderr)?** So you can separate the _data_ a
+program produces from its _diagnostics_. Consider:
 
 ```sh
 grep "ERROR" app.log > errors.txt 2> grep-problems.txt
@@ -207,7 +208,7 @@ grep "ERROR" app.log > errors.txt 2> grep-problems.txt
 - `> errors.txt` redirects **fd 1** (the matching lines — the useful output) into a
   file.
 - `2> grep-problems.txt` redirects **fd 2** (warnings like "permission denied on
-  some-file") into a *different* file.
+  some-file") into a _different_ file.
 
 The matched lines and the complaints go to different places, even though both would
 otherwise have landed on your screen. That's the entire reason stderr exists as a
@@ -221,18 +222,18 @@ sort < names.txt      # fd 0 now reads from a file, not the keyboard
 ls | grep foo         # ls's fd 1 is wired to grep's fd 0 through a kernel pipe
 ```
 
-`ls` has *no idea* any of this happened. It always just `write()`s to fd 1. The
-shell rewires fd 1 to a file, a pipe, or the terminal *before* launching `ls`. The
+`ls` has _no idea_ any of this happened. It always just `write()`s to fd 1. The
+shell rewires fd 1 to a file, a pipe, or the terminal _before_ launching `ls`. The
 program is blissfully ignorant of where its bytes go — which is exactly why the
 same `ls` works whether you're looking at its output, saving it, or feeding it to
 another command.
 
 > **⚠️ Gotcha — "is anyone actually watching?"** Because a program can't easily
-> tell what fd 1 points at, it may *ask* the kernel: "is my stdout a real
+> tell what fd 1 points at, it may _ask_ the kernel: "is my stdout a real
 > terminal?" via the `isatty()` call. Many programs light up with **color only
 > when the answer is yes.** That's why `ls` is colorful on screen but `ls | cat`
 > or `ls > file.txt` is plain — piping/redirecting means "not a terminal," so `ls`
-> disables color. Remember this; it's the reason our whole app needs a *real*
+> disables color. Remember this; it's the reason our whole app needs a _real_
 > terminal device and not a plain pipe (2.5, 2.10).
 
 ---
@@ -242,10 +243,10 @@ another command.
 This is the distinction that trips up every beginner, so we'll be blunt: **the
 shell and the terminal are two completely separate things.**
 
-- The **terminal** (emulator) is the *screen and keyboard* — layer (a). Its job is
+- The **terminal** (emulator) is the _screen and keyboard_ — layer (a). Its job is
   drawing characters and capturing keystrokes. It knows nothing about commands,
   files, or `PATH`.
-- The **shell** (bash, zsh, fish) is a *program that runs inside* the terminal —
+- The **shell** (bash, zsh, fish) is a _program that runs inside_ the terminal —
   layer (c). It's an ordinary user program, not part of the OS. Its job is to be a
   **REPL for the operating system**:
 
@@ -259,14 +260,14 @@ shell and the terminal are two completely separate things.**
     6. go to step 1
   ```
 
-That's *all* a shell is. Prompts, `$PATH` lookup, environment variables, tab
+That's _all_ a shell is. Prompts, `$PATH` lookup, environment variables, tab
 completion, pipes, `if`/`for` scripting, job control (`Ctrl-Z`, `bg`, `fg`) — every
 one of those is a **shell** feature, invented by bash/zsh. The terminal contributes
 none of it.
 
 The clean way to feel the separation: **you don't have to run a shell in a
 terminal at all.** Type `vim`, `top`, `python3`, or `node` and the shell steps
-aside — now the terminal is displaying *that* program instead. The terminal
+aside — now the terminal is displaying _that_ program instead. The terminal
 happily draws whatever byte stream it's given; it has no opinion about whether
 those bytes come from bash or from vim.
 
@@ -277,15 +278,15 @@ those bytes come from bash or from vim.
 > was loaded, but the tab and the app were never the same thing.
 
 > **⚠️ Gotcha — closing the window vs killing the shell.** When you close a
-> terminal window, the shell usually dies *too* — but not because they're the same
-> object. It's because the shell was the *child program the terminal launched*, and
+> terminal window, the shell usually dies _too_ — but not because they're the same
+> object. It's because the shell was the _child program the terminal launched_, and
 > tearing down the terminal (specifically, the master end of the PTY — 2.5) sends
 > the shell a hang-up signal (`SIGHUP`), the modern echo of a phone line going
-> dead. Two separate things, one causal link. In cmux-linux this matters: our
-> shells live in a *different process* from the window, so we control that
+> dead. Two separate things, one causal link. In Shepherd this matters: our
+> shells live in a _different process_ from the window, so we control that
 > lifecycle deliberately (chapter `06-node-pty.md`).
 
-> **🔧 In cmux-linux:** the shell is spawned by **node-pty** in the **main**
+> **🔧 In Shepherd:** the shell is spawned by **node-pty** in the **main**
 > process — the Node backend — not in the window. The window (renderer) only draws
 > the picture. That's the "the terminal you see is a puppet" idea from Chapter 1,
 > now with names: xterm.js = the puppet (a), node-pty's shell = the puppeteer's
@@ -300,7 +301,7 @@ plus the terminal's guts. Today there's no cable — the emulator and the shell 
 both just programs on the same machine. So the kernel **fakes the cable in
 software.** That fake is a **pseudo-terminal**, or **PTY**.
 
-A PTY is a *pair* of connected virtual devices the kernel creates on demand. The
+A PTY is a _pair_ of connected virtual devices the kernel creates on demand. The
 two ends have names (the terminology is unfortunately historical; both name-pairs
 mean the same two ends):
 
@@ -311,7 +312,7 @@ mean the same two ends):
 
 The magic property: **the slave end is indistinguishable from a real terminal.** It
 has a line discipline (2.8), it honors terminal settings (echo on/off, canonical
-mode), it stores a window size (2.9), and `isatty()` on it returns *true*. So when
+mode), it stores a window size (2.9), and `isatty()` on it returns _true_. So when
 bash opens the slave, `isatty(1)` says "yes, you're on a real terminal!" and bash
 turns on colors, its prompt, job control — the full experience. **bash cannot tell
 it isn't 1978.** That illusion is the entire point of a PTY.
@@ -340,8 +341,8 @@ line of output leftward:
 Read it as two one-way trips sharing a device:
 
 1. **Keystroke (rightward).** You press `l`. The emulator writes the byte `l` to
-   the **master**. The kernel passes it through to the slave, *via the line
-   discipline* (which may echo it back and may buffer it — 2.8). Eventually bash's
+   the **master**. The kernel passes it through to the slave, _via the line
+   discipline_ (which may echo it back and may buffer it — 2.8). Eventually bash's
    `read(0)` returns `l`.
 2. **Output (leftward).** bash decides to print. It `write()`s bytes to fd 1 (the
    slave). They travel back out the **master**, where the emulator `read()`s them
@@ -367,13 +368,13 @@ later:
 
 > **⚠️ Gotcha — a pipe is NOT a PTY.** In Node, `child_process.spawn('bash')` wires
 > the child up with plain **pipes**, not a PTY. bash's `isatty()` then returns
-> *false*, so you get no colors, no prompt, no job control, no line editing — a sad,
-> half-dead shell. This is *the* reason the `node-pty` library exists as a separate
+> _false_, so you get no colors, no prompt, no job control, no line editing — a sad,
+> half-dead shell. This is _the_ reason the `node-pty` library exists as a separate
 > native addon: creating a real PTY pair requires OS calls that plain
 > `child_process` doesn't make. **node-pty gives you a real terminal; a pipe gives
 > you a corpse.** Chapter `06-node-pty.md` is built on this distinction.
 
-> **🔧 In cmux-linux:** node-pty creates the PTY pair, `exec`s bash on the *slave*
+> **🔧 In Shepherd:** node-pty creates the PTY pair, `exec`s bash on the _slave_
 > side, and hands **us the master end** as a Node stream object. When we call
 > `ptyProcess.write("ls\n")`, that's "write to the master" (the keystroke trip).
 > When `ptyProcess.onData((bytes) => …)` fires, that's "read from the master" (the
@@ -384,7 +385,7 @@ later:
 
 ## 2.6 Escape sequences, part 1: how bytes become colors and cursors
 
-We've been saying "bytes flow through the wire." But if it's *just* bytes, how does
+We've been saying "bytes flow through the wire." But if it's _just_ bytes, how does
 `git` make text red, or `vim` move the cursor to the top-left, or a progress bar
 overwrite itself in place? There's no separate "formatting channel." The answer is
 delightfully sneaky: **the control commands are mixed right into the same byte
@@ -396,20 +397,20 @@ that mean "this isn't text to print — it's an instruction."
 The bytes `0x00`–`0x1F` aren't printable letters; they're **control characters**,
 each with a meaning inherited from teletype days:
 
-| Byte | Name | Escape in `printf` | Effect |
-|---|---|---|---|
-| `0x0A` | Line Feed (LF) | `\n` | Move the cursor **down** one row |
-| `0x0D` | Carriage Return (CR) | `\r` | Move the cursor to **column 0** (start of line) |
-| `0x09` | Tab | `\t` | Advance to the next tab stop |
-| `0x08` | Backspace | `\b` | Move the cursor **left** one column |
-| `0x07` | Bell | `\a` | **Beep** (or flash) — a leftover from a literal bell on the Teletype |
-| `0x1B` | **Escape (ESC)** | `\033` (octal) / `\e` / `\x1b` | "The next bytes are a **command**, not text" |
+| Byte   | Name                 | Escape in `printf`             | Effect                                                               |
+| ------ | -------------------- | ------------------------------ | -------------------------------------------------------------------- |
+| `0x0A` | Line Feed (LF)       | `\n`                           | Move the cursor **down** one row                                     |
+| `0x0D` | Carriage Return (CR) | `\r`                           | Move the cursor to **column 0** (start of line)                      |
+| `0x09` | Tab                  | `\t`                           | Advance to the next tab stop                                         |
+| `0x08` | Backspace            | `\b`                           | Move the cursor **left** one column                                  |
+| `0x07` | Bell                 | `\a`                           | **Beep** (or flash) — a leftover from a literal bell on the Teletype |
+| `0x1B` | **Escape (ESC)**     | `\033` (octal) / `\e` / `\x1b` | "The next bytes are a **command**, not text"                         |
 
 Two of these explain a famous Windows-vs-Unix quirk. On a real teletype, ending a
-line meant two *physical* motions: **return the carriage** to the left (CR) and
+line meant two _physical_ motions: **return the carriage** to the left (CR) and
 **feed the paper up** one line (LF). That's why Windows line endings are `\r\n` —
 they encode both motions literally. Unix collapsed it to just `\n`. Keep CR (`\r`)
-and LF (`\n`) as *separate* motions in your head; it pays off in a minute.
+and LF (`\n`) as _separate_ motions in your head; it pays off in a minute.
 
 **Worked example — the humble progress bar.** How does `Downloading… Done!`
 overwrite itself on one line, without scrolling? With `\r`:
@@ -420,20 +421,22 @@ printf 'Downloading...'; sleep 1; printf '\rDone!         \n'
 
 Walkthrough: we print `Downloading...` (cursor is now sitting after the dots).
 `\r` yanks the cursor back to **column 0 of the same line** (no new line). Then
-`Done!` prints *over* the old text starting at the left. The trailing spaces are
+`Done!` prints _over_ the old text starting at the left. The trailing spaces are
 deliberate — they paint over the leftover `ng...` characters from the longer word.
 Finally `\n` drops to the next line. Every spinner and progress bar you've ever
 seen is this trick: `\r` to the start, reprint. No magic.
 
-> **⚠️ Gotcha — the "staircase."** `\n` moves **down but not left** (it's *only*
+> **⚠️ Gotcha — the "staircase."** `\n` moves **down but not left** (it's _only_
 > LF, not CR+LF). In a normal terminal the line discipline quietly translates your
 > `\n` into `\r\n` so text starts at the left each line. But in **raw mode** (2.8),
 > that translation is off, and a lone `\n` gives you:
+>
 > ```
 > line one
 >          line two
 >                   line three
 > ```
+>
 > Everyone who writes raw-mode terminal output hits this once. The fix: emit
 > `\r\n` yourself.
 
@@ -455,11 +458,11 @@ Sequence Introducer** — which is `ESC` followed by `[`:
    └─────────────────────── ESC (0x1B): "the next bytes are a command, not text"
 ```
 
-So the byte string `\033[31m` means: *ESC, begin control sequence, parameter 31,
-command `m`.* Command `m` is **SGR (Select Graphic Rendition)** — "change text
+So the byte string `\033[31m` means: _ESC, begin control sequence, parameter 31,
+command `m`._ Command `m` is **SGR (Select Graphic Rendition)** — "change text
 appearance" — and parameter `31` means "foreground red." The terminal reads those
 five bytes, prints **nothing**, and instead flips its "current color" to red. Every
-character *after* that comes out red until you change it again.
+character _after_ that comes out red until you change it again.
 
 **The worked example the whole chapter has been building toward:**
 
@@ -471,32 +474,32 @@ Byte-by-byte, here's what the terminal emulator does:
 
 1. `\033[31m` → SGR 31: set foreground to red. Nothing is printed; internal state
    changes.
-2. `r`, `e`, `d` → three ordinary characters, painted in the *current* color: red.
+2. `r`, `e`, `d` → three ordinary characters, painted in the _current_ color: red.
 3. `\033[0m` → SGR 0: **reset** all attributes back to default. (This is the step
    people forget — omit it and your prompt, and everything after, stays red.)
 4. `\n` → newline.
 
-Result: the word **red**, in red, then back to normal. That is the *entire*
+Result: the word **red**, in red, then back to normal. That is the _entire_
 mechanism behind colored output in `git`, `ls`, test runners, and every CLI you've
 ever admired. It's just bytes carrying `\033[…m` markers inline with the text.
 
 **A cheat-sheet of the CSI sequences you'll actually meet:**
 
-| Sequence | Name | Effect |
-|---|---|---|
-| `\033[0m` | SGR 0 | Reset all colors/styles to default |
-| `\033[1m` | SGR 1 | **Bold** / bright |
-| `\033[4m` | SGR 4 | Underline |
-| `\033[7m` | SGR 7 | Reverse video (swap fg/bg) |
-| `\033[31m` … `\033[37m` | SGR | Foreground color (red…white) |
-| `\033[41m` … `\033[47m` | SGR | Background color |
-| `\033[38;5;208m` | SGR | Foreground from the **256-color** palette (208 = orange) |
-| `\033[38;2;255;105;180m` | SGR | Foreground **truecolor** RGB (here, hot pink) |
-| `\033[H` | CUP | Move cursor to **home** (row 1, col 1) |
-| `\033[3;10H` | CUP | Move cursor to **row 3, column 10** |
-| `\033[2A` `\033[2B` `\033[2C` `\033[2D` | CUU/CUD/CUF/CUB | Move cursor **up/down/right/left** by 2 |
-| `\033[2J` | ED | **Erase** the entire screen |
-| `\033[K` | EL | Erase from cursor to end of line |
+| Sequence                                | Name            | Effect                                                   |
+| --------------------------------------- | --------------- | -------------------------------------------------------- |
+| `\033[0m`                               | SGR 0           | Reset all colors/styles to default                       |
+| `\033[1m`                               | SGR 1           | **Bold** / bright                                        |
+| `\033[4m`                               | SGR 4           | Underline                                                |
+| `\033[7m`                               | SGR 7           | Reverse video (swap fg/bg)                               |
+| `\033[31m` … `\033[37m`                 | SGR             | Foreground color (red…white)                             |
+| `\033[41m` … `\033[47m`                 | SGR             | Background color                                         |
+| `\033[38;5;208m`                        | SGR             | Foreground from the **256-color** palette (208 = orange) |
+| `\033[38;2;255;105;180m`                | SGR             | Foreground **truecolor** RGB (here, hot pink)            |
+| `\033[H`                                | CUP             | Move cursor to **home** (row 1, col 1)                   |
+| `\033[3;10H`                            | CUP             | Move cursor to **row 3, column 10**                      |
+| `\033[2A` `\033[2B` `\033[2C` `\033[2D` | CUU/CUD/CUF/CUB | Move cursor **up/down/right/left** by 2                  |
+| `\033[2J`                               | ED              | **Erase** the entire screen                              |
+| `\033[K`                                | EL              | Erase from cursor to end of line                         |
 
 **Worked example — clear the screen and draw at a spot:**
 
@@ -507,26 +510,26 @@ printf '\033[2J\033[3;10HHello!\n'
 `\033[2J` erases the whole screen; `\033[3;10H` parks the cursor at row 3, column
 10; then `Hello!` prints there. This — clearing, then positioning, then drawing —
 is the beating heart of every "full-screen" terminal app. `vim`, `htop`, and `tmux`
-are, at bottom, just very elaborate loops of *erase, move cursor, print, repeat*.
+are, at bottom, just very elaborate loops of _erase, move cursor, print, repeat_.
 
-> **🔧 In cmux-linux:** the emulator that reads and obeys all of these bytes is
+> **🔧 In Shepherd:** the emulator that reads and obeys all of these bytes is
 > **xterm.js**. When bash (in the main process) writes `\033[31m`, those exact
 > bytes travel out the PTY master → through node-pty → over Electron IPC → into
 > xterm.js in the renderer, which parses the CSI and flips the on-screen color to
 > red. **We never write a color-parser ourselves** — xterm.js is a full VT100/xterm
-> interpreter, and inheriting that is *why we chose it* (chapter `07-xtermjs.md`).
+> interpreter, and inheriting that is _why we chose it_ (chapter `07-xtermjs.md`).
 
 > **A useful mental model:** think of escape codes as the terminal's version of an
 > imperative drawing API — like calling `ctx.fillStyle = 'red'` and
 > `ctx.moveTo(x, y)` on an HTML `<canvas>`, except the "function calls" are encoded
-> as byte sequences *interleaved with the text* rather than as JavaScript. The
+> as byte sequences _interleaved with the text_ rather than as JavaScript. The
 > terminal is a canvas; escape codes are its drawing commands.
 
 ---
 
 ## 2.7 Escape sequences, part 2: OSC — talking to the terminal itself
 
-CSI sequences manipulate the *character grid* — colors, cursor, erasing. But
+CSI sequences manipulate the _character grid_ — colors, cursor, erasing. But
 sometimes a program wants to talk to the **terminal application as a whole**: "set
 your window title," "put this on the clipboard," "pop a desktop notification."
 Those aren't grid operations, so they use a different family: **OSC — Operating
@@ -571,7 +574,7 @@ fg/bg colors), **OSC 7** (report the current working directory to the terminal).
 
 ### Preview: OSC 9 / 99 / 777 — notifications (our signature feature)
 
-Here's the one that matters most for cmux-linux. Several OSC commands exist to fire
+Here's the one that matters most for Shepherd. Several OSC commands exist to fire
 a **desktop notification** straight from the byte stream — no library, no API, just
 `printf`:
 
@@ -585,19 +588,19 @@ printf '\033]777;notify;Build;All tests passed\033\\'
 
 Think about how powerful that is. **Any** program that can write to stdout — a
 shell script, a test runner, a coding agent like Claude Code — can pop a desktop
-notification by printing a magic string. It needs to know *nothing* about your
-desktop environment. It just emits bytes, and the terminal (which *does* know how
+notification by printing a magic string. It needs to know _nothing_ about your
+desktop environment. It just emits bytes, and the terminal (which _does_ know how
 to show a notification) does the rest. This is the terminal-native way to say "hey,
 I need you."
 
-That is precisely the hook cmux-linux hangs its identity on. When an agent finishes
+That is precisely the hook Shepherd hangs its identity on. When an agent finishes
 and wants your attention, one path is that it prints an OSC 9/99/777. The **main
 process is watching the PTY byte stream for exactly these sequences**, and when it
 spots one it lights up the sidebar, rings the pane, and fires an OS notification —
 the "which agent needs me?" magic from Chapter 1.
 
-> **🔧 In cmux-linux:** we treat the terminal output as *two* audiences at once. The
-> bytes go to **xterm.js** to be drawn, *and* the same bytes are scanned in the
+> **🔧 In Shepherd:** we treat the terminal output as _two_ audiences at once. The
+> bytes go to **xterm.js** to be drawn, _and_ the same bytes are scanned in the
 > main process for OSC 9/99/777. One is a display; the other is an event source.
 > The full parsing pipeline — which codes, how we extract title/body, how it drives
 > the rings — is chapter `12-notifications-and-osc.md`. For now just hold this: **a
@@ -620,13 +623,13 @@ settings (which any program can flip):
 ### Canonical mode (a.k.a. "cooked" mode) — the default
 
 In canonical mode the kernel buffers input **one line at a time** and does a
-surprising amount of work *before your program ever sees a single byte*:
+surprising amount of work _before your program ever sees a single byte_:
 
 - **It echoes.** Each character you type is copied back to the terminal so you can
-  *see* what you're typing. (More on this being a deliberate act below.)
+  _see_ what you're typing. (More on this being a deliberate act below.)
 - **It edits the line for you.** Backspace erases the previous character. `Ctrl-U`
-  kills the whole line. `Ctrl-W` deletes the last word. All of this happens *inside
-  the kernel*, invisibly — the program never sees the deleted characters.
+  kills the whole line. `Ctrl-W` deletes the last word. All of this happens _inside
+  the kernel_, invisibly — the program never sees the deleted characters.
 - **It waits for Enter.** Only when you press Return does the kernel hand the whole,
   finished line to the program's `read()` in one delivery.
 - **It turns keys into signals.** `Ctrl-C` becomes a **SIGINT** sent to the
@@ -635,16 +638,16 @@ surprising amount of work *before your program ever sees a single byte*:
   **SIGQUIT**.
 
 Here's the mind-bender for a web dev: when a bash script runs `read name`, **bash
-didn't implement backspace or line editing.** The *kernel's line discipline* did.
+didn't implement backspace or line editing.** The _kernel's line discipline_ did.
 You can type, mistype, backspace, retype, and only the final clean line reaches
 bash on Enter. bash got a free `<input>` element from the operating system.
 
 ### Raw mode — for programs that want every keystroke
 
-Some programs need to react to *each* keypress instantly and control the screen
+Some programs need to react to _each_ keypress instantly and control the screen
 themselves. `vim` must respond to a bare `j` (move down) with no Enter. A REPL must
 handle the Up-arrow for history. So these programs switch the terminal into **raw
-mode**, which turns *off* canonical buffering (and usually echo, and signal
+mode**, which turns _off_ canonical buffering (and usually echo, and signal
 generation). Now:
 
 - Every keystroke is delivered to the program **immediately**, one byte at a time.
@@ -654,7 +657,7 @@ generation). Now:
 That's why `Ctrl-C` inside vim doesn't kill vim: vim asked for raw mode, so the
 kernel no longer converts `Ctrl-C` into a signal — it just hands vim the byte
 `0x03`, and vim decides to ignore it. The same key is a "kill" at a bash prompt
-(canonical) and a no-op in vim (raw), because the *mode of the line discipline* is
+(canonical) and a no-op in vim (raw), because the _mode of the line discipline_ is
 different.
 
 ```
@@ -673,27 +676,27 @@ different.
 This deserves its own spotlight because it violates a web-dev intuition hard. In a
 browser `<input>`, the **browser** draws each character as you type — input and
 display are the same widget. **In a terminal, they are not.** When you press a key,
-the byte travels *away* from the screen, into the PTY, toward the program. It
+the byte travels _away_ from the screen, into the PTY, toward the program. It
 appears on screen **only because something deliberately echoes it back**:
 
 - In **canonical mode**, the **kernel's line discipline** echoes it (the ECHO
   termios flag).
-- In **raw mode**, the *program* echoes it — e.g., bash's own line editor prints
+- In **raw mode**, the _program_ echoes it — e.g., bash's own line editor prints
   the character back as part of drawing your command line.
 
-Either way, echo is an *action taken by software*, not an automatic property of
+Either way, echo is an _action taken by software_, not an automatic property of
 typing. Turn echo off and your keystrokes still reach the program perfectly — they
 just leave no mark on the screen.
 
 ### Why passwords don't echo (the whole trick, finally)
 
 When `sudo` or `ssh` prompts `Password:`, watch what happens: you type, and
-*nothing appears*. Here is the entire mechanism: the program **turns off the ECHO
+_nothing appears_. Here is the entire mechanism: the program **turns off the ECHO
 flag** (via termios) before reading, and turns it back on afterward. The kernel
 still faithfully receives every keystroke and delivers your password to the
 program — it simply stops copying the characters to the screen while ECHO is off.
-No masking, no dots, no special "password widget." Just: *echo, temporarily
-disabled.* Anticlimactic and beautiful.
+No masking, no dots, no special "password widget." Just: _echo, temporarily
+disabled._ Anticlimactic and beautiful.
 
 You can feel all of this yourself with the `stty` command, which reads and writes
 line-discipline settings:
@@ -705,7 +708,7 @@ stty echo                  # turn echo back ON
 echo "you actually typed: $secret"   # ...but it was captured all along
 ```
 
-> **🔧 In cmux-linux:** because our shell runs on a *real* PTY (thanks to node-pty,
+> **🔧 In Shepherd:** because our shell runs on a _real_ PTY (thanks to node-pty,
 > not a pipe), we get this entire line-discipline machine for free — canonical
 > editing at the prompt, raw mode when vim asks for it, `Ctrl-C` becoming a signal,
 > and password prompts that correctly hide input. If we'd used a plain pipe, none
@@ -713,7 +716,7 @@ echo "you actually typed: $secret"   # ...but it was captured all along
 > the screen. This is another concrete reason the PTY (2.5) is non-negotiable.
 
 > **⚠️ Gotcha — who's echoing?** A classic bug in home-grown terminals is
-> characters appearing **twice** (both the program *and* the line discipline echo)
+> characters appearing **twice** (both the program _and_ the line discipline echo)
 > or **not at all** (neither does). With node-pty + xterm.js you sidestep this: the
 > PTY's line discipline handles echo, and xterm.js just displays whatever comes
 > back out the master. Don't add your own "show the key I pressed" logic in the
@@ -725,14 +728,14 @@ echo "you actually typed: $secret"   # ...but it was captured all along
 
 One more property lives on the PTY device: its **size**, measured in **columns ×
 rows** of character cells (the classic VT100 default is **80 × 24**). This is not a
-pixel size — it's a *grid* size, and the kernel stores it right on the TTY/PTY as a
+pixel size — it's a _grid_ size, and the kernel stores it right on the TTY/PTY as a
 little `struct winsize`.
 
 Why does anyone care? Line-by-line programs (like a shell scrolling output) mostly
 don't. But **full-screen "TUI" apps must know the exact grid to draw correctly.**
 `vim` needs to know it has, say, 80 columns and 24 rows so it can place its status
 line on row 24, wrap text at column 80, and center a message. `htop`, `less`,
-`tmux`, and every dashboard-style tool are the same: they *paint to a grid*, and
+`tmux`, and every dashboard-style tool are the same: they _paint to a grid_, and
 they must know that grid's dimensions or the output is scrambled.
 
 A program asks "how big am I?" by querying the device (the `ioctl(fd, TIOCGWINSZ)`
@@ -745,10 +748,10 @@ tput cols      # prints:  80
 tput lines     # prints:  24
 ```
 
-> **⚠️ Gotcha — no terminal, no size.** Run those commands where stdout *isn't* a
+> **⚠️ Gotcha — no terminal, no size.** Run those commands where stdout _isn't_ a
 > real terminal (say, piped through another process) and `stty size` reports an
 > error and `tput` falls back to a guessed 80 × 24. It's the same `isatty()` truth
-> from 2.3: size is a property of a *terminal device*, so if there's no terminal,
+> from 2.3: size is a property of a _terminal device_, so if there's no terminal,
 > there's no honest answer. (You may see this exact behavior if you run our shell
 > without a proper PTY — one more reason node-pty matters.)
 
@@ -775,28 +778,28 @@ out and redraw to fill the new space? A little four-step cooperative dance:
 ```
 
 So a resize is not one action but a **conversation**: the emulator sets the size →
-the kernel *signals* the program → the program re-reads the size and repaints
+the kernel _signals_ the program → the program re-reads the size and repaints
 itself. If a program doesn't bother to handle SIGWINCH (many simple ones don't), it
 just keeps using the old dimensions until the next time it happens to ask — which
 is why a naive program can look wrong after a resize until you nudge it.
 
 > **Web analogy:** SIGWINCH is the terminal's `window.addEventListener('resize',
-> …)`. Same idea — "the viewport changed, re-layout" — but delivered as a Unix
+…)`. Same idea — "the viewport changed, re-layout" — but delivered as a Unix
 > signal to a process instead of a DOM event to a callback. Programs that ignore it
 > are like a webpage with a fixed-pixel layout that doesn't reflow: technically
 > still running, visibly broken.
 
-> **🔧 In cmux-linux:** when you drag a pane divider or resize the window, xterm.js
+> **🔧 In Shepherd:** when you drag a pane divider or resize the window, xterm.js
 > (with its **fit addon**) recomputes how many cols × rows now fit, and we call
 > **`ptyProcess.resize(cols, rows)`** in node-pty. That performs step 2 (write the
 > new size to the PTY master), the kernel does step 3 (SIGWINCH to the shell/vim),
 > and the program does step 4 (repaint). Get this wiring wrong and vim inside a
-> pane draws to the *old* size — a garbled display — until it's nudged. Chapters
+> pane draws to the _old_ size — a garbled display — until it's nudged. Chapters
 > `06-node-pty.md` and `07-xtermjs.md` implement the two halves of this handshake.
 
 ---
 
-## 2.10 The whole thing, as cmux-linux
+## 2.10 The whole thing, as Shepherd
 
 Time to collapse all five ideas — the three layers, byte streams, the shell, the
 PTY, escape codes, line discipline, and size — into the exact shape of our app.
@@ -840,24 +843,24 @@ Walk the loops one final time, now fully named:
 
 - **You type.** xterm.js (the emulator, layer a) captures the key, sends it over
   IPC; node-pty writes it to the **PTY master** (layer b); the line discipline
-  cooks/echoes it; bash's `read()` gets it (layer c). *That's 2.5's rightward
-  trip.*
+  cooks/echoes it; bash's `read()` gets it (layer c). _That's 2.5's rightward
+  trip._
 - **The shell prints.** bash `write()`s bytes to its stdout (the slave), possibly
   containing `\033[31m…`; they exit the **master**; `pty.onData` fires; we IPC them
   to xterm.js, which parses the escape codes and paints red text at the cursor.
-  *That's 2.5's leftward trip + 2.6's escape parsing.*
-- **An agent needs you.** The same output bytes are *also* scanned in the main
+  _That's 2.5's leftward trip + 2.6's escape parsing._
+- **An agent needs you.** The same output bytes are _also_ scanned in the main
   process for an OSC 9/99/777 (2.7). Spotting one triggers the sidebar ring and a
-  desktop notification. *That's the Chapter 1 "magic," and it's just an escape code
-  in the byte stream.*
+  desktop notification. _That's the Chapter 1 "magic," and it's just an escape code
+  in the byte stream._
 - **You resize a pane.** xterm.js's fit addon computes new cols × rows; we call
-  `pty.resize`; the kernel sends **SIGWINCH**; vim repaints. *That's 2.9's dance.*
+  `pty.resize`; the kernel sends **SIGWINCH**; vim repaints. _That's 2.9's dance._
 
 Notice what our own code is and isn't. We do **not** write a VT100 interpreter
 (xterm.js is that), and we do **not** implement line editing, echo, or signal
 handling (the kernel's line discipline is that). Our job is the **plumbing between
 the layers** — moving bytes across the process boundary via IPC, and watching the
-stream for the codes that make the sidebar come alive. The terminal *physics* in
+stream for the codes that make the sidebar come alive. The terminal _physics_ in
 this chapter is the bedrock; every remaining chapter is an engineering detail
 bolted onto it.
 
@@ -880,7 +883,7 @@ If you remember nothing else from this chapter, carry these six sentences:
 6. **Colors, cursors, titles, and notifications are all escape codes** — bytes
    like `\033[31m` (CSI) and `\033]0;…` (OSC) interleaved with the text.
 
-Everything cmux-linux does is one of these facts wearing an Electron costume.
+Everything Shepherd does is one of these facts wearing an Electron costume.
 
 ---
 
@@ -919,7 +922,7 @@ the **emulator** (screen + keyboard, e.g. xterm.js), the **TTY/PTY device** (a
 kernel "wire" with a line discipline), and the **shell or program** (bash, vim) at
 the far end. They communicate only in **bytes**, over the three standard streams
 `stdin`/`stdout`/`stderr` (fds 0/1/2 — Node's `process.stdin/out/err`). The
-**shell is just a program** running *inside* the terminal, not the terminal itself.
+**shell is just a program** running _inside_ the terminal, not the terminal itself.
 Because there's no real serial cable anymore, the kernel fakes one with a **PTY** —
 a **master** end (held by the emulator) glued to a **slave** end (the shell's
 stdio) — so unmodified programs think they're on real hardware and inherit the line
@@ -928,11 +931,12 @@ motion, window titles, and desktop notifications are all escape codes** —
 `\033[…` (CSI) and `\033]…` (OSC) — interleaved with the text. The **line
 discipline** explains why your keystrokes appear (echo) and why passwords don't
 (echo temporarily off), while the PTY's **size** plus the **SIGWINCH** signal keep
-full-screen apps like vim drawing correctly across resizes. In cmux-linux,
+full-screen apps like vim drawing correctly across resizes. In Shepherd,
 **node-pty holds the master** and **xterm.js is the emulator** — everything else is
 plumbing bytes between them.
 
 ## Where this shows up next
+
 - The two-process split those layers live in → `03-electron-architecture.md`
 - Moving the bytes across that split (send/onData) → `04-ipc-inter-process-communication.md` and `05-preload-and-context-isolation.md`
 - Holding the **PTY master**, `write`/`onData`/`resize`, env injection → `06-node-pty.md`
@@ -942,6 +946,7 @@ plumbing bytes between them.
 - The full end-to-end keystroke + notification trace → `17-how-it-all-connects.md`
 
 ## Further reading
+
 - The TTY demystified (Linus Åkesson) — the single best deep-dive on TTYs, PTYs, sessions, and signals: https://www.linusakesson.net/programming/tty/
 - ANSI escape code (Wikipedia) — a complete, browsable table of CSI/SGR/OSC sequences: https://en.wikipedia.org/wiki/ANSI_escape_code
 - XTerm Control Sequences (Thomas Dickey, invisible-island) — the authoritative reference for what real terminals implement: https://invisible-island.net/xterm/ctlseqs/ctlseqs.html

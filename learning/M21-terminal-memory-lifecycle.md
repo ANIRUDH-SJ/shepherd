@@ -148,11 +148,11 @@ and clears its ref.
 Diagnostics are enabled only by the exact value:
 
 ```sh
-CMUX_MEMORY_DIAGNOSTICS=1
+SHEPHERD_MEMORY_DIAGNOSTICS=1
 ```
 
 Every other value leaves the normal path at one cached boolean check.
-`reportTerminalMemory()` emits one `[cmux:memory]` JSON object only at lifecycle
+`reportTerminalMemory()` emits one `[shepherd:memory]` JSON object only at lifecycle
 boundaries. It contains:
 
 - terminal and owner counts;

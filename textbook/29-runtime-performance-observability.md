@@ -28,7 +28,7 @@ into a permanent performance cost or a privacy risk.
 
 ## 1. External and internal benchmarks answer different questions
 
-The terminal benchmark harness measures cmux-linux from outside. That is the
+The terminal benchmark harness measures Shepherd from outside. That is the
 right boundary for comparing applications because every subject receives the
 same observer. Internal instrumentation is intentionally not comparable with
 Kitty, Ghostty, or GNOME Terminal because their phase names and architectures
@@ -39,7 +39,7 @@ The two forms complement each other:
 | Observer         | Best question                                                           |
 | ---------------- | ----------------------------------------------------------------------- |
 | External harness | Did total behavior improve relative to the baseline and other subjects? |
-| Internal trace   | Which cmux-linux stage changed, and what should we profile next?        |
+| Internal trace   | Which Shepherd stage changed, and what should we profile next?          |
 
 An internal event must never replace the external result. Product code can report
 itself “ready” too early. The external worker remains the independent check.
@@ -51,7 +51,7 @@ mean JavaScript downloaded, React invoked, DOM committed, the first frame
 requested, or the first frame displayed. Mixing those definitions across runs
 creates false improvements.
 
-cmux-linux uses names tied to concrete calls or lifecycle events:
+Shepherd uses names tied to concrete calls or lifecycle events:
 
 - `electron-ready` is the resolution of `app.whenReady()`;
 - `window-created` follows the `BrowserWindow` constructor;
@@ -132,7 +132,7 @@ Instrumentation can invalidate its own measurements if it adds work to hot
 paths. The safest default is an explicit launch-time opt-in:
 
 ```bash
-CMUX_PERF_DIAGNOSTICS=1 npm run start
+SHEPHERD_PERF_DIAGNOSTICS=1 npm run start
 ```
 
 Without the exact value `1`:
@@ -206,7 +206,7 @@ kind.
 The diagnostic output is one newline-delimited JSON object with a stable prefix:
 
 ```text
-[cmux:perf] {"schemaVersion":1,"kind":"startup","complete":true,"events":[...]}
+[shepherd:perf] {"schemaVersion":1,"kind":"startup","complete":true,"events":[...]}
 ```
 
 For two adjacent events:

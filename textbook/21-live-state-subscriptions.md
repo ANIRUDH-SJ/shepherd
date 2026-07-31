@@ -51,7 +51,7 @@ projection used by list/snapshot endpoints, then store the normalized query. Thi
 keeps comma-separated CLI values, enum validation, timestamp cursors, limits, and
 workspace resolution identical across one-shot and streaming consumers.
 
-In cmux-linux, the renderer reducer remains authoritative. Electron main receives a
+In Shepherd, the renderer reducer remains authoritative. Electron main receives a
 structured mirror, applies each saved query, and compares the resulting projection
 with the subscriber's previous projection. Terminal text is never scraped.
 
@@ -64,7 +64,7 @@ stalled observer can grow the desktop process until it crashes. Common policies 
 2. drop individual events — requires more complex gap signalling;
 3. disconnect the slow consumer — simple when reconnect snapshots are available.
 
-cmux-linux chooses option 3 at 1 MiB of queued output and also caps the process at
+Shepherd chooses option 3 at 1 MiB of queued output and also caps the process at
 64 subscriptions. Reconnection is safe because sequence-zero always carries a full
 snapshot.
 

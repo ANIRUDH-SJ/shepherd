@@ -17,7 +17,7 @@ A Git worktree attaches another directory to the same repository:
 
 Each directory has independent checked-out files and index state. Git objects and
 most repository metadata remain shared, so it is faster and smaller than another
-clone. This maps naturally to cmux-linux: one worktree becomes one workspace cwd,
+clone. This maps naturally to Shepherd: one worktree becomes one workspace cwd,
 and every terminal/agent in that workspace starts inside the isolated directory.
 
 ## 20.2 Product contract
@@ -25,10 +25,10 @@ and every terminal/agent in that workspace starts inside the isolated directory.
 The implemented command supports two explicit modes:
 
 ```bash
-cmux new-worktree --repo /repo --path /worktrees/task \
+shepherd new-worktree --repo /repo --path /worktrees/task \
   --new-branch feat/task --start-point main --name task
 
-cmux new-worktree --repo /repo --path /worktrees/review \
+shepherd new-worktree --repo /repo --path /worktrees/review \
   --branch review/topic
 ```
 
@@ -36,7 +36,7 @@ cmux new-worktree --repo /repo --path /worktrees/review \
 attaches an existing branch. They are mutually exclusive because silently
 guessing whether a ref should be created makes typos dangerous.
 
-The result is both a Git worktree and a selected cmux-linux workspace whose PTY
+The result is both a Git worktree and a selected Shepherd workspace whose PTY
 cwd is the canonical worktree path.
 
 ## 20.3 Architecture and sequencing
@@ -146,14 +146,14 @@ and source-control lifetime are separate.
 
 ## 20.8 Alternatives and tradeoffs
 
-| Approach | Benefit | Cost |
-| --- | --- | --- |
-| Switch branches in one checkout | simplest disk layout | tasks overwrite each other's working context |
-| Clone for every task | strong directory isolation | duplicates objects/config and fetch state |
-| Git worktree per workspace | fast, shared objects, independent files/index | Git prevents one branch in two worktrees; lifecycle needs explicit cleanup |
-| Let renderer run Git | direct UI flow | breaks context isolation and expands the preload attack surface |
-| Shell command string | little code | quoting and command-injection risk |
-| Auto-delete on workspace close | convenient cleanup | can destroy uncommitted work or a worktree still used elsewhere |
+| Approach                        | Benefit                                       | Cost                                                                       |
+| ------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------- |
+| Switch branches in one checkout | simplest disk layout                          | tasks overwrite each other's working context                               |
+| Clone for every task            | strong directory isolation                    | duplicates objects/config and fetch state                                  |
+| Git worktree per workspace      | fast, shared objects, independent files/index | Git prevents one branch in two worktrees; lifecycle needs explicit cleanup |
+| Let renderer run Git            | direct UI flow                                | breaks context isolation and expands the preload attack surface            |
+| Shell command string            | little code                                   | quoting and command-injection risk                                         |
+| Auto-delete on workspace close  | convenient cleanup                            | can destroy uncommitted work or a worktree still used elsewhere            |
 
 The chosen design optimizes for explicit source-control mutation and reuse of the
 existing workspace/PTY architecture.
@@ -188,7 +188,7 @@ different network/destructive authority and should remain separate commands.
 1. Why is a worktree usually better than branch switching for concurrent agents?
 2. What does a worktree share with the primary checkout, and what stays isolated?
 3. Why are `--branch` and `--new-branch` separate?
-4. Which validations belong to cmux-linux, and which remain Git's authority?
+4. Which validations belong to Shepherd, and which remain Git's authority?
 5. What security property does `execFile` provide, and what does it not provide?
 6. Why is Git created before renderer workspace state?
 7. Why does workspace close not remove the worktree?

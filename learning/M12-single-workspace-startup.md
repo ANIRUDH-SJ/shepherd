@@ -45,7 +45,7 @@ or the other:
 const INITIAL_APP = sanitizeRestored(window.api?.session?.loadSync?.() ?? null) ?? initialApp()
 ```
 
-An isolated launch with a new `CMUX_SESSION_PATH` produced a one-workspace
+An isolated launch with a new `SHEPHERD_SESSION_PATH` produced a one-workspace
 snapshot. The multi-row startup therefore came from a valid saved snapshot, not
 React mounting twice or two workspace-creation actions.
 

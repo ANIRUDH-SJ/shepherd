@@ -3,12 +3,12 @@
 ## Status and purpose
 
 This document turns the first benchmark signals into a measured optimization
-program for cmux-linux. It is a plan, not a claim that a bottleneck has already
+program for Shepherd. It is a plan, not a claim that a bottleneck has already
 been proven. Each optimization must land in its own branch and PR with a
 before/after comparison.
 
 The 2026-07-21 pilot observed 674.49 ms startup, 321.05 MiB PSS, 10% sampled idle
-CPU, and 14.15 MiB/s parser-oriented throughput for cmux-linux. Those values came
+CPU, and 14.15 MiB/s parser-oriented throughput for Shepherd. Those values came
 from one measured sample on a host with 88.5% swap use. They identify areas to
 investigate, but are not a publishable ranking or a reliable performance
 baseline. See `benchmarks/results/2026-07-21-pilot.md`.

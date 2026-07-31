@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-Status: planned.
+Status: implementation and documentation complete; final verification in progress.
 
 Branch: `feat/shepherd-rebrand`
 
@@ -56,14 +56,15 @@ benchmark commit IDs and result filenames remain unchanged.
 
 1. `docs: plan Shepherd rebrand`
 2. `app: define Shepherd product identity`
-3. `socket: add Shepherd compatibility endpoints`
-4. `cli: make Shepherd the primary command`
+3. `socket: preserve legacy control paths`
+4. `cli: introduce Shepherd command`
 5. `integrations: migrate managed Shepherd hooks`
-6. `renderer: apply Shepherd branding`
-7. `package: build Shepherd Linux artifacts`
-8. focused review fixes
-9. `docs: explain the Shepherd migration`
-10. `docs: mark Shepherd rebrand review complete`
+6. `renderer: adopt Shepherd identity`
+7. `diagnostics: publish Shepherd runtime signals`
+8. `packaging: ship Shepherd application identity`
+9. `benchmarks: target Shepherd runtime`
+10. `docs: explain Shepherd identity migration`
+11. focused review and completion updates
 
 ## Verification
 
@@ -90,17 +91,17 @@ benchmark commit IDs and result filenames remain unchanged.
 
 ## Delivery checklist
 
-- [ ] Centralize Shepherd and legacy product constants.
-- [ ] Preserve existing user state without copying or overwriting directories.
-- [ ] Prefer new environment variables and accept legacy aliases.
-- [ ] Serve the new socket and bounded legacy endpoint safely.
-- [ ] Ship `shepherd` as primary CLI and retain `cmux` compatibility.
-- [ ] Migrate only exact managed provider integrations.
-- [ ] Rename visible renderer, window, protocol, and diagnostic branding.
+- [x] Centralize Shepherd and legacy product constants.
+- [x] Preserve existing user state without copying or overwriting directories.
+- [x] Prefer new environment variables and accept legacy aliases.
+- [x] Serve the new socket and bounded legacy endpoint safely.
+- [x] Ship `shepherd` as primary CLI and retain `cmux` compatibility.
+- [x] Migrate only exact managed provider integrations.
+- [x] Rename visible renderer, window, protocol, and diagnostic branding.
 - [ ] Produce Shepherd AppImage and Debian artifacts.
-- [ ] Add focused regression and packaged runtime coverage.
-- [ ] Complete learning and textbook documentation.
-- [ ] Synchronize README, roadmap, features, indexes, and glossary.
+- [x] Add focused regression and unpacked-package coverage.
+- [x] Complete learning and textbook documentation.
+- [x] Synchronize README, roadmap, features, indexes, and glossary.
 - [ ] Pass all required verification.
 - [ ] Open, code-review, and merge the dedicated PR.
 - [ ] Rename the GitHub repository and update the canonical `origin`.
