@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-Status: implementation and documentation complete; final verification in progress.
+Status: implementation, documentation, and local verification complete; PR delivery in progress.
 
 Branch: `feat/shepherd-rebrand`
 
@@ -76,6 +76,8 @@ benchmark commit IDs and result filenames remain unchanged.
   filename, bundled `shepherd` command, and legacy `cmux` alias.
 - Isolated production smoke for both socket names and both CLI names.
 - A legacy-state smoke proving the renamed app restores the existing session.
+- Visual proof from the isolated packaged application in
+  `docs/images/shepherd-rebrand.png`.
 - Final `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`,
   `npm run dist`, and `git diff --check`.
 
@@ -98,10 +100,10 @@ benchmark commit IDs and result filenames remain unchanged.
 - [x] Ship `shepherd` as primary CLI and retain `cmux` compatibility.
 - [x] Migrate only exact managed provider integrations.
 - [x] Rename visible renderer, window, protocol, and diagnostic branding.
-- [ ] Produce Shepherd AppImage and Debian artifacts.
+- [x] Produce Shepherd AppImage and Debian artifacts.
 - [x] Add focused regression and unpacked-package coverage.
 - [x] Complete learning and textbook documentation.
 - [x] Synchronize README, roadmap, features, indexes, and glossary.
-- [ ] Pass all required verification.
+- [x] Pass all required verification.
 - [ ] Open, code-review, and merge the dedicated PR.
 - [ ] Rename the GitHub repository and update the canonical `origin`.
