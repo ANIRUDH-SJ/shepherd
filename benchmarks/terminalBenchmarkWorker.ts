@@ -1,25 +1,25 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 
 const required = [
-  'CMUX_BENCH_RUN_ID',
-  'CMUX_BENCH_READY_FILE',
-  'CMUX_BENCH_DONE_FILE',
-  'CMUX_BENCH_ERROR_FILE',
-  'CMUX_BENCH_STOP_FILE',
-  'CMUX_BENCH_FIXTURE_FILE'
+  'SHEPHERD_BENCH_RUN_ID',
+  'SHEPHERD_BENCH_READY_FILE',
+  'SHEPHERD_BENCH_DONE_FILE',
+  'SHEPHERD_BENCH_ERROR_FILE',
+  'SHEPHERD_BENCH_STOP_FILE',
+  'SHEPHERD_BENCH_FIXTURE_FILE'
 ] as const
 
 for (const name of required) {
   if (!process.env[name]) throw new Error(`missing ${name}`)
 }
 
-const runId = process.env.CMUX_BENCH_RUN_ID!
-const readyFile = process.env.CMUX_BENCH_READY_FILE!
-const doneFile = process.env.CMUX_BENCH_DONE_FILE!
-const errorFile = process.env.CMUX_BENCH_ERROR_FILE!
-const stopFile = process.env.CMUX_BENCH_STOP_FILE!
-const fixture = readFileSync(process.env.CMUX_BENCH_FIXTURE_FILE!)
-const responseTimeoutMs = Number(process.env.CMUX_BENCH_RESPONSE_TIMEOUT_MS ?? '15000')
+const runId = process.env.SHEPHERD_BENCH_RUN_ID!
+const readyFile = process.env.SHEPHERD_BENCH_READY_FILE!
+const doneFile = process.env.SHEPHERD_BENCH_DONE_FILE!
+const errorFile = process.env.SHEPHERD_BENCH_ERROR_FILE!
+const stopFile = process.env.SHEPHERD_BENCH_STOP_FILE!
+const fixture = readFileSync(process.env.SHEPHERD_BENCH_FIXTURE_FILE!)
+const responseTimeoutMs = Number(process.env.SHEPHERD_BENCH_RESPONSE_TIMEOUT_MS ?? '15000')
 
 if (!process.stdin.isTTY || typeof process.stdin.setRawMode !== 'function') {
   throw new Error('benchmark worker requires a controlling terminal')

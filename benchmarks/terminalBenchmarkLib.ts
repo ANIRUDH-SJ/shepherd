@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { isAbsolute } from 'node:path'
 
 export type FixtureKind = 'ascii' | 'unicode' | 'ansi'
-export type SubjectMode = 'cmux' | 'terminal'
+export type SubjectMode = 'shepherd' | 'terminal'
 
 export interface SubjectDefinition {
   id: string
@@ -136,10 +136,11 @@ export function validateBenchmarkConfig(value: unknown): BenchmarkConfig {
     if (ids.has(id)) throw new Error(`duplicate subject id: ${id}`)
     ids.add(id)
 
-    const mode = entry.mode
-    if (mode !== 'cmux' && mode !== 'terminal') {
-      throw new Error(`subject ${id} mode must be cmux or terminal`)
+    const rawMode = entry.mode
+    if (rawMode !== 'shepherd' && rawMode !== 'cmux' && rawMode !== 'terminal') {
+      throw new Error(`subject ${id} mode must be shepherd or terminal`)
     }
+    const mode: SubjectMode = rawMode === 'cmux' ? 'shepherd' : rawMode
     const args = stringArray(entry, 'args')
     for (const arg of args) {
       if (arg.startsWith('{') && !ARG_PLACEHOLDERS.has(arg)) {
@@ -149,8 +150,8 @@ export function validateBenchmarkConfig(value: unknown): BenchmarkConfig {
     if (mode === 'terminal' && !args.includes('{shell}')) {
       throw new Error(`terminal subject ${id} must include the {shell} argument`)
     }
-    if (mode === 'cmux' && args.includes('{shell}')) {
-      throw new Error(`cmux subject ${id} receives its worker through SHELL`)
+    if (mode === 'shepherd' && args.includes('{shell}')) {
+      throw new Error(`Shepherd subject ${id} receives its worker through SHELL`)
     }
 
     return {

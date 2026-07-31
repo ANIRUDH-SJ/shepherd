@@ -120,6 +120,28 @@ const validConfig = validateBenchmarkConfig({
   ]
 })
 assert(validConfig.subjects[0].id === 'kitty', 'validates a terminal subject')
+const shepherdConfig = validateBenchmarkConfig({
+  schemaVersion: 1,
+  display: ':1',
+  subjects: [
+    {
+      id: 'shepherd',
+      label: 'Shepherd',
+      mode: 'shepherd',
+      command: '/tmp/shepherd',
+      args: [],
+      versionCommand: '/usr/bin/git',
+      versionArgs: ['--version'],
+      source: 'local build'
+    }
+  ]
+})
+assert(shepherdConfig.subjects[0].mode === 'shepherd', 'validates a Shepherd subject')
+const legacyConfig = validateBenchmarkConfig({
+  ...shepherdConfig,
+  subjects: [{ ...shepherdConfig.subjects[0], mode: 'cmux' }]
+})
+assert(legacyConfig.subjects[0].mode === 'shepherd', 'normalizes the legacy subject mode')
 rejects(
   () =>
     validateBenchmarkConfig({

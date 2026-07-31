@@ -288,7 +288,7 @@ function processIdentities(runId: string): Array<{
   marked: boolean
 }> {
   assertRunId(runId)
-  const marker = `CMUX_BENCH_RUN_ID=${runId}`
+  const marker = `SHEPHERD_BENCH_RUN_ID=${runId}`
   const processes: Array<{ pid: number; ppid: number; command: string; marked: boolean }> = []
   for (const entry of readdirSync('/proc')) {
     if (!/^\d+$/.test(entry)) continue
@@ -372,7 +372,7 @@ function childEnvironment(config: BenchmarkConfig, subject: SubjectDefinition): 
 }
 
 function writeWorkerShell(path: string): void {
-  writeFileSync(path, '#!/bin/sh\nexec "$CMUX_BENCH_NODE" "$CMUX_BENCH_WORKER"\n', {
+  writeFileSync(path, '#!/bin/sh\nexec "$SHEPHERD_BENCH_NODE" "$SHEPHERD_BENCH_WORKER"\n', {
     mode: 0o700,
     flag: 'wx'
   })
@@ -436,7 +436,7 @@ function captureCommand(command: string, args: string[]): string {
 }
 
 function captureEnvironment(config: BenchmarkConfig): Record<string, unknown> {
-  const glxinfo = process.env.CMUX_BENCH_GLXINFO
+  const glxinfo = process.env.SHEPHERD_BENCH_GLXINFO || process.env.CMUX_BENCH_GLXINFO
   const glx =
     glxinfo && isAbsolute(glxinfo) && existsSync(glxinfo)
       ? captureCommand(glxinfo, ['-B'])
@@ -490,7 +490,7 @@ async function runSubject(
 ): Promise<BenchmarkSample> {
   const runId = `${subject.id}-${round}-${process.pid}-${Date.now()}`
   assertRunId(runId)
-  const runDir = mkdtempSync(join(tmpdir(), 'cmux-terminal-bench-run-'))
+  const runDir = mkdtempSync(join(tmpdir(), 'shepherd-terminal-bench-run-'))
   const readyFile = join(runDir, 'ready.json')
   const doneFile = join(runDir, 'done.json')
   const errorFile = join(runDir, 'error.json')
@@ -501,21 +501,21 @@ async function runSubject(
 
   const environment: NodeJS.ProcessEnv = {
     ...childEnvironment(config, subject),
-    CMUX_BENCH_RUN_ID: runId,
-    CMUX_BENCH_READY_FILE: readyFile,
-    CMUX_BENCH_DONE_FILE: doneFile,
-    CMUX_BENCH_ERROR_FILE: errorFile,
-    CMUX_BENCH_STOP_FILE: stopFile,
-    CMUX_BENCH_FIXTURE_FILE: fixturePath,
-    CMUX_BENCH_RESPONSE_TIMEOUT_MS: String(options.timeoutMs),
-    CMUX_BENCH_NODE: process.execPath,
-    CMUX_BENCH_WORKER: compiledWorkerPath,
+    SHEPHERD_BENCH_RUN_ID: runId,
+    SHEPHERD_BENCH_READY_FILE: readyFile,
+    SHEPHERD_BENCH_DONE_FILE: doneFile,
+    SHEPHERD_BENCH_ERROR_FILE: errorFile,
+    SHEPHERD_BENCH_STOP_FILE: stopFile,
+    SHEPHERD_BENCH_FIXTURE_FILE: fixturePath,
+    SHEPHERD_BENCH_RESPONSE_TIMEOUT_MS: String(options.timeoutMs),
+    SHEPHERD_BENCH_NODE: process.execPath,
+    SHEPHERD_BENCH_WORKER: compiledWorkerPath,
     XDG_CONFIG_HOME: join(runDir, 'config'),
     XDG_CACHE_HOME: join(runDir, 'cache'),
     XDG_DATA_HOME: join(runDir, 'data'),
-    CMUX_SOCKET_PATH: join(runDir, 'cmux.sock')
+    SHEPHERD_SOCKET_PATH: join(runDir, 'shepherd.sock')
   }
-  if (subject.mode === 'cmux') environment.SHELL = workerShell
+  if (subject.mode === 'shepherd') environment.SHELL = workerShell
   const args = subject.args.map((argument) => (argument === '{shell}' ? workerShell : argument))
   const log = openSync(logPath, 'w', 0o600)
   const startNs = process.hrtime.bigint()
@@ -640,7 +640,7 @@ async function main(): Promise<void> {
     options.samples < 20 ||
     pressureBefore.reasons.length > 0
   const fixture = createFixture(options.fixtureKind, options.fixtureBytes)
-  const workRoot = mkdtempSync(join(tmpdir(), 'cmux-terminal-bench-suite-'))
+  const workRoot = mkdtempSync(join(tmpdir(), 'shepherd-terminal-bench-suite-'))
   const fixturePath = join(workRoot, `${options.fixtureKind}.fixture`)
   const compiledWorkerPath = join(workRoot, 'terminalBenchmarkWorker.mjs')
   const logRoot = join(workRoot, 'logs')

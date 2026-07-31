@@ -14,15 +14,15 @@ function assert(condition: boolean, message: string): void {
 }
 
 async function main(): Promise<void> {
-  const root = mkdtempSync(join(tmpdir(), 'cmux-worktree-test-'))
+  const root = mkdtempSync(join(tmpdir(), 'shepherd-worktree-test-'))
   const repo = join(root, 'repo')
   const worktree = join(root, 'feature-worktree')
   const existingWorktree = join(root, 'existing-worktree')
 
   try {
     execFileSync('git', ['init', repo], { stdio: 'ignore' })
-    execFileSync('git', ['-C', repo, 'config', 'user.name', 'cmux test'])
-    execFileSync('git', ['-C', repo, 'config', 'user.email', 'cmux@example.invalid'])
+    execFileSync('git', ['-C', repo, 'config', 'user.name', 'shepherd test'])
+    execFileSync('git', ['-C', repo, 'config', 'user.email', 'shepherd@example.invalid'])
     execFileSync('git', ['-C', repo, 'commit', '--allow-empty', '-m', 'initial'], {
       stdio: 'ignore'
     })

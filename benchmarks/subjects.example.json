@@ -3,13 +3,13 @@
   "display": ":0",
   "subjects": [
     {
-      "id": "cmux-unpacked",
-      "label": "cmux-linux unpacked production build",
-      "mode": "cmux",
-      "command": "/absolute/path/to/cmux-linux/release/linux-unpacked/cmux-linux",
+      "id": "shepherd-unpacked",
+      "label": "Shepherd unpacked production build",
+      "mode": "shepherd",
+      "command": "/absolute/path/to/shepherd/release/linux-unpacked/shepherd",
       "args": [],
       "versionCommand": "/usr/bin/git",
-      "versionArgs": ["-C", "/absolute/path/to/cmux-linux", "rev-parse", "HEAD"],
+      "versionArgs": ["-C", "/absolute/path/to/shepherd", "rev-parse", "HEAD"],
       "source": "local production build; replace with the exact commit"
     },
     {
