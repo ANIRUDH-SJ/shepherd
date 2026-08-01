@@ -45,6 +45,7 @@ code as we write it.
 | **M22**   | `M22-shepherd-rebrand.md`                    | Product identity, state compatibility, sockets, CLI aliases, managed hooks, renderer settings, packaging, and tests         |
 | **M23**   | `M23-clickable-terminal-links.md`            | URL, OSC 8, and existing-file detection, xterm cell ranges, validated IPC opening, security, tests, and live proof          |
 | **M24**   | `M24-minimal-workspace-sidebar.md`           | Flat workspace navigation, contextual agent rows, useful-only metadata, exact focus, density, and visual proof              |
+| **M25**   | `M25-minimal-terminal-chrome.md`             | Compact context/tabs, flat panes, hairline splits, hover/focus actions, active-tab visibility, and multi-pane proof         |
 
 ## How to read a milestone file
 

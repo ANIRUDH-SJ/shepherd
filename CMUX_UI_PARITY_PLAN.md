@@ -145,6 +145,9 @@ not a permanent AI dashboard.
 
 **Goal:** reduce the stacked-header and card-container appearance around the terminal.
 
+**Status:** implementation, live interaction proof, and documentation are complete on
+`feat/minimal-terminal-chrome`; review and merge are the remaining delivery steps.
+
 ### Scope
 
 - Keep one compact workspace title strip and remove low-value `Pane N · Terminal N`
@@ -159,12 +162,13 @@ not a permanent AI dashboard.
 - Continue using stable terminal numbering as an accessible fallback while allowing
   useful semantic titles later.
 
-### Planned commits
+### Delivery commits
 
 1. `test: define minimal terminal chrome`
 2. `renderer: compact workspace and tab chrome`
 3. `ui: flatten panes and hover controls`
-4. `docs: explain minimal terminal chrome`
+4. `renderer: keep active tabs in view`
+5. `docs: explain minimal terminal chrome`
 
 ### Focused verification
 
@@ -348,9 +352,9 @@ building a general-purpose browser platform.
 - [x] No permanent Agents section when the sidebar can express contextual state.
 - [x] No permanent shortcut legend.
 - [x] No dashed empty-state cards.
-- [ ] No generic `Pane N · Terminal N` copy in permanent top-level chrome.
-- [ ] No ordinary pane rendered as a rounded dashboard card.
-- [ ] No accent ring used as the default active-pane treatment.
+- [x] No generic `Pane N · Terminal N` copy in permanent top-level chrome.
+- [x] No ordinary pane rendered as a rounded dashboard card.
+- [x] No accent ring used as the default active-pane treatment.
 - [ ] No repeated project, workspace, branch, and agent information across several rows.
 - [x] Secondary controls appear on hover/focus without becoming undiscoverable.
 - [x] Empty space belongs to the terminal, not placeholder panels.
