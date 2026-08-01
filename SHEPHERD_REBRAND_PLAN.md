@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-Status: implementation, documentation, and local verification complete; PR delivery in progress.
+Status: complete.
 
 Branch: `feat/shepherd-rebrand`
 
@@ -17,6 +17,12 @@ The canonical Desktop checkout remains at
 `/home/anirudh-s-j/Desktop/cmux-linux` during delivery so active tooling and
 historical worktrees are not invalidated. The GitHub repository is renamed only
 after the feature PR is merged.
+
+Delivery completed through
+[PR #44](https://github.com/ANIRUDH-SJ/shepherd/pull/44), merged as
+`5aefedeecddf09c7c5ece875e7a30ce100f1e8be`. The GitHub repository and canonical
+`origin` now use `https://github.com/ANIRUDH-SJ/shepherd.git`; the local Desktop
+directory intentionally retains its stable historical path.
 
 ## Identity contract
 
@@ -105,5 +111,5 @@ benchmark commit IDs and result filenames remain unchanged.
 - [x] Complete learning and textbook documentation.
 - [x] Synchronize README, roadmap, features, indexes, and glossary.
 - [x] Pass all required verification.
-- [ ] Open, code-review, and merge the dedicated PR.
-- [ ] Rename the GitHub repository and update the canonical `origin`.
+- [x] Open, code-review, and merge the dedicated PR.
+- [x] Rename the GitHub repository and update the canonical `origin`.
