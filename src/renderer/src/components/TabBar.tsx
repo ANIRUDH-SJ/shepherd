@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { Pane } from '../layout/types'
 import { tabNavigationTarget, terminalPanelId, terminalTabId } from '../terminalChrome'
 import Icon from './Icon'
@@ -40,6 +41,11 @@ export default function TabBar(props: Props): React.JSX.Element {
   } = props
   const surfaceIds = pane.surfaces.map((surface) => surface.id)
   const canCloseSurface = pane.surfaces.length > 1 || canClosePane
+  const activeTabRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    activeTabRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [pane.activeSurfaceId])
 
   const handleTabKeyDown = (event: React.KeyboardEvent, surfaceId: string): void => {
     if (event.key === 'Delete' && canCloseSurface) {
@@ -61,6 +67,7 @@ export default function TabBar(props: Props): React.JSX.Element {
         {pane.surfaces.map((s) => (
           <div
             key={s.id}
+            ref={s.id === pane.activeSurfaceId ? activeTabRef : undefined}
             role="presentation"
             className={'tab' + (s.id === pane.activeSurfaceId ? ' active' : '')}
           >

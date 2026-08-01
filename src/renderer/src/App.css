@@ -557,7 +557,12 @@ body.resizing * {
   min-width: 0;
   align-items: center;
   gap: 0;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.tab-list::-webkit-scrollbar {
+  display: none;
 }
 .tab {
   position: relative;
@@ -570,6 +575,7 @@ body.resizing * {
   font-size: 11.5px;
   color: var(--color-text-secondary);
   max-width: 170px;
+  flex: 0 0 auto;
 }
 .tab.active {
   background: var(--color-surface-raised);
