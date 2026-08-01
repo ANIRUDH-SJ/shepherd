@@ -114,20 +114,21 @@ body.resizing * {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: var(--space-7) var(--space-5) var(--space-5);
+  padding: var(--space-3) var(--space-2);
 }
 .sidebar-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-6);
-  padding: 0 var(--space-2);
+  min-height: 30px;
+  margin-bottom: var(--space-2);
+  padding: 0 var(--space-3);
 }
 .brand {
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--color-accent);
-  letter-spacing: 0.2px;
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
 }
 .sidebar-head-actions {
   display: flex;
@@ -135,17 +136,17 @@ body.resizing * {
 }
 .icon-btn {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   border: 0;
   background: transparent;
   color: var(--color-text-muted);
   cursor: pointer;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
   padding: 0;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
 }
 .icon-btn:hover {
   background: var(--color-surface-raised);
@@ -159,42 +160,36 @@ body.resizing * {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 1px;
 }
 .ws-row {
   position: relative;
   width: 100%;
   text-align: left;
-  border: 1px solid transparent;
+  border: 0;
   font: inherit;
   background: transparent;
   color: inherit;
-  padding: var(--space-4) var(--space-5);
-  border-radius: var(--radius-lg);
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
 }
 .ws-row-select {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 3px;
   min-width: 0;
   cursor: pointer;
 }
 .ws-row-select:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 3px;
+  outline: 1px solid var(--color-focus);
+  outline-offset: 2px;
 }
 .ws-row:hover {
   background: var(--color-surface-hover);
 }
 .ws-row.active {
-  border-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
-  background: color-mix(in srgb, var(--color-selection) 30%, var(--color-surface));
+  background: color-mix(in srgb, var(--color-selection) 22%, transparent);
   box-shadow: inset 2px 0 0 var(--color-accent);
-}
-.ws-row.active .ws-status,
-.ws-row.active .ws-context,
-.ws-row.active .ws-branch {
-  color: var(--color-selection-text);
 }
 .ws-row.attention {
   animation: ws-flash 1s ease-in-out infinite;
@@ -211,9 +206,9 @@ body.resizing * {
 .ws-row-top {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   min-width: 0;
-  padding-right: 44px;
+  padding-right: 40px;
 }
 .ws-dot {
   width: 7px;
@@ -223,8 +218,8 @@ body.resizing * {
   flex: 0 0 auto;
 }
 .ws-name {
-  font-weight: 600;
-  font-size: 13px;
+  font-size: 12.5px;
+  font-weight: 500;
   flex: 1 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -264,8 +259,8 @@ body.resizing * {
 }
 .ws-row-actions {
   position: absolute;
-  top: var(--space-4);
-  right: var(--space-5);
+  top: 5px;
+  right: 6px;
   display: flex;
   gap: var(--space-1);
 }
@@ -311,7 +306,7 @@ body.resizing * {
   background: var(--color-selection-hover);
 }
 .ws-status {
-  font-size: 11.5px;
+  font-size: 10.5px;
   color: var(--color-text-muted);
   min-width: 0;
   overflow: hidden;
@@ -321,14 +316,14 @@ body.resizing * {
 .ws-meta {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-3);
   min-width: 0;
 }
 .ws-context,
 .ws-branch {
   color: var(--color-text-muted);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 10px;
   line-height: 1.25;
   min-width: 0;
   overflow: hidden;
@@ -338,14 +333,9 @@ body.resizing * {
 .ws-context {
   flex: 1 1 auto;
 }
-.ws-detail-row {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
 .ws-branch {
-  width: 100%;
   display: flex;
+  flex: 0 1 auto;
   align-items: center;
   gap: var(--space-2);
   color: var(--color-git);
@@ -356,268 +346,90 @@ body.resizing * {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.ws-branch.no-git {
-  color: var(--color-text-subdued);
-}
-.ws-row.active .ws-branch.no-git {
-  color: var(--color-selection-text);
-}
 .ws-usage {
   flex: 0 0 auto;
   color: var(--color-text-muted);
-  font-size: 10.5px;
+  font-size: 10px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.ws-row.active .ws-usage {
-  color: var(--color-selection-text);
+.ws-agents {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 3px;
 }
-.ws-agent-rollup {
+.ws-agent {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  color: var(--color-text-subdued);
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.ws-agent-rollup > span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ws-row.active .ws-agent-rollup {
-  color: var(--color-selection-text);
-}
-
-/* Semantic agent list */
-.agent-section {
-  flex: 0 1 40%;
-  min-height: 92px;
-  margin-top: var(--space-5);
-  padding: 9px var(--space-2) 0;
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.agent-section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--space-2) var(--space-3);
-  color: var(--color-text-subdued);
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.7px;
-  text-transform: uppercase;
-}
-.agent-list {
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-.agent-group {
-  min-width: 0;
-}
-.agent-group-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--space-2) var(--space-2);
-  color: var(--color-text-subdued);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-.agent-group.group-needs-you .agent-group-head {
-  color: var(--color-danger);
-}
-.agent-group.group-working .agent-group-head {
-  color: var(--color-working);
-}
-.agent-group > [role='list'] {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-.agent-row {
   width: 100%;
-  padding: 6px 6px;
-  border: 0;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  text-align: left;
-  font-family: var(--font-mono);
-}
-.agent-row:hover,
-.agent-row:focus-visible {
-  background: var(--color-surface-hover);
-  outline: none;
-}
-.agent-row:focus-visible {
-  box-shadow: inset 0 0 0 1px var(--color-accent-strong);
-}
-.agent-row-main {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
   min-width: 0;
+  padding: 2px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-align: left;
 }
-.agent-state-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex: 0 0 auto;
-  background: var(--color-text-muted);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-text-muted) 12%, transparent);
+.ws-agent:hover {
+  background: var(--color-surface-hover);
 }
-.agent-name {
+.ws-agent:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: -1px;
+}
+.ws-agent > span:last-child {
   min-width: 0;
   flex: 1 1 auto;
-  color: var(--color-text);
-  font-size: 11.5px;
-  font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.agent-state {
-  max-width: 42%;
-  flex: 0 1 auto;
-  color: var(--color-text-muted);
-  font-size: 9.5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.agent-elapsed {
+.ws-agent-dot {
+  width: 6px;
+  height: 6px;
   flex: 0 0 auto;
-  color: var(--color-text-subdued);
-  font-size: 9px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  border-radius: 50%;
+  background: var(--color-text-muted);
 }
-.agent-context {
-  display: block;
-  margin: 3px 0 0 13px;
-  color: var(--color-text-subdued);
-  font-size: 9.5px;
-  line-height: 1.35;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.agent-row.state-working .agent-state-dot {
+.ws-agent.state-working .ws-agent-dot {
   background: var(--color-working);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-working) 13%, transparent);
-  animation: agent-pulse 1.8s ease-in-out infinite;
 }
-.agent-row.state-working .agent-state {
+.ws-agent.state-working {
   color: var(--color-working);
 }
-.agent-row.state-blocked .agent-state-dot {
+.ws-agent.state-blocked .ws-agent-dot {
   background: var(--color-danger);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-danger) 16%, transparent);
 }
-.agent-row.state-blocked .agent-state {
+.ws-agent.state-blocked {
   color: var(--color-danger);
 }
-.agent-row.state-done .agent-state-dot {
+.ws-agent.state-done .ws-agent-dot {
   background: var(--color-info);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-info) 13%, transparent);
 }
-.agent-row.state-done .agent-state {
+.ws-agent.state-done {
   color: var(--color-info);
 }
-.agent-row.state-idle .agent-state-dot {
+.ws-agent.state-idle .ws-agent-dot {
   background: var(--color-success);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-success) 12%, transparent);
 }
-.agent-row.state-idle .agent-state {
+.ws-agent.state-idle {
   color: var(--color-success);
 }
-.agent-empty {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  margin: var(--space-1) 0;
-  padding: var(--space-4);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text-faint);
-  font-family: var(--font-mono);
-  font-size: 10px;
-}
-.agent-empty > .ui-icon {
-  font-size: 18px;
-}
-.agent-empty span {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-.agent-empty strong {
-  color: var(--color-text-muted);
-  font-size: 10.5px;
-}
-.agent-empty small {
-  color: var(--color-text-faint);
-  font-size: 9px;
-}
-@keyframes agent-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 1;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
-  .agent-row.state-working .agent-state-dot,
   .ws-row.attention {
     animation: none;
   }
 }
 @container (max-width: 210px) {
-  .agent-elapsed {
+  .ws-context {
     display: none;
   }
-}
-
-/* Shortcut legend pinned to the bottom */
-.shortcuts {
-  margin-top: var(--space-6);
-  padding: var(--space-5) var(--space-3) var(--space-1);
-  border-top: 1px solid var(--color-border);
-  font-size: 11.5px;
-  opacity: 0.7;
-  line-height: 1.9;
-}
-.shortcuts-title {
-  text-transform: uppercase;
-  font-size: 10px;
-  letter-spacing: 1px;
-  opacity: 0.6;
-  margin-bottom: 4px;
-}
-kbd {
-  background: var(--color-surface-hover);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 1px 5px;
-  font-size: 10.5px;
-  font-family: inherit;
 }
 
 /* Drag-to-resize strip + collapsed expand button */
