@@ -15,8 +15,7 @@ export interface ResolveTerminalFileLinksRequest {
 }
 
 export type TerminalLinkTarget =
-  | { kind: 'url'; url: string }
-  | ({ kind: 'file' } & TerminalFileReference)
+  { kind: 'url'; url: string } | ({ kind: 'file' } & TerminalFileReference)
 
 export interface OpenTerminalLinkRequest {
   id: string
@@ -25,15 +24,26 @@ export interface OpenTerminalLinkRequest {
 
 export type OpenTerminalLinkResult =
   | { ok: true }
-  | { ok: false; error: 'invalid-request' | 'terminal-not-found' | 'target-not-found' | 'open-failed' }
+  | {
+      ok: false
+      error: 'invalid-request' | 'terminal-not-found' | 'target-not-found' | 'open-failed'
+    }
 
 function isBoundedPlainString(value: unknown, maximumLength: number): value is string {
   return (
     typeof value === 'string' &&
     value.length > 0 &&
     value.length <= maximumLength &&
-    !/[\u0000-\u001f\u007f]/u.test(value)
+    !hasTerminalLinkControlCharacters(value)
   )
+}
+
+export function hasTerminalLinkControlCharacters(value: string): boolean {
+  for (let index = 0; index < value.length; index++) {
+    const code = value.charCodeAt(index)
+    if (code <= 0x1f || code === 0x7f) return true
+  }
+  return false
 }
 
 function isTerminalId(value: unknown): value is string {

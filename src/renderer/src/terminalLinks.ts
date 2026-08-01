@@ -16,10 +16,11 @@ export interface TerminalFileLinkCandidate extends TerminalFileReference {
   column?: number
 }
 
-const TOKEN_PATTERN = /[^\s"'`<>{}\[\]()]+/gu
+const TOKEN_PATTERN = /[^\s"'`<>{}[\]()]+/gu
 const TRAILING_PUNCTUATION = /[.,;!?]+$/u
 const LOCATION_SUFFIX = /:(\d+)(?::(\d+))?$/u
-const BARE_FILE = /^(?:\.[A-Za-z0-9][A-Za-z0-9._-]*|[A-Za-z0-9_@+-][A-Za-z0-9_@+.-]*\.[A-Za-z0-9]{1,16})$/u
+const BARE_FILE =
+  /^(?:\.[A-Za-z0-9][A-Za-z0-9._-]*|[A-Za-z0-9_@+-][A-Za-z0-9_@+.-]*\.[A-Za-z0-9]{1,16})$/u
 
 function isFilePath(value: string): boolean {
   if (!value || value === '.' || value === '..' || value === '~') return false
@@ -80,6 +81,8 @@ export function findTerminalFileLinks(lineText: string): TerminalFileLinkCandida
   return links
 }
 
-export function terminalLinkModifierPressed(event: Pick<MouseEvent, 'ctrlKey' | 'metaKey'>): boolean {
+export function terminalLinkModifierPressed(
+  event: Pick<MouseEvent, 'ctrlKey' | 'metaKey'>
+): boolean {
   return event.ctrlKey || event.metaKey
 }
