@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict'
+import type { IBufferCell, IBufferLine, ILink, Terminal } from '@xterm/xterm'
 import {
   MAX_TERMINAL_LINK_CANDIDATES,
+  TerminalFileLinkProvider,
   findTerminalFileLinks,
+  snapshotTerminalLine,
+  terminalFileLinkRange,
+  terminalOscLinkTarget,
   terminalLinkModifierPressed
 } from './terminalLinks'
 
@@ -69,4 +74,97 @@ assert.equal(terminalLinkModifierPressed({ ctrlKey: true, metaKey: false }), tru
 assert.equal(terminalLinkModifierPressed({ ctrlKey: false, metaKey: true }), true)
 assert.equal(terminalLinkModifierPressed({ ctrlKey: false, metaKey: false }), false)
 
-console.log('✅ ALL TERMINAL LINK PARSER TESTS PASS')
+assert.deepEqual(terminalOscLinkTarget('https://example.com/docs'), {
+  kind: 'url',
+  url: 'https://example.com/docs'
+})
+assert.deepEqual(terminalOscLinkTarget('file:///project/src/main.ts'), {
+  kind: 'file',
+  path: 'file:///project/src/main.ts'
+})
+assert.equal(terminalOscLinkTarget('javascript:alert(1)'), null)
+assert.equal(terminalOscLinkTarget('relative/file.ts'), null)
+
+function fakeLine(cells: { chars: string; width: number }[]): IBufferLine {
+  return {
+    isWrapped: false,
+    length: cells.length,
+    getCell: (column) => {
+      const cell = cells[column]
+      if (!cell) return undefined
+      return {
+        getChars: () => cell.chars,
+        getWidth: () => cell.width
+      } as IBufferCell
+    },
+    translateToString: () => cells.map((cell) => cell.chars).join('')
+  }
+}
+
+function textLine(text: string): IBufferLine {
+  return fakeLine([...text].map((chars) => ({ chars, width: 1 })))
+}
+
+function fakeTerminal(line: IBufferLine): Pick<Terminal, 'buffer' | 'cols'> {
+  return {
+    cols: line.length,
+    buffer: {
+      active: {
+        getLine: (index: number) => (index === 0 ? line : undefined)
+      }
+    }
+  } as Pick<Terminal, 'buffer' | 'cols'>
+}
+
+function provideLinks(
+  provider: TerminalFileLinkProvider,
+  bufferLineNumber = 1
+): Promise<ILink[] | undefined> {
+  return new Promise((resolve) => provider.provideLinks(bufferLineNumber, resolve))
+}
+
+async function main(): Promise<void> {
+  const wideLine = fakeLine([
+    { chars: '界', width: 2 },
+    { chars: '', width: 0 },
+    { chars: ' ', width: 1 },
+    ...[...'src/main.ts'].map((chars) => ({ chars, width: 1 }))
+  ])
+  const wideSnapshot = snapshotTerminalLine(wideLine, wideLine.length)
+  assert.equal(wideSnapshot.text, '界 src/main.ts')
+  assert.deepEqual(
+    terminalFileLinkRange(findTerminalFileLinks(wideSnapshot.text)[0], wideSnapshot, 4),
+    { start: { x: 4, y: 4 }, end: { x: 14, y: 4 } },
+    'maps UTF-16 parser offsets back to xterm cells after a wide glyph'
+  )
+
+  const activated: string[] = []
+  const provider = new TerminalFileLinkProvider(
+    fakeTerminal(textLine('src/main.ts missing.ts')),
+    async () => [true, false],
+    (event, candidate) => {
+      if (terminalLinkModifierPressed(event)) activated.push(candidate.path)
+    }
+  )
+  const links = await provideLinks(provider)
+  assert.equal(links?.length, 1, 'only exposes existing paths as links')
+  links?.[0].activate({ ctrlKey: false, metaKey: false } as MouseEvent, links[0].text)
+  assert.deepEqual(activated, [], 'ordinary click remains available for focus and selection')
+  links?.[0].activate({ ctrlKey: true, metaKey: false } as MouseEvent, links[0].text)
+  assert.deepEqual(activated, ['src/main.ts'])
+
+  let resolvePending!: (exists: boolean[]) => void
+  const staleProvider = new TerminalFileLinkProvider(
+    fakeTerminal(textLine('src/main.ts')),
+    () => new Promise((resolve) => (resolvePending = resolve)),
+    () => undefined
+  )
+  const staleResult = provideLinks(staleProvider)
+  staleProvider.dispose()
+  resolvePending([true])
+  assert.equal(await staleResult, undefined, 'drops asynchronous results after disposal')
+
+  console.log('✅ ALL TERMINAL LINK RENDERER TESTS PASS')
+}
+
+void main()
