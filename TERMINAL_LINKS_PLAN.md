@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-Status: implemented and verified; pull-request delivery pending.
+Status: implementation, verification, and documentation complete in PR #46.
 
 Branch: `feat/clickable-terminal-links`
 
@@ -103,4 +103,4 @@ Electron main will:
 - [x] Complete focused and full verification.
 - [x] Capture visible runtime evidence.
 - [x] Complete learning and textbook documentation.
-- [ ] Open, code-review, and merge the dedicated PR.
+- [x] Open and code-review the dedicated PR (#46).
