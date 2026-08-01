@@ -123,6 +123,8 @@ Think of the book in five "acts":
 - `34-product-identity-and-compatible-rebranding.md` — product identity across
   Electron, Linux packaging, sockets, CLIs, state, integrations, and safe
   compatibility retirement.
+- `35-safe-terminal-link-activation.md` — plain URLs, OSC 8, file references,
+  xterm cell geometry, validated IPC activation, and desktop-opening security.
 
 **Reference**
 
@@ -172,6 +174,7 @@ Think of the book in five "acts":
 | `32-adaptive-event-driven-observation.md`          | Event acceleration, bounded recovery, visibility-aware scheduling, exact deadlines, safety, and idle-CPU measurement                           | 03, 08, 22, 23, 28     |
 | `33-terminal-memory-and-ownership.md`              | Renderer/PTY ownership, cleanup races, retention bounds, aggregate diagnostics, PSS scaling, process safety, and allocator high-water behavior | 03, 04, 06, 07, 28, 31 |
 | `34-product-identity-and-compatible-rebranding.md` | Identity contracts, precedence, state selection, dual sockets, managed migrations, packaging, and compatibility retirement                     | 03, 11, 13, 15         |
+| `35-safe-terminal-link-activation.md`              | URL/file/OSC 8 detection, xterm cell ranges, live cwd resolution, IPC trust boundaries, opening policy, failure handling, and testing          | 02, 04, 05, 06, 07, 33 |
 
 ---
 
@@ -249,3 +252,4 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `32-adaptive-event-driven-observation.md` — activity-aware observation and deadline scheduling
 - `33-terminal-memory-and-ownership.md` — terminal ownership, bounded retention, and lifecycle measurement
 - `34-product-identity-and-compatible-rebranding.md` — safe product identity migration and compatibility design
+- `35-safe-terminal-link-activation.md` — safe URL, OSC 8, and local-file activation from terminal output

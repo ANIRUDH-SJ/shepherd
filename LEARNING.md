@@ -106,6 +106,7 @@ _Renders the terminal in the browser. Needed for M1, deepened in M2/M6._
 - [ ] `.write(data)` to display output; `.onData(cb)` to capture keystrokes
 - [ ] **FitAddon** — auto-size the terminal to its container
 - [ ] **WebGL addon** — GPU rendering for smooth scrolling (perf, M6)
+- [ ] **Link providers + OSC 8** — map rendered cell ranges to validated URL/file actions (M23)
 - [ ] Mounting xterm inside a **React component** (refs + `useEffect`, cleanup)
 - [ ] Theming (colors, font, cursor) to match cmux later
 - 📚 _xterm.js docs/guides + the "getting started" example_

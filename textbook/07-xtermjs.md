@@ -195,7 +195,15 @@ term.open(container)
 
 term.loadAddon(new WebglAddon()) // GPU rendering (load AFTER open())
 term.loadAddon(new SearchAddon())
-term.loadAddon(new WebLinksAddon()) // makes URLs clickable
+term.loadAddon(
+  new WebLinksAddon((event, url) => {
+    if (!event.ctrlKey && !event.metaKey) return
+    void window.api.terminal.openLink({
+      id: surfaceId,
+      target: { kind: 'url', url }
+    })
+  })
+) // detects URLs here; Electron main validates and opens them
 
 fit.fit() // size the terminal to its container
 ```
@@ -239,9 +247,12 @@ renderer.**
 to search the scrollback, with options for case sensitivity, whole-word, and regex,
 plus highlight decorations. We'll wire this to a Ctrl-F search box later.
 
-**WebLinksAddon — clickable URLs.** Detects `http(s)://…` in the output and turns
-it into a clickable link that opens in the browser. Small, high-value polish for
-an agent tool that constantly prints URLs (PRs, docs, dev servers).
+**WebLinksAddon — clickable URLs.** Detects `http(s)://…` in the output,
+including URLs wrapped across physical rows, and returns exact xterm ranges. Its
+default browser handler is not the right privilege boundary for an Electron
+app. Shepherd supplies a Ctrl/Meta-click handler that sends a bounded target
+through preload IPC; Electron main validates the protocol and terminal owner
+before opening it. Chapter 35 develops the full URL, file, and OSC 8 design.
 
 | Addon             | Package                  | One-line job                             |
 | ----------------- | ------------------------ | ---------------------------------------- |
@@ -253,8 +264,8 @@ an agent tool that constantly prints URLs (PRs, docs, dev servers).
 > **🔧 In Shepherd:** FitAddon and WebglAddon are **not optional** for us —
 > FitAddon because our panes resize constantly (splits, drags, sidebar toggles),
 > and WebglAddon because agents produce heavy, colorful, streaming output that the
-> DOM renderer struggles with. Search and WebLinks are polish we add in the M6
-> theming/perf pass (`ROADMAP.md`). Load order matters: **FitAddon before
+> DOM renderer struggles with. WebLinks is now active beside Shepherd's custom
+> existing-file provider; Search remains future polish. Load order matters: **FitAddon before
 > `fit()`**, and **WebglAddon after `open()`** (it needs the mounted canvas).
 
 ---

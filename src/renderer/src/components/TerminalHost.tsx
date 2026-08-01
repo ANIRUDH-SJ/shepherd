@@ -1,12 +1,19 @@
 import { useEffect, useRef } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { WebLinksAddon } from '@xterm/addon-web-links'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { TERMINAL_SCROLLBACK_LINES } from '../../../shared/terminalMemory'
+import type { TerminalLinkTarget } from '../../../shared/terminalLinks'
 import { getFontSize } from '../settings'
 import { RENDERER_EVENT } from '../events'
 import { terminalPanelId, terminalTabId } from '../terminalChrome'
+import {
+  registerTerminalFileLinks,
+  terminalLinkModifierPressed,
+  terminalOscLinkTarget
+} from '../terminalLinks'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TerminalHost — ONE live terminal, bound to ONE backend shell by `surfaceId`.
@@ -40,16 +47,51 @@ export default function TerminalHost({
     const container = containerRef.current
     if (!container) return
 
+    const openLink = (target: TerminalLinkTarget): void => {
+      void window.api.terminal.openLink({ id: surfaceId, target }).then(
+        (result) => {
+          if (!result.ok) console.warn(`[shepherd:links] open failed: ${result.error}`)
+        },
+        () => console.warn('[shepherd:links] open request failed')
+      )
+    }
+
     const term = new Terminal({
       fontFamily: '"JetBrains Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace',
       fontSize: getFontSize(),
       scrollback: TERMINAL_SCROLLBACK_LINES,
       cursorBlink: true,
-      theme: { background: '#0d0d0f', foreground: '#e6e6e6', cursor: '#8ab4ff' }
+      theme: { background: '#0d0d0f', foreground: '#e6e6e6', cursor: '#8ab4ff' },
+      linkHandler: {
+        allowNonHttpProtocols: true,
+        activate: (event, value) => {
+          if (!terminalLinkModifierPressed(event)) return
+          const target = terminalOscLinkTarget(value)
+          if (target) openLink(target)
+        }
+      }
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
+    term.loadAddon(
+      new WebLinksAddon((event, url) => {
+        if (terminalLinkModifierPressed(event)) openLink({ kind: 'url', url })
+      })
+    )
     term.open(container)
+    const fileLinks = registerTerminalFileLinks(
+      term,
+      (candidates) => window.api.terminal.resolveFileLinks({ id: surfaceId, candidates }),
+      (event, candidate) => {
+        if (!terminalLinkModifierPressed(event)) return
+        openLink({
+          kind: 'file',
+          path: candidate.path,
+          ...(candidate.line === undefined ? {} : { line: candidate.line }),
+          ...(candidate.column === undefined ? {} : { column: candidate.column })
+        })
+      }
+    )
     const measuresStartup = window.api.performance.enabled && focused
     if (measuresStartup) window.api.performance.mark('terminal-opened')
     fit.fit()
@@ -153,6 +195,7 @@ export default function TerminalHost({
       offData()
       offExit()
       window.api.terminal.dispose(surfaceId)
+      fileLinks.dispose()
       term.dispose()
       refs.current = null
     }

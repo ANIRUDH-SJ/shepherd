@@ -25,6 +25,8 @@ const api: ShepherdApi = {
     create: (opts) => ipcRenderer.invoke(IPC.TERM_CREATE, opts),
     input: (msg) => ipcRenderer.send(IPC.TERM_INPUT, msg),
     resize: (msg) => ipcRenderer.send(IPC.TERM_RESIZE, msg),
+    resolveFileLinks: (request) => ipcRenderer.invoke(IPC.TERM_RESOLVE_FILE_LINKS, request),
+    openLink: (request) => ipcRenderer.invoke(IPC.TERM_OPEN_LINK, request),
     dispose: (id) => ipcRenderer.send(IPC.TERM_DISPOSE, id),
 
     onData: (id, cb) => {

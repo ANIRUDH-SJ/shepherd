@@ -1,4 +1,5 @@
-import { app, ipcMain, Notification, type WebContents } from 'electron'
+import { app, ipcMain, Notification, shell, type WebContents } from 'electron'
+import { statSync } from 'node:fs'
 import * as pty from 'node-pty'
 import { homedir, platform } from 'os'
 import { join } from 'path'
@@ -22,6 +23,11 @@ import {
   type TermInput,
   type TermResize
 } from '../shared/ipc'
+import {
+  isOpenTerminalLinkRequest,
+  isResolveTerminalFileLinksRequest,
+  type OpenTerminalLinkResult
+} from '../shared/terminalLinks'
 import type { RuntimePerformanceMarkName } from '../shared/runtimePerformance'
 import {
   TERMINAL_MEMORY_LOG_PREFIX,
@@ -30,6 +36,12 @@ import {
   type TerminalMemorySnapshotReason
 } from '../shared/terminalMemory'
 import { PRODUCT_ENV } from '../shared/product'
+import {
+  openTerminalLinkTarget,
+  readTerminalShellCwd,
+  terminalFileReferencesExist,
+  type TerminalLinkDependencies
+} from './terminalLinks'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PTY MANAGER  (main process — the "real shell" half of the terminal)
@@ -66,6 +78,21 @@ const terminals = new TerminalOwnershipRegistry<WebContents, TerminalRec>({
   onOwnerLost: (id, terminal) => disposeTerminal(id, terminal, false, 'owner-lost')
 })
 const memoryDiagnosticsEnabled = terminalMemoryDiagnosticsEnabled(process.env)
+const terminalLinkDependencies: TerminalLinkDependencies = {
+  homeDirectory: homedir,
+  pathKind: (path) => {
+    try {
+      const stats = statSync(path)
+      if (stats.isFile()) return 'file'
+      if (stats.isDirectory()) return 'directory'
+    } catch {
+      // Link candidates are expected to disappear or fail validation sometimes.
+    }
+    return null
+  },
+  openExternal: (url) => shell.openExternal(url),
+  openPath: (path) => shell.openPath(path)
+}
 
 function reportTerminalMemory(reason: TerminalMemorySnapshotReason): void {
   if (!memoryDiagnosticsEnabled) return
@@ -300,6 +327,31 @@ export function registerPtyIpc(markPerformance?: (name: RuntimePerformanceMarkNa
     if (!isTermDataAck(msg)) return
     terminals.getOwned(msg.id, event.sender)?.output.acknowledge(msg.sequence)
   })
+
+  // Resolve syntactic file references lazily when xterm asks about a hovered
+  // line. The requesting renderer must own the PTY, and relative paths use the
+  // shell's live cwd rather than stale renderer state.
+  ipcMain.handle(IPC.TERM_RESOLVE_FILE_LINKS, (event, request: unknown): boolean[] => {
+    if (!isResolveTerminalFileLinksRequest(request)) return []
+    const terminal = terminals.getOwned(request.id, event.sender)
+    if (!terminal) return request.candidates.map(() => false)
+    const cwd = readTerminalShellCwd(terminal.proc.pid)
+    if (!cwd) return request.candidates.map(() => false)
+    return terminalFileReferencesExist(request.candidates, cwd, terminalLinkDependencies)
+  })
+
+  // Revalidate on activation because files and cwd can change between hover and
+  // Ctrl-click. Electron's shell APIs receive argv-free values; no shell runs.
+  ipcMain.handle(
+    IPC.TERM_OPEN_LINK,
+    async (event, request: unknown): Promise<OpenTerminalLinkResult> => {
+      if (!isOpenTerminalLinkRequest(request)) return { ok: false, error: 'invalid-request' }
+      const terminal = terminals.getOwned(request.id, event.sender)
+      if (!terminal) return { ok: false, error: 'terminal-not-found' }
+      const cwd = readTerminalShellCwd(terminal.proc.pid) ?? ''
+      return openTerminalLinkTarget(request.target, cwd, terminalLinkDependencies)
+    }
+  )
 
   // fire-and-forget: resize
   ipcMain.on(IPC.TERM_RESIZE, (event, msg: TermResize) => {
