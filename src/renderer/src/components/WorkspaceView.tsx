@@ -3,7 +3,7 @@ import { computeLayout, listSurfaceIds } from '../layout/tree'
 import { type AppAction, paneAction, type Workspace } from '../state/appReducer'
 import { workspaceIdentity } from '../sidebarView'
 import type { WorkspaceAction } from '../state/workspaceReducer'
-import { terminalContextSummary } from '../terminalChrome'
+import { terminalWorkspaceAriaLabel } from '../terminalChrome'
 import PaneView from './PaneView'
 import Divider from './Divider'
 import Icon from './Icon'
@@ -39,10 +39,10 @@ export default function WorkspaceView({
   }, [workspace.root])
 
   const identity = workspaceIdentity(workspace, position)
-  const chromeSummary = terminalContextSummary(
-    panes.map((entry) => entry.pane),
-    workspace.activePaneId,
-    surfaceNumbers
+  const chromeLabel = terminalWorkspaceAriaLabel(
+    identity.primary,
+    panes.length,
+    surfaceNumbers.size
   )
 
   // Adapt pane-level (M2) actions to the app reducer, tagged with this workspace.
@@ -50,29 +50,20 @@ export default function WorkspaceView({
 
   return (
     <div className="workspace-view" style={{ display: active ? 'flex' : 'none' }}>
-      <header className="workspace-context-strip" aria-label="Workspace context">
+      <header className="workspace-context-strip" aria-label={chromeLabel}>
         <div
           className="workspace-context-identity"
           title={`${identity.primary}\n${identity.context}\n${workspace.cwd}`}
         >
           <Icon name="terminal" />
           <strong>{identity.primary}</strong>
-          <span>{identity.context}</span>
         </div>
-        <span className="workspace-context-separator" aria-hidden="true" />
-        <div
-          className={'workspace-context-branch' + (workspace.gitBranch ? '' : ' no-git')}
-          title={
-            workspace.gitBranch ? `Git branch: ${workspace.gitBranch}` : 'Not a Git repository'
-          }
-        >
-          <Icon name="branch" />
-          <span>{workspace.gitBranch ?? 'No Git'}</span>
-        </div>
-        <div className="workspace-context-spacer" />
-        <span className="workspace-context-focus" title={chromeSummary.countLabel}>
-          {chromeSummary.focusLabel}
-        </span>
+        {workspace.gitBranch && (
+          <div className="workspace-context-branch" title={`Git branch: ${workspace.gitBranch}`}>
+            <Icon name="branch" />
+            <span>{workspace.gitBranch}</span>
+          </div>
+        )}
       </header>
       <div className="pane-layer" ref={layerRef}>
         {panes.map(({ pane, rect }, paneIndex) => (
