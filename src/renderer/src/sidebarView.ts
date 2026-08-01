@@ -20,3 +20,12 @@ export function workspaceIdentity(
   }
   return { primary: workspace.projectName, context: positional, positional }
 }
+
+/** Only keep secondary project text when it adds information below a custom name. */
+export function workspaceProjectContext(
+  workspace: WorkspaceIdentitySource,
+  identity: WorkspaceIdentity
+): string | null {
+  if (!workspace.name || identity.context === 'Home') return null
+  return identity.context
+}

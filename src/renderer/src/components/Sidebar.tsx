@@ -7,7 +7,7 @@ import {
   workspaceAgentLabel
 } from '../agentView'
 import { RENDERER_EVENT } from '../events'
-import { workspaceIdentity } from '../sidebarView'
+import { workspaceIdentity, workspaceProjectContext } from '../sidebarView'
 import { type AppAction, createWorkspaceAction, type Workspace } from '../state/appReducer'
 import { usageDetails, usageSummary } from '../usageView'
 import Icon from './Icon'
@@ -117,7 +117,8 @@ export default function Sidebar({
           const summary = usageSummary(w.usage)
           const workspaceAgents = sortAgentsForSidebar(agentsByWorkspace.get(w.id) ?? [])
           const agentSummary = agentRollupLabel(workspaceAgents)
-          const hasMetadata = Boolean(w.name || w.gitBranch || summary)
+          const projectContext = workspaceProjectContext(w, identity)
+          const hasMetadata = Boolean(projectContext || w.gitBranch || summary)
           return (
             <div
               key={w.id}
@@ -214,12 +215,12 @@ export default function Sidebar({
                 )}
                 {hasMetadata && (
                   <div className="ws-meta">
-                    {w.name && (
+                    {projectContext && (
                       <span
                         className="ws-context"
                         title={`Project: ${w.projectName}\nDirectory: ${w.cwd}`}
                       >
-                        {identity.context}
+                        {projectContext}
                       </span>
                     )}
                     {w.gitBranch && (
