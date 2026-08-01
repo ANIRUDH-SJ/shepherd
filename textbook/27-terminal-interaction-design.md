@@ -20,8 +20,9 @@ active surface answers “which terminal is visible in this rectangle?” Inacti
 panes still have active tabs; they simply do not own workspace focus.
 
 Using one visual treatment for both levels makes the interface ambiguous. A
-small underline is enough for the visible tab in every pane. A stronger border
-or top edge identifies the one active pane.
+small underline is enough for the visible tab in every pane. The active pane can
+use a slightly different neutral tab-row surface; a permanent accent border makes
+ordinary focus look like an alert and turns a split workspace into a card grid.
 
 ## 2. Use the ARIA tabs contract
 
@@ -104,16 +105,18 @@ Users frequently collapse a sidebar to maximize terminal width. A thin context
 strip can preserve the minimum orientation information:
 
 - workspace/project identity;
-- Git branch or explicit non-Git state;
-- active pane and terminal numbers.
+- Git branch, when one exists;
+- pane and terminal counts in the accessible name.
 
-This repeats some sidebar data intentionally. Redundancy is useful when the main
-source can be hidden and the repeated form is compact. The strip should not grow
-into another toolbar: full paths, counts, and explanations can remain in titles.
+This repeats the minimum sidebar identity intentionally. Redundancy is useful when
+the main source can be hidden and the repeated form is compact. The strip should
+not grow into another toolbar: paths and positional context can remain in titles,
+while counts remain available to assistive technology without permanent
+`Pane N · Terminal N` copy.
 
-At narrow widths, remove secondary positional context before project identity or
-Git state. Flex children that truncate need `min-width: 0`; otherwise a long
-branch can push the active-terminal label off screen.
+At narrow widths, omit missing metadata and truncate the branch before project
+identity. Flex children that truncate need `min-width: 0`; otherwise a long branch
+can push the workspace identity off screen.
 
 ## 7. Discoverable actions without permanent noise
 
@@ -124,14 +127,16 @@ to discover and disappear for keyboard users.
 A balanced rule is:
 
 ```text
-inactive/resting pane -> actions faintly visible
-active pane           -> actions moderately visible
-pane hover/focus      -> actions fully visible
+resting pane toolbar  -> actions visually absent but keyboard reachable
+toolbar hover         -> actions fully visible
+action keyboard focus -> actions fully visible
 ```
 
-Use `:focus-within` alongside hover so tabbing to any pane control reveals the
-whole group. Every icon-only button still needs a title and accessible label.
-Opacity is presentation only; controls remain in the keyboard order.
+Use `:focus-within` on the action group alongside toolbar hover so tabbing to a
+pane control reveals the whole group. Do not use `display: none` or `visibility:
+hidden`, which would remove keyboard access. Every icon-only button still needs a
+title and accessible label. Opacity is presentation only; controls remain in the
+keyboard order.
 
 ## 8. Disable impossible actions
 
@@ -156,10 +161,23 @@ They are easy to scan but change after closing or restructuring the tree. Stable
 ids remain the keys for reducers, PTYs, DOM relationships, and socket targeting.
 
 This separation prevents visible numbering from becoming persistent identity.
-The context helper can safely return `Pane 3 · Terminal 3` while the state keeps
-opaque generated ids.
+Tabs can safely show `Terminal 3`, and a workspace helper can expose `4 panes, 6
+terminals` accessibly, while state keeps opaque generated ids. Positional focus
+copy does not need to occupy permanent top-level chrome.
 
-## 10. Layout boundary
+## 10. Keeping the active tab visible
+
+A compact tablist eventually becomes narrower than its children. Clipping the
+overflow without synchronization can leave the selected terminal offscreen. A
+horizontal overflow viewport with a hidden scrollbar preserves capacity, while a
+small effect scrolls the newly active tab into the nearest visible position.
+
+The dependency should be the primitive `activeSurfaceId`. The effect reads the
+current active-tab ref and calls `scrollIntoView`; it does not own selection or
+trigger another reducer update. Roving keyboard focus, pointer selection, and new
+tab creation all benefit from the same synchronization.
+
+## 11. Layout boundary
 
 The workspace context strip changes the available pane rectangle. The correct
 structure is a column:
@@ -174,7 +192,11 @@ Pane percentages and dividers remain relative to the pane layer, not the entire
 window. This preserves the tiling algorithm; no geometry formulas need to know
 about the strip height.
 
-## 11. Security and failure handling
+Flat pane styling does not reduce divider hit targets. The visible boundary can be
+one pixel while the positioned drag element remains several pixels wide, making
+resize practical without recreating card borders.
+
+## 12. Security and failure handling
 
 Terminal chrome adds no OS, filesystem, network, IPC, or PTY authority. DOM ids
 derive only from application-generated surface ids. Icons come from a closed
@@ -186,7 +208,7 @@ selection validates both ids and returns the original state for an invalid pane
 or surface. These fail-closed rules avoid moving focus to a nonexistent panel or
 storing an invalid active pane.
 
-## 12. Testing strategy
+## 13. Testing strategy
 
 Pure tests should cover:
 
@@ -195,19 +217,22 @@ Pure tests should cover:
 - tab/panel id agreement;
 - surface selection activating its pane;
 - invalid target rejection;
-- pane/terminal label numbering and pluralization.
+- accessible pane/terminal count pluralization;
+- one selected and one tabbable item per tablist.
 
 Visual smoke tests complement them with split geometry, focus hierarchy, icon
-alignment, truncation, enabled/disabled states, xterm fitting, and narrow-window
-behavior. A single-pane case and a nested multi-pane case exercise different
-capability and layout paths.
+alignment, truncation, enabled/disabled states, action opacity before/after focus,
+xterm fitting, and narrow-window behavior. Single-, two-, four-, and eight-pane
+cases exercise different capability and layout pressure. A many-tab case must
+also prove that the active tab stays visible.
 
-## 13. Alternatives and tradeoffs
+## 14. Alternatives and tradeoffs
 
 A generic tab component library could supply keyboard behavior, but integrating
 close buttons, xterm lifetime, and pane capture would still require custom state
 work. Keeping all actions permanently bright is simpler but visually overwhelms
-dense splits. Hiding actions completely is cleaner but harms discovery.
+dense splits. Removing actions from layout is cleaner at rest but harms keyboard
+discovery. Opacity plus `:focus-within` preserves both concerns.
 
 A breadcrumb inside every pane would repeat workspace context excessively. One
 workspace-level strip preserves orientation without reducing each terminal's
@@ -223,3 +248,4 @@ unchanged and makes interaction semantics testable.
 3. What does roving `tabIndex` improve?
 4. Why must a newly visible xterm be refitted?
 5. When is redundant workspace context justified?
+6. Why must active-tab scrolling derive from selection instead of owning it?

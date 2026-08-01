@@ -204,6 +204,9 @@
 
 ## T
 
+- **terminal chrome** — The compact workspace strip, tab rows, dividers, and
+  contextual controls surrounding terminal content. It provides navigation and
+  capabilities without owning PTY state. (see 27-terminal-interaction-design.md)
 - **Tauri** — An alternative to Electron that pairs a Rust backend with the OS's _native_ webview (no bundled Chromium), yielding smaller apps. We chose Electron for its mature Node ecosystem (node-pty) and one consistent Chromium everywhere. (see 03-electron-architecture.md)
 - **teletype (TTY)** — The original electromechanical terminal (a printing keyboard); its abbreviation survives as "TTY," the kernel's word for a terminal device. A pty is a software stand-in for one. (see 02-how-terminals-work.md)
 - **tiling** — Automatically arranging panes to fill the available space without overlapping (as opposed to floating windows). Splitting a pane subdivides its rectangle; our layout tree drives the arrangement. (see 10-tiling-and-layout.md)

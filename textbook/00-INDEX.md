@@ -101,8 +101,8 @@ Think of the book in five "acts":
   accessibility, validation, and theme extension boundaries.
 - `26-sidebar-information-architecture.md` — project-first identity, contextual
   agent ownership, useful-only metadata, accessible controls, and flat layout tradeoffs.
-- `27-terminal-interaction-design.md` — ARIA tabs, roving focus, pane/tab state,
-  xterm lifetime, context strips, capability controls, and interaction tradeoffs.
+- `27-terminal-interaction-design.md` — ARIA tabs, roving focus, flat pane chrome,
+  active-tab visibility, xterm lifetime, capability controls, and interaction tradeoffs.
 - `28-terminal-performance-measurement.md` — honest benchmark boundaries,
   deterministic workloads, PSS/CPU accounting, statistics, process safety, and
   extension into rendered and interaction suites.
@@ -166,7 +166,7 @@ Think of the book in five "acts":
 | `24-single-workspace-startup.md`                   | Startup cardinality, active-workspace projection, compatibility, security, and persistence tradeoffs                                           | 09, 13, 23             |
 | `25-semantic-ui-tokens.md`                         | Semantic CSS tokens, cascade architecture, visual hierarchy, accessibility, validation, and theming                                            | 08, 14                 |
 | `26-sidebar-information-architecture.md`           | Workspace identity, contextual agent ownership, useful-only metadata, SVG boundaries, accessibility, and flat layout                           | 08, 19, 25             |
-| `27-terminal-interaction-design.md`                | Semantic tabs, roving focus, pane activation, xterm visibility, context strips, and capability controls                                        | 07, 08, 10, 25         |
+| `27-terminal-interaction-design.md`                | Semantic tabs, roving focus, flat panes, active-tab visibility, xterm lifetime, context strips, and capability controls                        | 07, 08, 10, 25         |
 | `28-terminal-performance-measurement.md`           | Production benchmarks, workload/end-point design, PSS/CPU, robust statistics, process ownership, and safety                                    | 02, 06, 07, 15         |
 | `29-runtime-performance-observability.md`          | Cross-process startup traces, semantic boundaries, monotonic clocks, disabled overhead, security, and optimization                             | 03, 04, 07, 28         |
 | `30-startup-critical-path-scheduling.md`           | Critical-path classification, readiness handshakes, late consumers, event-loop turns, and failure handling                                     | 03, 04, 29             |
@@ -244,7 +244,7 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `24-single-workspace-startup.md` — deterministic one-workspace relaunch policy
 - `25-semantic-ui-tokens.md` — semantic CSS contract and visual-system foundation
 - `26-sidebar-information-architecture.md` — project-first identity and contextual agent ownership
-- `27-terminal-interaction-design.md` — accessible nested pane/tab focus and terminal chrome
+- `27-terminal-interaction-design.md` — accessible nested pane/tab focus and flat terminal chrome
 - `28-terminal-performance-measurement.md` — reproducible terminal measurement and safe process accounting
 - `29-runtime-performance-observability.md` — bounded cross-process startup phase traces
 - `30-startup-critical-path-scheduling.md` — readiness-driven background service activation
