@@ -46,12 +46,34 @@ frontend", IPC = "the API calls between them".
 - [x] **M21** — Renderer-owned terminal lifecycle and memory accounting ✓
 - [x] **M22** — Shepherd product, CLI, packaging, and compatibility identity ✓
 - [x] **M23** — Safe clickable terminal URLs, OSC 8 links, and local file references ✓
+- [ ] **M24** — Minimal, flat workspace sidebar
+- [ ] **M25** — Minimal terminal tabs, headers, panes, and controls
+- [ ] **M26** — Neutral terminal-first theme and semantic interaction states
+- [ ] **M27** — Notification center, meaningful rings, and jump-to-unread
+- [ ] **M28** — Compact pull-request and listening-port workspace metadata
+- [ ] **M29** — Terminal find, command palette, contextual help, and settings entry
+- [ ] **M30** — Constrained localhost preview surface
 
 ---
 
 > **Companion doc:** [`FEATURES.md`](./FEATURES.md) — the feature map, object
 > model (Window→Workspace→Pane→Surface→Panel), and socket API this roadmap now
 > reflects. Read it alongside these milestones.
+
+> **Deferred agent-workspace UI plan:**
+> [`AGENT_WORKSPACE_UI_PLAN.md`](./AGENT_WORKSPACE_UI_PLAN.md) — the
+> dependency-ordered, one-feature-per-PR plan for task-first navigation,
+> attention management, review, worktree task creation, session lifecycle,
+> terminal context, permissions, previews, and later agent-work experiments.
+> This document is planning only; its features are not implemented yet. Every
+> feature requires both `learning/` and `textbook/` updates after its behavior
+> settles.
+
+> **Active cmux-parity delivery plan:**
+> [`CMUX_UI_PARITY_PLAN.md`](./CMUX_UI_PARITY_PLAN.md) — the one-PR-per-milestone
+> sequence for removing dashboard-like UI, restoring terminal-first hierarchy,
+> and then adding cmux-inspired notifications, metadata, utilities, and preview.
+> Complete M24–M26 before beginning the deferred agent-workspace panels.
 
 ## M0 — Project setup & scaffolding
 
@@ -467,10 +489,31 @@ filesystem access, and desktop opening behind explicit validation boundaries._
 - [x] Prove URL, existing file, missing file, and OSC 8 hover behavior in isolated Electron
 - [x] Document implementation, architecture, security, alternatives, and tradeoffs
 
+## M24–M30 — cmux UI parity and terminal-first simplification
+
+_Goal: replace Shepherd's dashboard-like presentation with a compact terminal-first
+shell, then add only the cmux-inspired context and utilities that remain useful._
+
+- [ ] **M24:** remove permanent agent/shortcut furniture and flatten the workspace sidebar
+- [ ] **M25:** compact workspace/tab chrome and remove ordinary pane-card styling
+- [ ] **M26:** neutralize the palette and reserve accent/motion for semantic state
+- [ ] **M27:** add bounded pending notifications, meaningful rings, and unread navigation
+- [ ] **M28:** add reliable, compact PR and listening-port metadata
+- [ ] **M29:** replace shortcut furniture with terminal find, palette, help, and settings
+- [ ] **M30:** add a constrained localhost preview after the terminal shell is stable
+- [ ] Deliver every milestone on its own branch and PR using the commit, verification,
+      screenshot, `learning/`, and `textbook/` gates in
+      [`CMUX_UI_PARITY_PLAN.md`](./CMUX_UI_PARITY_PLAN.md)
+
 ---
 
 ## Stretch / later (post-v1)
 
+- [ ] Implement the deferred agent-workspace UI series one feature and PR at a
+      time, following [`AGENT_WORKSPACE_UI_PLAN.md`](./AGENT_WORKSPACE_UI_PLAN.md);
+      begin only after the cmux parity series is visually accepted;
+      complete code/tests first, then update both `learning/` and `textbook/`
+      before closing each feature
 - [ ] Port the React UI to **Tauri** for lean binaries (~10× smaller, less RAM)
 - [ ] PR status/number + listening ports per workspace (git branch lands in v1)
 - [ ] In-app browser panels + browser automation API (`Panel='browser'`)
