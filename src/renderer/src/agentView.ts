@@ -60,6 +60,20 @@ export function agentStatusLabel(agent: AgentRecord): string {
   return agent.state
 }
 
+/** Compact provider and state text for an agent shown inside its owning workspace. */
+export function workspaceAgentLabel(agent: AgentRecord): string {
+  return `${agent.displayName} · ${agentStatusLabel(agent)}`
+}
+
+/** Keep the visible row terse while exposing optional provider detail accessibly. */
+export function workspaceAgentAriaLabel(
+  agent: AgentRecord,
+  workspaceName: string
+): string {
+  const message = agent.message ? `, ${agent.message}` : ''
+  return `Focus ${agent.displayName}, ${agentStatusLabel(agent)}, ${workspaceName}${message}`
+}
+
 export function sortAgentsForSidebar(agents: AgentRecord[]): AgentRecord[] {
   return [...agents].sort((a, b) => {
     const stateDifference = STATE_PRIORITY[a.state] - STATE_PRIORITY[b.state]
