@@ -112,6 +112,11 @@
 - **layout tree (PaneNode)** — The recursive tree describing a workspace's splits: each node is either a _leaf_ (one pane) or a _split_ (a direction, child nodes, and sizes). Rendering it produces the tiled layout. (see 10-tiling-and-layout.md)
 - **libghostty** — The C library extracted from the Ghostty terminal that powers cmux's GPU renderer. We deliberately _don't_ use it — its C/Zig API is unstable and awkward to bind from Electron — and use xterm.js (+ WebGL addon) instead. (see 07-xtermjs.md)
 - **line discipline** — The kernel layer sitting between a pty and the program on it that processes bytes — echoing typed characters, handling backspace and Ctrl-C, and switching between canonical and raw mode. (see 02-how-terminals-work.md)
+- **link provider (xterm.js)** — A renderer-side object that inspects a requested
+  xterm buffer line and returns text, an exact cell range, and an activation
+  callback. Shepherd uses the official provider for HTTP(S) and a custom,
+  existence-checked provider for local file references. (see
+  35-safe-terminal-link-activation.md)
 
 ## M
 
@@ -138,6 +143,10 @@
   cleanup, and uses expected-value removal to reject stale callbacks. (see
   33-terminal-memory-and-ownership.md)
 - **OSC (Operating System Command)** — A family of escape sequences beginning `ESC ]` used to talk to the terminal/OS itself — set the window title, define hyperlinks, or fire desktop notifications — rather than draw on the screen. (see 02-how-terminals-work.md; the notification codes: 12-notifications-and-osc.md)
+- **OSC 8 hyperlink** — An OSC sequence that associates visible terminal text
+  with a URI. Because the label can differ from the hidden target, Shepherd
+  treats the URI as untrusted and allows only validated HTTP(S) or local-file
+  activation. (see 35-safe-terminal-link-activation.md)
 - **OSC 9 / 99 / 777** — Specific OSC sequences a program emits to request a desktop notification. We scan each terminal's output for them and, when one appears, light up the sidebar automatically — no setup required. (see 12-notifications-and-osc.md)
 
 ## P
@@ -194,6 +203,10 @@
 - **Tauri** — An alternative to Electron that pairs a Rust backend with the OS's _native_ webview (no bundled Chromium), yielding smaller apps. We chose Electron for its mature Node ecosystem (node-pty) and one consistent Chromium everywhere. (see 03-electron-architecture.md)
 - **teletype (TTY)** — The original electromechanical terminal (a printing keyboard); its abbreviation survives as "TTY," the kernel's word for a terminal device. A pty is a software stand-in for one. (see 02-how-terminals-work.md)
 - **tiling** — Automatically arranging panes to fill the available space without overlapping (as opposed to floating windows). Splitting a pane subdivides its rectangle; our layout tree drives the arrangement. (see 10-tiling-and-layout.md)
+- **TOCTOU (time of check to time of use)** — A race where state can change
+  between validation and action. Terminal file links are checked for hover and
+  checked again on activation because the shell cwd or file may change between
+  those moments. (see 35-safe-terminal-link-activation.md)
 - **TTL (time to live)** — A bounded lifetime attached to an agent report. Main
   converts it to a local expiry time so a missing provider cleanup event cannot
   leave the sidebar stale forever. (see 19-semantic-agent-runtime.md)
@@ -213,6 +226,11 @@
 
 - **webContents** — The Electron object representing a window's rendered web page. Its `.send(channel, payload)` is how main pushes IPC messages to the renderer. (see 04-ipc-inter-process-communication.md; it's a property of BrowserWindow, 03-electron-architecture.md)
 - **WebGL addon** — An xterm.js addon that renders the terminal on the GPU (via WebGL) for smooth, fast drawing of lots of text — our pragmatic stand-in for cmux's GPU (Ghostty) renderer. (see 07-xtermjs.md)
+- **WebLinks addon** — The official xterm.js link provider that recognizes
+  HTTP(S) text, including wrapped URLs. Shepherd supplies a modifier-aware
+  activation callback and sends the URL through validated main-process IPC
+  instead of letting the renderer open it directly. (see
+  35-safe-terminal-link-activation.md)
 - **Window** — In our object model, an OS window with its own sidebar and independent set of workspaces. (Distinct from Electron's BrowserWindow, which _implements_ it.) (see 09-typescript-and-the-data-model.md)
 - **window.api** — The object our preload script exposes (via contextBridge) onto the renderer's global `window`, bundling the safe functions the React UI calls to reach main — e.g. `window.api.sendInput(...)`. (see 05-preload-and-context-isolation.md)
 - **Workspace** — In our object model, one row in the sidebar: a named context (a project or agent) with its own layout, cwd, git branch, status, and notification state. (see 09-typescript-and-the-data-model.md)

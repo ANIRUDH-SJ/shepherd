@@ -182,6 +182,7 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | 33  | **Adaptive background observation**                                  | content-free activity acceleration, quiet/hidden recovery cadences, non-overlapping agent and metadata scans, and exact renderer lifecycle deadlines                                 | 🟢                                                          |
 | 34  | **Owned terminal lifecycle**                                         | creator-authorized PTY control, renderer-loss cleanup, explicit scrollback/capture/queue bounds, aggregate memory diagnostics, and scaling/recovery benchmarks                       | 🟢                                                          |
 | 35  | **Independent Shepherd identity**                                    | product constants, safe state selection, dual migration sockets, primary CLI, managed-hook upgrades, renderer/protocol identity, and Linux packaging                                 | 🟢                                                          |
+| 36  | **Safe clickable terminal links**                                    | Ctrl/Meta-click HTTP(S), OSC 8, and existing local paths through xterm providers, live shell-cwd resolution, owned IPC, and revalidated Electron opening                             | 🟢                                                          |
 
 ---
 
@@ -295,6 +296,7 @@ which is 90% of why the screenshot looks the way it does.
       other known CLIs, and safely named custom agents; lifecycle reporters add richer state
 - [x] Active workspace layout + cwd restored as the single workspace on relaunch
 - [x] Live project and Git branch shown for each workspace's active terminal
+- [x] Ctrl/Meta-click opens validated HTTP(S), OSC 8, and existing local-file links
 - [ ] Final dark-theme matching pass
 
 ---

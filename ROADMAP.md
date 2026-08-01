@@ -45,6 +45,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M20** — Adaptive event-driven runtime observation ✓
 - [x] **M21** — Renderer-owned terminal lifecycle and memory accounting ✓
 - [x] **M22** — Shepherd product, CLI, packaging, and compatibility identity ✓
+- [x] **M23** — Safe clickable terminal URLs, OSC 8 links, and local file references ✓
 
 ---
 
@@ -446,6 +447,24 @@ without discarding existing sessions, automation, or managed integrations._
 - [x] Rename renderer, schema, diagnostics, benchmarks, package, executable, and desktop identity
 - [x] Migrate the persisted font-size key without resetting the user preference
 - [x] Build and inspect a real unpacked Shepherd production artifact
+- [x] Document implementation, architecture, security, alternatives, and tradeoffs
+
+## M23 — Safe clickable terminal links
+
+_Goal: make useful terminal output actionable while keeping untrusted text,
+filesystem access, and desktop opening behind explicit validation boundaries._
+
+- [x] Detect wrapped plain HTTP(S) URLs with the official xterm addon
+- [x] Honor OSC 8 HTTP(S) and local-file links through a strict protocol allowlist
+- [x] Parse bounded absolute, home, dot-relative, project-relative, and bare file references
+- [x] Preserve optional `path:line:column` metadata for future editor navigation
+- [x] Map UTF-16 parser offsets to exact xterm cells, including wide characters
+- [x] Confirm file existence lazily against the interactive shell's live cwd
+- [x] Require terminal ownership and revalidate every target on activation
+- [x] Open through Electron APIs without shell commands or interpolation
+- [x] Preserve terminal focus and selection through Ctrl/Meta-click activation
+- [x] Cover parsers, ranges, IPC validation, resolution, opening, and async teardown
+- [x] Prove URL, existing file, missing file, and OSC 8 hover behavior in isolated Electron
 - [x] Document implementation, architecture, security, alternatives, and tradeoffs
 
 ---

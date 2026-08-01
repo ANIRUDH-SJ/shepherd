@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-Status: planned.
+Status: implemented and verified; pull-request delivery pending.
 
 Branch: `feat/clickable-terminal-links`
 
@@ -51,55 +51,56 @@ Electron main will:
 - return structured failures without writing attacker-controlled text into the
   terminal.
 
-## Planned implementation
+## Implementation checklist
 
-1. Add pure terminal-link candidate parsing and range tests.
-2. Add shared bounded IPC request/result contracts and validators.
-3. Add main-process resolution and activation handlers tied to terminal
-   ownership and the shell's live cwd.
-4. Add the official xterm.js WebLinks addon, a file-link provider, and a strict
-   OSC 8 handler in `TerminalHost`.
-5. Add visual and runtime smoke coverage for URL, file, invalid-path, and
-   ordinary-click behavior.
-6. Write the completed code walkthrough and textbook chapter, then synchronize
-   the roadmap, feature matrix, indexes, glossary, and relevant xterm chapter.
+1. [x] Add pure terminal-link candidate parsing and range tests.
+2. [x] Add shared bounded IPC request/result contracts and validators.
+3. [x] Add main-process resolution and activation handlers tied to terminal
+       ownership and the shell's live cwd.
+4. [x] Add the official xterm.js WebLinks addon, a file-link provider, and a strict
+       OSC 8 handler in `TerminalHost`.
+5. [x] Add visual runtime smoke coverage for URL, file, invalid-path, and OSC 8,
+       plus focused ordinary-click behavior coverage.
+6. [x] Write the completed code walkthrough and textbook chapter, then synchronize
+       the roadmap, feature matrix, indexes, glossary, and relevant xterm chapter.
 
 ## Planned commit sequence
 
 1. `docs: plan clickable terminal links`
 2. `links: parse terminal file references`
-3. `ipc: validate terminal link targets`
-4. `renderer: activate clickable terminal links`
-5. `docs: explain clickable terminal links`
-6. focused review and verification fixes, if needed
+3. `ipc: define terminal link contract`
+4. `main: open validated terminal links`
+5. `renderer: activate clickable terminal links`
+6. `docs: explain clickable terminal links`
+7. focused review and verification fixes, if needed
 
 ## Verification
 
 - Focused parser, IPC-validator, ownership, path-resolution, and activation tests.
 - Renderer tests for character-to-cell ranges, modifier activation, and stale
   asynchronous provider results.
-- Isolated Electron smoke using a real existing file, an HTTP URL with a stubbed
-  opener where practical, a nonexistent path, and OSC 8 output.
+- Isolated Electron smoke using a real existing file, an HTTP URL, a nonexistent
+  path, and OSC 8 output; focused tests keep ordinary click non-activating.
 - Visual proof showing URL and file-link hover treatment.
 - Final `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, and
   `git diff --check`.
 
 ## Documentation checklist
 
-- [ ] Add a code-focused walkthrough under `learning/` after behavior settles.
-- [ ] Add a textbook chapter covering terminal protocols, xterm link providers,
+- [x] Add a code-focused walkthrough under `learning/` after behavior settles.
+- [x] Add a textbook chapter covering terminal protocols, xterm link providers,
       IPC boundaries, filesystem resolution, security, tradeoffs, and extensions.
-- [ ] Update `ROADMAP.md`, `FEATURES.md`, learning/textbook indexes, glossary, and
+- [x] Update `ROADMAP.md`, `FEATURES.md`, learning/textbook indexes, glossary, and
       the xterm.js chapter.
-- [ ] Keep all examples aligned with the final implementation.
+- [x] Keep all examples aligned with the final implementation.
 
 ## Delivery checklist
 
-- [ ] Implement and test candidate parsing.
-- [ ] Implement and test bounded link IPC contracts.
-- [ ] Resolve links against the owning terminal's live cwd.
-- [ ] Add safe URL, OSC 8, and file-link activation.
-- [ ] Complete focused and full verification.
-- [ ] Capture visible runtime evidence.
-- [ ] Complete learning and textbook documentation.
+- [x] Implement and test candidate parsing.
+- [x] Implement and test bounded link IPC contracts.
+- [x] Resolve links against the owning terminal's live cwd.
+- [x] Add safe URL, OSC 8, and file-link activation.
+- [x] Complete focused and full verification.
+- [x] Capture visible runtime evidence.
+- [x] Complete learning and textbook documentation.
 - [ ] Open, code-review, and merge the dedicated PR.

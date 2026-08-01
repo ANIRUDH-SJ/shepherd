@@ -12,10 +12,11 @@ Vertical named sidebar with live project/branch context and per-agent status,
 notification rings when an agent needs you, split terminal panes, and a socket
 API for automation.
 
-> **Status: early development.** Core runtime milestones **M0–M5** and **M7–M15**
-> are complete — real shells, split panes, live workspace/Git context, automatic
-> agent discovery, session restore, and the Unix-socket API. **M6** (polish &
-> packaging) is in progress. See
+> **Status: early development.** Core runtime milestones **M0–M5**, **M7–M16**,
+> and **M18–M23** are complete — real shells, split panes, live workspace/Git
+> context, automatic agent discovery, safe clickable links, session restore, and
+> the Unix-socket API. **M6** (polish & packaging) and the expanded **M17**
+> benchmark suites are in progress. See
 > `ROADMAP.md` for the plan and `learning/` for a running, plain-English log of
 > what each milestone built.
 
@@ -59,9 +60,15 @@ shepherd             # or launch Shepherd from the app menu
 | `Ctrl+Shift+B`             | toggle sidebar                                     |
 | `Ctrl+Shift+=` / `-` / `0` | zoom terminal in / out / reset                     |
 | `F2` on a workspace        | rename workspace (`Enter` saves, `Escape` cancels) |
+| `Ctrl`/`Meta` + click      | open a terminal URL or existing local file         |
 
 When a terminal tab has keyboard focus, Left/Right wraps across tabs, Home/End
 jumps to the first or last tab in that pane, and Delete closes the focused tab.
+
+Terminal output recognizes HTTP(S), OSC 8 hyperlinks, and existing paths such
+as `src/main/index.ts:42:7`. Ctrl-click on Linux, or Meta-click where customary,
+opens the validated target in the operating system's default application. A
+normal click remains available for focus and text selection.
 
 You can also right-click a workspace and choose **Rename workspace**, double-click
 its name, or use its pencil action. Submitting an empty name returns to the live
