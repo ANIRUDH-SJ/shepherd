@@ -482,7 +482,7 @@ body.resizing * {
 }
 .workspace-context-strip {
   display: flex;
-  height: 30px;
+  height: 24px;
   flex: 0 0 auto;
   align-items: center;
   gap: var(--space-3);
@@ -503,10 +503,9 @@ body.resizing * {
   white-space: nowrap;
 }
 .workspace-context-identity {
-  max-width: 42%;
+  max-width: 58%;
 }
 .workspace-context-identity strong,
-.workspace-context-identity span,
 .workspace-context-branch span {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -515,36 +514,18 @@ body.resizing * {
 .workspace-context-identity strong {
   color: var(--color-text-secondary);
   font-size: 10.5px;
-}
-.workspace-context-identity span {
-  color: var(--color-text-subdued);
-}
-.workspace-context-separator {
-  width: 1px;
-  height: 13px;
-  flex: 0 0 auto;
-  background: var(--color-border-strong);
+  font-weight: 600;
 }
 .workspace-context-branch {
-  max-width: 28%;
+  max-width: 38%;
   color: var(--color-git);
-}
-.workspace-context-branch.no-git {
-  color: var(--color-text-subdued);
-}
-.workspace-context-spacer {
-  flex: 1 1 auto;
-}
-.workspace-context-focus {
-  flex: 0 0 auto;
-  color: var(--color-text-subdued);
-  font-variant-numeric: tabular-nums;
 }
 .pane-layer {
   position: relative;
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
+  background: var(--color-canvas);
 }
 
 /* ── A pane ─────────────────────────────────────────────────────────────────── */
@@ -553,23 +534,19 @@ body.resizing * {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border: 0;
+  border-radius: 0;
   background: var(--color-canvas);
 }
-.pane.active {
-  border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
-}
 .pane.active .pane-tabs {
-  background: color-mix(in srgb, var(--color-accent) 6%, var(--color-sidebar));
-  box-shadow: inset 0 2px 0 var(--color-accent);
+  background: var(--color-surface);
 }
 .pane-tabs {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
-  height: 30px;
-  padding: 0 4px;
+  gap: 0;
+  height: 26px;
+  padding: 0 2px;
   background: var(--color-sidebar);
   border-bottom: 1px solid var(--color-border);
   user-select: none;
@@ -579,41 +556,32 @@ body.resizing * {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: var(--space-1);
+  gap: 0;
   overflow: hidden;
 }
 .tab {
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-1);
-  height: 22px;
-  padding: 0 var(--space-1);
-  border-radius: var(--radius-md);
-  font-size: 12px;
+  gap: 0;
+  height: 25px;
+  padding: 0;
+  border-radius: 0;
+  font-size: 11.5px;
   color: var(--color-text-secondary);
   max-width: 170px;
 }
 .tab.active {
   background: var(--color-surface-raised);
   color: var(--color-text);
-}
-.tab.active::after {
-  content: '';
-  position: absolute;
-  right: var(--space-2);
-  bottom: -4px;
-  left: var(--space-2);
-  height: 2px;
-  border-radius: 1px;
-  background: var(--color-accent);
+  box-shadow: inset 0 -1px 0 var(--color-accent);
 }
 .tab-select {
   min-width: 0;
   height: 100%;
-  padding: 0 var(--space-2) 0 var(--space-3);
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   background: transparent;
   color: inherit;
   cursor: pointer;
@@ -644,8 +612,8 @@ body.resizing * {
 .tab-new,
 .pane-btn {
   display: grid;
-  width: 24px;
-  height: 22px;
+  width: 22px;
+  height: 20px;
   place-items: center;
   padding: 0;
 }
@@ -658,7 +626,6 @@ body.resizing * {
   opacity: 0;
 }
 .tab:hover .tab-close,
-.tab.active .tab-close,
 .tab:focus-within .tab-close {
   opacity: 0.72;
 }
@@ -672,15 +639,14 @@ body.resizing * {
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  opacity: 0.32;
+  opacity: 0;
+  pointer-events: none;
   transition: opacity var(--transition-fast);
 }
-.pane.active .pane-actions {
-  opacity: 0.58;
-}
-.pane:hover .pane-actions,
-.pane:focus-within .pane-actions {
+.pane-tabs:hover .pane-actions,
+.pane-actions:focus-within {
   opacity: 1;
+  pointer-events: auto;
 }
 .pane-btn:focus-visible,
 .tab-new:focus-visible,
@@ -688,10 +654,13 @@ body.resizing * {
   outline: 1px solid var(--color-focus);
   outline-offset: -1px;
 }
-.pane-btn:disabled,
-.tab .tab-close:disabled {
+.pane-btn:disabled {
   cursor: not-allowed;
   opacity: 0.18;
+}
+.tab .tab-close:disabled {
+  cursor: default;
+  opacity: 0;
 }
 .tabs-spacer {
   flex: 1 1 auto;
@@ -708,11 +677,6 @@ body.resizing * {
 }
 
 @media (max-width: 720px) {
-  .workspace-context-identity span,
-  .workspace-context-separator,
-  .workspace-context-focus {
-    display: none;
-  }
   .workspace-context-identity,
   .workspace-context-branch {
     max-width: 48%;
@@ -737,18 +701,18 @@ body.resizing * {
 .divider::before {
   content: '';
   position: absolute;
-  background: var(--color-border);
+  background: var(--color-border-strong);
 }
 .divider.row::before {
-  left: 3px;
+  left: 4px;
   top: 0;
-  width: 2px;
+  width: 1px;
   height: 100%;
 }
 .divider.column::before {
-  top: 3px;
+  top: 4px;
   left: 0;
-  height: 2px;
+  height: 1px;
   width: 100%;
 }
 .divider:hover::before {
