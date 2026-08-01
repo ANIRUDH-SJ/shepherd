@@ -28,6 +28,16 @@ export function terminalPanelId(surfaceId: string): string {
   return `terminal-panel-${surfaceId}`
 }
 
+export function terminalWorkspaceAriaLabel(
+  workspaceName: string,
+  paneCount: number,
+  terminalCount: number
+): string {
+  const panes = `${paneCount} ${paneCount === 1 ? 'pane' : 'panes'}`
+  const terminals = `${terminalCount} ${terminalCount === 1 ? 'terminal' : 'terminals'}`
+  return `${workspaceName}, ${panes}, ${terminals}`
+}
+
 export interface TerminalContextSummary {
   focusLabel: string
   countLabel: string

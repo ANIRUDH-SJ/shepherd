@@ -2,7 +2,8 @@ import {
   tabNavigationTarget,
   terminalContextSummary,
   terminalPanelId,
-  terminalTabId
+  terminalTabId,
+  terminalWorkspaceAriaLabel
 } from './terminalChrome'
 
 let failures = 0
@@ -25,6 +26,14 @@ assert(tabNavigationTarget(ids, 'term-b', 'Enter') === undefined, 'ignores non-n
 assert(tabNavigationTarget([], 'term-a', 'ArrowRight') === undefined, 'handles an empty tab list')
 assert(terminalTabId('term-a') === 'terminal-tab-term-a', 'derives a stable tab id')
 assert(terminalPanelId('term-a') === 'terminal-panel-term-a', 'derives a stable panel id')
+assert(
+  terminalWorkspaceAriaLabel('shepherd', 1, 1) === 'shepherd, 1 pane, 1 terminal',
+  'labels a compact single-terminal workspace accessibly'
+)
+assert(
+  terminalWorkspaceAriaLabel('review', 4, 6) === 'review, 4 panes, 6 terminals',
+  'pluralizes compact workspace counts'
+)
 
 const summary = terminalContextSummary(
   [
