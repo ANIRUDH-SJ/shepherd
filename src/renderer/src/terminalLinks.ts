@@ -177,6 +177,22 @@ export function terminalFileLinkRange(
   }
 }
 
+function terminalLineSnapshotsMatch(
+  left: TerminalLineSnapshot,
+  right: TerminalLineSnapshot
+): boolean {
+  if (left.text !== right.text || left.cells.length !== right.cells.length) return false
+  return left.cells.every((cell, index) => {
+    const other = right.cells[index]
+    return (
+      cell.startIndex === other.startIndex &&
+      cell.endIndex === other.endIndex &&
+      cell.startColumn === other.startColumn &&
+      cell.endColumn === other.endColumn
+    )
+  })
+}
+
 export class TerminalFileLinkProvider implements ILinkProvider, IDisposable {
   private disposed = false
   private requestSequence = 0
@@ -202,35 +218,46 @@ export class TerminalFileLinkProvider implements ILinkProvider, IDisposable {
       return
     }
 
-    void this.resolveLinks(
-      candidates.map(({ path, line: lineNumber, column }) => ({
-        path,
-        ...(lineNumber === undefined ? {} : { line: lineNumber }),
-        ...(column === undefined ? {} : { column })
-      }))
-    ).then(
-      (exists) => {
-        if (this.disposed || requestSequence !== this.requestSequence) {
-          callback(undefined)
-          return
-        }
+    const references = candidates.map(({ path, line: lineNumber, column }) => ({
+      path,
+      ...(lineNumber === undefined ? {} : { line: lineNumber }),
+      ...(column === undefined ? {} : { column })
+    }))
 
-        const links = candidates.flatMap((candidate, index): ILink[] => {
-          if (exists[index] !== true) return []
-          const range = terminalFileLinkRange(candidate, snapshot, bufferLineNumber)
-          if (!range) return []
-          return [
-            {
-              range,
-              text: candidate.text,
-              activate: (event) => this.activateLink(event, candidate)
-            }
-          ]
-        })
-        callback(links.length > 0 ? links : undefined)
-      },
-      () => callback(undefined)
-    )
+    void Promise.resolve()
+      .then(() => this.resolveLinks(references))
+      .then(
+        (exists) => {
+          const currentLine = this.terminal.buffer.active.getLine(bufferLineNumber - 1)
+          if (
+            this.disposed ||
+            requestSequence !== this.requestSequence ||
+            !currentLine ||
+            !terminalLineSnapshotsMatch(
+              snapshot,
+              snapshotTerminalLine(currentLine, this.terminal.cols)
+            )
+          ) {
+            callback(undefined)
+            return
+          }
+
+          const links = candidates.flatMap((candidate, index): ILink[] => {
+            if (exists[index] !== true) return []
+            const range = terminalFileLinkRange(candidate, snapshot, bufferLineNumber)
+            if (!range) return []
+            return [
+              {
+                range,
+                text: candidate.text,
+                activate: (event) => this.activateLink(event, candidate)
+              }
+            ]
+          })
+          callback(links.length > 0 ? links : undefined)
+        },
+        () => callback(undefined)
+      )
   }
 
   dispose(): void {

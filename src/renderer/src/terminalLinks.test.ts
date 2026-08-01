@@ -105,12 +105,14 @@ function textLine(text: string): IBufferLine {
   return fakeLine([...text].map((chars) => ({ chars, width: 1 })))
 }
 
-function fakeTerminal(line: IBufferLine): Pick<Terminal, 'buffer' | 'cols'> {
+function fakeTerminal(line: IBufferLine | (() => IBufferLine)): Pick<Terminal, 'buffer' | 'cols'> {
+  const initialLine = typeof line === 'function' ? line() : line
   return {
-    cols: line.length,
+    cols: initialLine.length,
     buffer: {
       active: {
-        getLine: (index: number) => (index === 0 ? line : undefined)
+        getLine: (index: number) =>
+          index === 0 ? (typeof line === 'function' ? line() : line) : undefined
       }
     }
   } as Pick<Terminal, 'buffer' | 'cols'>
@@ -153,6 +155,19 @@ async function main(): Promise<void> {
   links?.[0].activate({ ctrlKey: true, metaKey: false } as MouseEvent, links[0].text)
   assert.deepEqual(activated, ['src/main.ts'])
 
+  let currentLine = textLine('src/main.ts')
+  let resolveChangedLine!: (exists: boolean[]) => void
+  const changedLineProvider = new TerminalFileLinkProvider(
+    fakeTerminal(() => currentLine),
+    () => new Promise((resolve) => (resolveChangedLine = resolve)),
+    () => undefined
+  )
+  const changedLineResult = provideLinks(changedLineProvider)
+  await Promise.resolve()
+  currentLine = textLine('not-the-same-line')
+  resolveChangedLine([true])
+  assert.equal(await changedLineResult, undefined, 'drops results after the buffer line changes')
+
   let resolvePending!: (exists: boolean[]) => void
   const staleProvider = new TerminalFileLinkProvider(
     fakeTerminal(textLine('src/main.ts')),
@@ -160,6 +175,7 @@ async function main(): Promise<void> {
     () => undefined
   )
   const staleResult = provideLinks(staleProvider)
+  await Promise.resolve()
   staleProvider.dispose()
   resolvePending([true])
   assert.equal(await staleResult, undefined, 'drops asynchronous results after disposal')
