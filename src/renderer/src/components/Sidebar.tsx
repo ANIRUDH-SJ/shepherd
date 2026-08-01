@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState, type Dispatch } from 'react'
 import type { AgentRecord } from '../../../shared/agent'
-import { agentRollupLabel } from '../agentView'
+import {
+  agentRollupLabel,
+  sortAgentsForSidebar,
+  workspaceAgentAriaLabel,
+  workspaceAgentLabel
+} from '../agentView'
+import { RENDERER_EVENT } from '../events'
 import { workspaceIdentity } from '../sidebarView'
 import { type AppAction, createWorkspaceAction, type Workspace } from '../state/appReducer'
 import { usageDetails, usageSummary } from '../usageView'
-import AgentList from './AgentList'
 import Icon from './Icon'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -71,6 +76,13 @@ export default function Sidebar({
     if (restoreFocus) requestAnimationFrame(() => rowRefs.current.get(workspace.id)?.focus())
   }
 
+  const agentsByWorkspace = new Map<string, AgentRecord[]>()
+  for (const agent of agents) {
+    const workspaceAgents = agentsByWorkspace.get(agent.workspaceId)
+    if (workspaceAgents) workspaceAgents.push(agent)
+    else agentsByWorkspace.set(agent.workspaceId, [agent])
+  }
+
   return (
     <div className="sidebar-inner">
       <div className="sidebar-head">
@@ -103,9 +115,9 @@ export default function Sidebar({
           const displayName = identity.primary
           const editing = editingId === w.id
           const summary = usageSummary(w.usage)
-          const agentSummary = agentRollupLabel(
-            agents.filter((agent) => agent.workspaceId === w.id)
-          )
+          const workspaceAgents = sortAgentsForSidebar(agentsByWorkspace.get(w.id) ?? [])
+          const agentSummary = agentRollupLabel(workspaceAgents)
+          const hasMetadata = Boolean(w.name || w.gitBranch || summary)
           return (
             <div
               key={w.id}
@@ -197,40 +209,64 @@ export default function Sidebar({
                     </span>
                   )}
                 </div>
-                <div className="ws-meta">
-                  <span
-                    className="ws-context"
-                    title={`${identity.context}\nProject: ${w.projectName}\nDirectory: ${w.cwd}`}
-                  >
-                    {identity.context}
-                  </span>
-                  {summary && (
-                    <span
-                      className="ws-usage"
-                      title={usageDetails(w.usage)}
-                      aria-label={usageDetails(w.usage)}
-                    >
-                      {summary}
-                    </span>
-                  )}
-                </div>
-                <div className="ws-detail-row">
-                  <span
-                    className={'ws-branch' + (w.gitBranch ? '' : ' no-git')}
-                    title={w.gitBranch ? `Git branch: ${w.gitBranch}` : 'Not a Git repository'}
-                  >
-                    <Icon name="branch" />
-                    <span>{w.gitBranch ?? 'No Git repository'}</span>
-                  </span>
-                </div>
-                {w.status && <div className="ws-status">{w.status}</div>}
-                {agentSummary && (
-                  <div className="ws-agent-rollup" title={`Agents: ${agentSummary}`}>
-                    <Icon name="agents" />
-                    <span>{agentSummary}</span>
+                {workspaceAgents.length === 0 && w.status && (
+                  <div className="ws-status">{w.status}</div>
+                )}
+                {hasMetadata && (
+                  <div className="ws-meta">
+                    {w.name && (
+                      <span
+                        className="ws-context"
+                        title={`Project: ${w.projectName}\nDirectory: ${w.cwd}`}
+                      >
+                        {identity.context}
+                      </span>
+                    )}
+                    {w.gitBranch && (
+                      <span className="ws-branch" title={`Git branch: ${w.gitBranch}`}>
+                        <Icon name="branch" />
+                        <span>{w.gitBranch}</span>
+                      </span>
+                    )}
+                    {summary && (
+                      <span
+                        className="ws-usage"
+                        title={usageDetails(w.usage)}
+                        aria-label={usageDetails(w.usage)}
+                      >
+                        {summary}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
+              {workspaceAgents.length > 0 && (
+                <div className="ws-agents" aria-label={`${displayName} agents`}>
+                  {workspaceAgents.map((agent) => (
+                    <button
+                      key={agent.agentId}
+                      type="button"
+                      className={`ws-agent state-${agent.state}`}
+                      title={`${workspaceAgentLabel(agent)}${agent.message ? ` · ${agent.message}` : ''}`}
+                      aria-label={workspaceAgentAriaLabel(agent, displayName)}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        dispatch({ type: 'focusAgent', id: agent.agentId })
+                        window.requestAnimationFrame(() => {
+                          window.dispatchEvent(
+                            new CustomEvent(RENDERER_EVENT.focusSurface, {
+                              detail: agent.surfaceId
+                            })
+                          )
+                        })
+                      }}
+                    >
+                      <span className="ws-agent-dot" aria-hidden="true" />
+                      <span>{workspaceAgentLabel(agent)}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="ws-row-actions">
                 {!editing && (
                   <button
@@ -266,8 +302,6 @@ export default function Sidebar({
         })}
       </div>
 
-      <AgentList agents={agents} workspaces={workspaces} dispatch={dispatch} />
-
       {contextMenu && (
         <div
           className="ws-context-menu"
@@ -290,28 +324,6 @@ export default function Sidebar({
           </button>
         </div>
       )}
-
-      <div className="shortcuts">
-        <div className="shortcuts-title">shortcuts</div>
-        <div>
-          <kbd>Ctrl+Shift+D</kbd> split right
-        </div>
-        <div>
-          <kbd>Ctrl+Shift+E</kbd> split down
-        </div>
-        <div>
-          <kbd>Ctrl+Shift+T</kbd> new tab
-        </div>
-        <div>
-          <kbd>Ctrl+Shift+N</kbd> new workspace
-        </div>
-        <div>
-          <kbd>Ctrl+Shift+W</kbd> close
-        </div>
-        <div>
-          <kbd>Ctrl+Shift+±</kbd> zoom terminal
-        </div>
-      </div>
     </div>
   )
 }

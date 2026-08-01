@@ -66,10 +66,7 @@ export function workspaceAgentLabel(agent: AgentRecord): string {
 }
 
 /** Keep the visible row terse while exposing optional provider detail accessibly. */
-export function workspaceAgentAriaLabel(
-  agent: AgentRecord,
-  workspaceName: string
-): string {
+export function workspaceAgentAriaLabel(agent: AgentRecord, workspaceName: string): string {
   const message = agent.message ? `, ${agent.message}` : ''
   return `Focus ${agent.displayName}, ${agentStatusLabel(agent)}, ${workspaceName}${message}`
 }
