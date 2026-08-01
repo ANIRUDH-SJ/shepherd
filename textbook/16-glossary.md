@@ -49,6 +49,10 @@
 - **cmux** — The macOS terminal whose absence on Linux originally motivated this
   project. Shepherd is an independent implementation with its own identity and
   direction; it does not use cmux's source. (see 01-the-big-picture.md)
+- **contextual agent row** — A compact button rendered inside the workspace that
+  owns an agent record. It shows provider-neutral lifecycle state and focuses the
+  exact workspace, pane, and terminal when activated. (see
+  26-sidebar-information-architecture.md)
 - **Shepherd CLI** — The small `shepherd` command agents and scripts run (e.g. `shepherd notify ...`). It's a thin client that opens the unix socket, sends one JSON-RPC line, and prints the reply. (see 11-the-socket-api.md)
 - **contextBridge** — The Electron API used inside a preload script to safely expose a chosen set of functions onto the renderer's `window` (as `window.api`), without leaking Node.js or Electron internals into the web page. (see 05-preload-and-context-isolation.md)
 - **contextIsolation** — An Electron security setting (on by default) that runs the preload script and the web page in separate JavaScript contexts, so the page can't reach into Node/Electron. The only crossing is what contextBridge explicitly exposes. (see 05-preload-and-context-isolation.md)
@@ -97,8 +101,8 @@
 
 - **information hierarchy** — The ordering and grouping that tells users which
   facts matter first. The sidebar promotes custom workspace names or live
-  projects, then shows position, Git, status, and explicitly grouped agent
-  urgency. (see 26-sidebar-information-architecture.md)
+  projects, then shows only useful Git, status, usage, and contextual agent
+  state. (see 26-sidebar-information-architecture.md)
 
 - **IPC (Inter-Process Communication)** — Any mechanism for separate processes to exchange data. In Electron it's the message channel between main and renderer; treat it exactly like frontend↔backend API calls. (see 04-ipc-inter-process-communication.md)
 - **ipcMain / ipcRenderer** — Electron's two IPC endpoints. `ipcRenderer` (in the renderer) sends, invokes, and listens; `ipcMain` (in main) handles those requests and can push messages back. (see 04-ipc-inter-process-communication.md)

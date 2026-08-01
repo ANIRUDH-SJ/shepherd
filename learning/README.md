@@ -44,6 +44,7 @@ code as we write it.
 | **M21**   | `M21-terminal-memory-lifecycle.md`           | Renderer-owned PTYs, crash cleanup, explicit retention bounds, aggregate diagnostics, and 1/2/4/8 lifecycle proof           |
 | **M22**   | `M22-shepherd-rebrand.md`                    | Product identity, state compatibility, sockets, CLI aliases, managed hooks, renderer settings, packaging, and tests         |
 | **M23**   | `M23-clickable-terminal-links.md`            | URL, OSC 8, and existing-file detection, xterm cell ranges, validated IPC opening, security, tests, and live proof          |
+| **M24**   | `M24-minimal-workspace-sidebar.md`           | Flat workspace navigation, contextual agent rows, useful-only metadata, exact focus, density, and visual proof              |
 
 ## How to read a milestone file
 

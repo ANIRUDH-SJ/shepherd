@@ -46,7 +46,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M21** — Renderer-owned terminal lifecycle and memory accounting ✓
 - [x] **M22** — Shepherd product, CLI, packaging, and compatibility identity ✓
 - [x] **M23** — Safe clickable terminal URLs, OSC 8 links, and local file references ✓
-- [ ] **M24** — Minimal, flat workspace sidebar
+- [x] **M24** — Minimal, flat workspace sidebar ✓
 - [ ] **M25** — Minimal terminal tabs, headers, panes, and controls
 - [ ] **M26** — Neutral terminal-first theme and semantic interaction states
 - [ ] **M27** — Notification center, meaningful rings, and jump-to-unread
@@ -494,7 +494,7 @@ filesystem access, and desktop opening behind explicit validation boundaries._
 _Goal: replace Shepherd's dashboard-like presentation with a compact terminal-first
 shell, then add only the cmux-inspired context and utilities that remain useful._
 
-- [ ] **M24:** remove permanent agent/shortcut furniture and flatten the workspace sidebar
+- [x] **M24:** remove permanent agent/shortcut furniture and flatten the workspace sidebar
 - [ ] **M25:** compact workspace/tab chrome and remove ordinary pane-card styling
 - [ ] **M26:** neutralize the palette and reserve accent/motion for semantic state
 - [ ] **M27:** add bounded pending notifications, meaningful rings, and unread navigation

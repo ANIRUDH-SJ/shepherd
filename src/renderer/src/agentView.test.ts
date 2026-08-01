@@ -5,7 +5,9 @@ import {
   agentRollupLabel,
   agentStatusLabel,
   formatAgentElapsed,
-  sortAgentsForSidebar
+  sortAgentsForSidebar,
+  workspaceAgentAriaLabel,
+  workspaceAgentLabel
 } from './agentView'
 
 let failures = 0
@@ -48,6 +50,22 @@ assert(
   'renders approval as a block reason'
 )
 assert(agentStatusLabel(agent('done', 'done', 1)) === 'done', 'renders canonical done state')
+
+const contextualAgent = agent('Codex', 'working', 1, { activity: 'testing' })
+assert(
+  workspaceAgentLabel(contextualAgent) === 'Codex · testing',
+  'keeps contextual agent text compact'
+)
+assert(
+  workspaceAgentAriaLabel(
+    agent('Claude', 'blocked', 1, {
+      blockReason: 'approval',
+      message: 'Allow npm test?'
+    }),
+    'shepherd'
+  ) === 'Focus Claude, waiting approval, shepherd, Allow npm test?',
+  'describes exact contextual agent navigation accessibly'
+)
 
 const sorted = sortAgentsForSidebar([
   agent('idle', 'idle', 5),

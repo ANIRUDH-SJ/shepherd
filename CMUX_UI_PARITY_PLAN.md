@@ -88,6 +88,9 @@ runtime behavior.
 **Goal:** make the sidebar a flat workspace list with contextual agent status,
 not a permanent AI dashboard.
 
+**Status:** implementation and documentation are complete on
+`feat/minimal-workspace-sidebar`; review and merge are the remaining delivery steps.
+
 ### Scope
 
 - Remove the permanent global Agents section and its empty-state card.
@@ -102,21 +105,23 @@ not a permanent AI dashboard.
 - Preserve rename, close, context menu, unread, sidebar resize/collapse, accessible
   naming, keyboard selection, and exact agent-to-terminal focus.
 
-### Planned commits
+### Delivery commits
 
-1. `test: define minimal sidebar presentation`
-   - Update pure sidebar/agent view expectations.
-   - Add tests for no-agent omission, contextual agent status, ordering, and labels.
+1. `test: define contextual sidebar agents`
+   - Add compact contextual labels and complete accessible-label coverage.
 2. `renderer: flatten workspace sidebar`
    - Reshape `Sidebar` composition and workspace-row markup.
    - Remove permanent `AgentList` and shortcut rendering.
 3. `ui: simplify sidebar hierarchy`
    - Apply flat-list density, neutral toolbar treatment, restrained selection,
      truncation, hover, focus, narrow-width, and reduced-motion styles.
-4. `docs: explain minimal workspace sidebar`
+4. `renderer: hide generic sidebar metadata`
+   - Suppress repeated `Home` context while preserving useful repository context.
+   - Cover useful, generic, and unnamed project-context branches.
+5. `docs: explain minimal workspace sidebar`
    - Add the M24 learning walkthrough.
    - Update textbook sidebar information architecture and indexes.
-   - Synchronize feature map, roadmap, glossary, and screenshots.
+   - Synchronize feature map, roadmap, glossary, and visual verification notes.
 
 ### Focused verification
 
@@ -340,19 +345,19 @@ building a general-purpose browser platform.
 
 ## Visual acceptance checklist for PRs 1–3
 
-- [ ] No permanent Agents section when the sidebar can express contextual state.
-- [ ] No permanent shortcut legend.
-- [ ] No dashed empty-state cards.
+- [x] No permanent Agents section when the sidebar can express contextual state.
+- [x] No permanent shortcut legend.
+- [x] No dashed empty-state cards.
 - [ ] No generic `Pane N · Terminal N` copy in permanent top-level chrome.
 - [ ] No ordinary pane rendered as a rounded dashboard card.
 - [ ] No accent ring used as the default active-pane treatment.
 - [ ] No repeated project, workspace, branch, and agent information across several rows.
-- [ ] Secondary controls appear on hover/focus without becoming undiscoverable.
-- [ ] Empty space belongs to the terminal, not placeholder panels.
-- [ ] Narrow layouts truncate intentionally and preserve actions.
-- [ ] Keyboard focus remains clearly visible.
-- [ ] Reduced-motion users receive equivalent non-animated state.
-- [ ] Terminal selection, input, resize, links, splits, tabs, and PTY lifecycle regressions pass.
+- [x] Secondary controls appear on hover/focus without becoming undiscoverable.
+- [x] Empty space belongs to the terminal, not placeholder panels.
+- [x] Narrow layouts truncate intentionally and preserve actions.
+- [x] Keyboard focus remains clearly visible.
+- [x] Reduced-motion users receive equivalent non-animated state.
+- [x] Terminal selection, input, resize, links, splits, tabs, and PTY lifecycle regressions pass.
 
 ## Explicit non-goals
 
