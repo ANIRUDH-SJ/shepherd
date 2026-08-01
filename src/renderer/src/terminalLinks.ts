@@ -1,8 +1,13 @@
-export const MAX_TERMINAL_LINK_CANDIDATES = 16
-export const MAX_TERMINAL_LINK_TEXT_LENGTH = 1024
-export const MAX_TERMINAL_LINK_POSITION = 1_000_000
+import {
+  MAX_TERMINAL_LINK_CANDIDATES,
+  MAX_TERMINAL_LINK_POSITION,
+  MAX_TERMINAL_LINK_TEXT_LENGTH,
+  type TerminalFileReference
+} from '../../shared/terminalLinks'
 
-export interface TerminalFileLinkCandidate {
+export { MAX_TERMINAL_LINK_CANDIDATES }
+
+export interface TerminalFileLinkCandidate extends TerminalFileReference {
   text: string
   path: string
   startIndex: number

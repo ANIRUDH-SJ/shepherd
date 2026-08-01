@@ -2,6 +2,11 @@
 
 import type { AgentRecord } from './agent'
 import type { RendererRuntimePerformanceMarkName } from './runtimePerformance'
+import type {
+  OpenTerminalLinkRequest,
+  OpenTerminalLinkResult,
+  ResolveTerminalFileLinksRequest
+} from './terminalLinks'
 // SHARED IPC CONTRACT
 // Imported by ALL THREE sides (main, preload, renderer) so they agree on channel
 // names and message shapes. Types here are compile-time only — they vanish at
@@ -17,6 +22,8 @@ export const IPC = {
   TERM_RESIZE: 'terminal:resize',
   TERM_DISPOSE: 'terminal:dispose',
   TERM_DATA_ACK: 'terminal:data-ack',
+  TERM_RESOLVE_FILE_LINKS: 'terminal:resolve-file-links',
+  TERM_OPEN_LINK: 'terminal:open-link',
   // main → renderer  (push via webContents.send / ipcRenderer.on)
   TERM_DATA: 'terminal:data',
   TERM_EXIT: 'terminal:exit',
@@ -113,6 +120,10 @@ export interface ShepherdApi {
     input(msg: TermInput): void
     /** Tell a shell its terminal was resized. */
     resize(msg: TermResize): void
+    /** Check which syntactic file references currently resolve for this shell. */
+    resolveFileLinks(request: ResolveTerminalFileLinksRequest): Promise<boolean[]>
+    /** Open one validated URL or local file reference. */
+    openLink(request: OpenTerminalLinkRequest): Promise<OpenTerminalLinkResult>
     /** Kill a shell and forget it. */
     dispose(id: string): void
     /** Subscribe to a shell's output. Returns an unsubscribe function. */
