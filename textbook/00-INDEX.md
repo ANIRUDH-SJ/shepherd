@@ -99,8 +99,8 @@ Think of the book in five "acts":
   projection, backward compatibility, and persistence tradeoffs.
 - `25-semantic-ui-tokens.md` — CSS custom properties, semantic visual roles,
   accessibility, validation, and theme extension boundaries.
-- `26-sidebar-information-architecture.md` — project-first identity, urgency
-  grouping, progressive disclosure, accessible icons, and dense layout tradeoffs.
+- `26-sidebar-information-architecture.md` — project-first identity, contextual
+  agent ownership, useful-only metadata, accessible controls, and flat layout tradeoffs.
 - `27-terminal-interaction-design.md` — ARIA tabs, roving focus, pane/tab state,
   xterm lifetime, context strips, capability controls, and interaction tradeoffs.
 - `28-terminal-performance-measurement.md` — honest benchmark boundaries,
@@ -165,7 +165,7 @@ Think of the book in five "acts":
 | `23-live-workspace-metadata.md`                    | Shell cwd, Git roots, cached HEAD observation, async ownership, persistence, and project/branch UI                                             | 06, 09, 20             |
 | `24-single-workspace-startup.md`                   | Startup cardinality, active-workspace projection, compatibility, security, and persistence tradeoffs                                           | 09, 13, 23             |
 | `25-semantic-ui-tokens.md`                         | Semantic CSS tokens, cascade architecture, visual hierarchy, accessibility, validation, and theming                                            | 08, 14                 |
-| `26-sidebar-information-architecture.md`           | Workspace identity, agent urgency projections, empty states, SVG boundaries, accessibility, and layout                                         | 08, 19, 25             |
+| `26-sidebar-information-architecture.md`           | Workspace identity, contextual agent ownership, useful-only metadata, SVG boundaries, accessibility, and flat layout                           | 08, 19, 25             |
 | `27-terminal-interaction-design.md`                | Semantic tabs, roving focus, pane activation, xterm visibility, context strips, and capability controls                                        | 07, 08, 10, 25         |
 | `28-terminal-performance-measurement.md`           | Production benchmarks, workload/end-point design, PSS/CPU, robust statistics, process ownership, and safety                                    | 02, 06, 07, 15         |
 | `29-runtime-performance-observability.md`          | Cross-process startup traces, semantic boundaries, monotonic clocks, disabled overhead, security, and optimization                             | 03, 04, 07, 28         |
@@ -243,7 +243,7 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `23-live-workspace-metadata.md` — live project/branch context from the active terminal
 - `24-single-workspace-startup.md` — deterministic one-workspace relaunch policy
 - `25-semantic-ui-tokens.md` — semantic CSS contract and visual-system foundation
-- `26-sidebar-information-architecture.md` — project-first identity and explicit agent urgency groups
+- `26-sidebar-information-architecture.md` — project-first identity and contextual agent ownership
 - `27-terminal-interaction-design.md` — accessible nested pane/tab focus and terminal chrome
 - `28-terminal-performance-measurement.md` — reproducible terminal measurement and safe process accounting
 - `29-runtime-performance-observability.md` — bounded cross-process startup phase traces
