@@ -7,6 +7,8 @@ import {
   markWorkspaceNotificationsRead,
   pendingNotifications,
   resolveNotification,
+  resolveNotificationsForSubject,
+  sanitizeNotificationInbox,
   workspaceNotificationCounts,
   type InboxNotification,
   type NotificationInput
@@ -26,6 +28,7 @@ function input(overrides: Partial<NotificationInput> = {}): NotificationInput {
     id: 'notice-1',
     workspaceId: 'ws-1',
     surfaceId: 'term-1',
+    subjectId: null,
     title: 'Build',
     body: 'Waiting for approval',
     source: 'socket',
@@ -62,7 +65,7 @@ assert(inbox[0].sources.includes('agent'), 'agent lifecycle can deduplicate with
 
 inbox = addInboxNotification(
   inbox,
-  input({ id: 'notice-late', createdAt: 1_000 + NOTIFICATION_DEDUPE_WINDOW_MS + 1 })
+  input({ id: 'notice-late', createdAt: 1_800 + NOTIFICATION_DEDUPE_WINDOW_MS + 1 })
 )
 assert(inbox.length === 2, 'an event outside the deduplication window stays distinct')
 assert(inbox[0].id === 'notice-late', 'the inbox is newest first')
@@ -78,6 +81,12 @@ assert(
 )
 inbox = clearResolvedNotifications(inbox)
 assert(inbox.length === 1 && inbox[0].id === 'notice-1', 'clears only resolved history')
+
+const subjectInbox = resolveNotificationsForSubject(
+  addInboxNotification([], input({ subjectId: 'agent-1' })),
+  'agent-1'
+)
+assert(subjectInbox[0].resolved, 'resolves notifications when their lifecycle subject clears')
 
 const unsafe = addInboxNotification(
   [],
@@ -100,6 +109,13 @@ for (let index = 0; index < NOTIFICATION_INBOX_LIMIT + 8; index++) {
 assert(bounded.length === NOTIFICATION_INBOX_LIMIT, 'keeps a hard inbox limit')
 assert(bounded[0].id === `bounded-${NOTIFICATION_INBOX_LIMIT + 7}`, 'keeps newest records')
 assert(bounded.at(-1)?.id === 'bounded-8', 'drops oldest records first')
+
+const restored = sanitizeNotificationInbox(
+  [bounded[0], { ...bounded[1], workspaceId: 'missing' }, { unsafe: true }],
+  new Set(['ws-1'])
+)
+assert(restored.length === 1 && restored[0].id === bounded[0].id, 'restores valid owned records')
+assert(restored[0].dedupeKey.length > 0, 'recomputes persisted deduplication keys')
 
 console.log(
   failures === 0 ? '\n✅ ALL NOTIFICATION INBOX TESTS PASS' : `\n❌ ${failures} FAILURE(S)`
