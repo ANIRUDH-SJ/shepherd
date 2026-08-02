@@ -267,14 +267,14 @@ export default function App(): React.JSX.Element {
     })
   }, [])
 
-  // Persist only the LAYOUT (not transient status/attention), and only when it
-  // actually changes — so agent status churn can't starve a layout save, and we
-  // don't save fields we throw away on restore. (Copilot review, PR #4)
-  const layoutJson = useMemo(() => JSON.stringify(toLayoutSnapshot(state)), [state])
+  // Persist the active layout plus its bounded inbox. JSON equality keeps status,
+  // usage, live-agent, and pulse churn from restarting the save debounce because
+  // those fields are intentionally absent from the snapshot.
+  const sessionJson = useMemo(() => JSON.stringify(toLayoutSnapshot(state)), [state])
   useEffect(() => {
-    const t = setTimeout(() => window.api.session.save(JSON.parse(layoutJson)), 500)
+    const t = setTimeout(() => window.api.session.save(JSON.parse(sessionJson)), 500)
     return () => clearTimeout(t)
-  }, [layoutJson])
+  }, [sessionJson])
 
   // Drag the sidebar's right edge to resize it (pixel-based; same idea as the
   // pane Divider, textbook/10).

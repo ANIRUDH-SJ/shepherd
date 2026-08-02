@@ -97,8 +97,8 @@ export function initialApp(): AppState {
 
 /** Validate + normalise a restored session into an AppState (or null if unusable).
  *  Startup restores only the previously active workspace so every launch begins
- *  with one workspace. Its layout/cwd survive, transient state is reset, and its
- *  terminals re-spawn fresh when their panes mount. See textbook/13. */
+ *  with one workspace. Its layout/cwd and owned bounded inbox survive; live state
+ *  resets, and its terminals re-spawn fresh when their panes mount. See textbook/13. */
 export function sanitizeRestored(raw: unknown): AppState | null {
   if (!raw || typeof raw !== 'object') return null
   const r = raw as { workspaces?: unknown; activeWorkspaceId?: unknown; notifications?: unknown }
@@ -138,10 +138,7 @@ export function sanitizeRestored(raw: unknown): AppState | null {
       ? r.activeWorkspaceId
       : workspaces[0].id
   const startupWorkspace = workspaces.find((workspace) => workspace.id === active) ?? workspaces[0]
-  const notifications = sanitizeNotificationInbox(
-    r.notifications,
-    new Set([startupWorkspace.id])
-  )
+  const notifications = sanitizeNotificationInbox(r.notifications, new Set([startupWorkspace.id]))
   return refreshNotificationMarkers({
     workspaces: [startupWorkspace],
     activeWorkspaceId: startupWorkspace.id,
@@ -150,9 +147,9 @@ export function sanitizeRestored(raw: unknown): AppState | null {
   })
 }
 
-/** Persist the active workspace layout only. Runtime workspaces remain independent,
- *  but relaunch is intentionally a one-workspace boundary. Transient status,
- *  unread, attention, agents, and usage are excluded. */
+/** Persist the active workspace layout and its bounded notification inbox.
+ *  Runtime workspaces remain independent, and relaunch is intentionally a
+ *  one-workspace boundary. Status, pulse state, agents, and usage are excluded. */
 export function toLayoutSnapshot(state: AppState): {
   workspaces: Array<{
     id: string
@@ -224,7 +221,7 @@ function refreshNotificationMarkers(state: AppState): AppState {
     ...state,
     workspaces: state.workspaces.map((workspace) => {
       const counts = workspaceNotificationCounts(state.notifications, workspace.id)
-      return workspace.unread === (counts.unread > 0)
+      return workspace.unread === counts.unread > 0
         ? workspace
         : { ...workspace, unread: counts.unread > 0 }
     })
@@ -328,11 +325,13 @@ function reportAgent(state: AppState, report: AgentReport): AppState {
 function clearAgent(state: AppState, id: string, source?: string): AppState {
   const target = state.agents.find((agent) => agent.agentId === id)
   if (!target || (source !== undefined && target.source !== source)) return state
-  return refreshNotificationMarkers(refreshAgentAttention({
-    ...state,
-    agents: state.agents.filter((agent) => agent.agentId !== id),
-    notifications: resolveNotificationsForSubject(state.notifications, id)
-  }))
+  return refreshNotificationMarkers(
+    refreshAgentAttention({
+      ...state,
+      agents: state.agents.filter((agent) => agent.agentId !== id),
+      notifications: resolveNotificationsForSubject(state.notifications, id)
+    })
+  )
 }
 
 export function appReducer(state: AppState, action: AppAction): AppState {
@@ -489,9 +488,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       const notifications = resolveNotificationsForSurface(state.notifications, action.surfaceId)
       return agents.length === state.agents.length && notifications === state.notifications
         ? state
-        : refreshNotificationMarkers(
-            refreshAgentAttention({ ...state, agents, notifications })
-          )
+        : refreshNotificationMarkers(refreshAgentAttention({ ...state, agents, notifications }))
     }
 
     case 'expireAgents': {
@@ -526,9 +523,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       for (const subjectId of clearedSubjects) {
         notifications = resolveNotificationsForSubject(notifications, subjectId)
       }
-      return refreshNotificationMarkers(
-        refreshAgentAttention({ ...state, agents, notifications })
-      )
+      return refreshNotificationMarkers(refreshAgentAttention({ ...state, agents, notifications }))
     }
 
     case 'focusNotification': {
@@ -660,13 +655,15 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           ? { ...notification, unread: false, resolved: true }
           : notification
       )
-      return refreshNotificationMarkers(refreshAgentAttention({
-        ...next,
-        notifications,
-        agents: next.agents.filter(
-          (agent) => agent.workspaceId !== action.workspaceId || surfaces.has(agent.surfaceId)
-        )
-      }))
+      return refreshNotificationMarkers(
+        refreshAgentAttention({
+          ...next,
+          notifications,
+          agents: next.agents.filter(
+            (agent) => agent.workspaceId !== action.workspaceId || surfaces.has(agent.surfaceId)
+          )
+        })
+      )
     }
 
     default:
