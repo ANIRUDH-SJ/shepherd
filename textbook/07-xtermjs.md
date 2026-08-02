@@ -245,7 +245,9 @@ renderer.**
 
 **SearchAddon — find in the buffer.** Adds `findNext(term)` / `findPrevious(term)`
 to search the scrollback, with options for case sensitivity, whole-word, and regex,
-plus highlight decorations. We'll wire this to a Ctrl-F search box later.
+plus highlight decorations. Shepherd now wires bounded literal current-terminal search
+to Ctrl+Shift+F. In xterm 6 the decoration path requires `allowProposedApi`; Chapter 37
+explains the runtime compatibility boundary, focus flow, and large-scrollback limits.
 
 **WebLinksAddon — clickable URLs.** Detects `http(s)://…` in the output,
 including URLs wrapped across physical rows, and returns exact xterm ranges. Its

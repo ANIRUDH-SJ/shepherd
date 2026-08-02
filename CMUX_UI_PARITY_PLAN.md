@@ -310,6 +310,9 @@ snapshot contract with the settled implementation.
 
 **Goal:** replace the removed shortcut wall with useful, discoverable tools.
 
+**Status:** implemented, documented, fully verified, and live-reviewed on
+`feat/terminal-utilities`.
+
 ### Scope
 
 - Add current-terminal scrollback find.

@@ -49,6 +49,7 @@ code as we write it.
 | **M26**   | `M26-neutral-ui-theme.md`                    | Neutral shell palette, semantic-only color/motion, accessible focus, independent xterm theme, contrast tests, and live proof                     |
 | **M27**   | `M27-notification-center.md`                 | Bounded persistent inbox, cross-source deduplication, exact unread navigation, explicit resolution, one-shot rings, and accessible popover proof |
 | **M28**   | `M28-workspace-pr-port-metadata.md`          | Optional bounded PR discovery, process-owned listeners, cache invalidation, compact context, false-positive hardening, and live proof            |
+| **M29**   | `M29-terminal-utilities.md`                  | Bounded terminal find, typed command registry, palette ranking, contextual help, minimal settings, modal focus, and live proof                   |
 
 ## How to read a milestone file
 

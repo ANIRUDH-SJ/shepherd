@@ -51,7 +51,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M26** — Neutral terminal-first theme and semantic interaction states ✓
 - [x] **M27** — Notification center, meaningful rings, and jump-to-unread ✓
 - [x] **M28** — Compact pull-request and listening-port workspace metadata ✓
-- [ ] **M29** — Terminal find, command palette, contextual help, and settings entry
+- [x] **M29** — Terminal find, command palette, contextual help, and settings entry ✓
 - [ ] **M30** — Constrained localhost preview surface
 
 ---
@@ -499,7 +499,7 @@ shell, then add only the cmux-inspired context and utilities that remain useful.
 - [x] **M26:** neutralize the palette and reserve accent/motion for semantic state
 - [x] **M27:** add bounded pending notifications, meaningful rings, and unread navigation
 - [x] **M28:** add reliable, compact PR and listening-port metadata
-- [ ] **M29:** replace shortcut furniture with terminal find, palette, help, and settings
+- [x] **M29:** replace shortcut furniture with terminal find, palette, help, and settings
 - [ ] **M30:** add a constrained localhost preview after the terminal shell is stable
 - [ ] Deliver every milestone on its own branch and PR using the commit, verification,
       screenshot, `learning/`, and `textbook/` gates in

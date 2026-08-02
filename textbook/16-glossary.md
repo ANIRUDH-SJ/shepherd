@@ -46,6 +46,13 @@
 
 - **canonical vs raw mode** — Two modes of the terminal line discipline. In _canonical_ ("cooked") mode the kernel buffers a whole line and handles editing (backspace) before your program sees it; in _raw_ mode every keystroke is delivered instantly with no processing — which is what shells and full-screen apps (and our terminals) need. (see 02-how-terminals-work.md)
 - **Chromium** — The open-source browser engine behind Google Chrome. Electron embeds it to run the renderer process, so your UI is literally a web page with full HTML/CSS/JS — our React app — running inside it. (see 03-electron-architecture.md)
+- **command palette** — A temporary searchable list of application capabilities.
+  Shepherd derives its rows, shortcuts, availability, and execution IDs from one
+  typed command registry instead of permanent shortcut chrome. (see
+  37-keyboard-first-terminal-utilities.md)
+- **command registry** — The typed, data-only source of command identity, labels,
+  shortcuts, keywords, and availability policy shared by the key handler,
+  palette, and contextual help. (see 37-keyboard-first-terminal-utilities.md)
 - **cmux** — The macOS terminal whose absence on Linux originally motivated this
   project. Shepherd is an independent implementation with its own identity and
   direction; it does not use cmux's source. (see 01-the-big-picture.md)
@@ -84,6 +91,9 @@
 
 - **FitAddon** — An xterm.js addon that measures the container element and resizes the terminal's grid (cols × rows) to fit, so we can then tell node-pty the new size. (see 07-xtermjs.md)
 - **Flatpak** — A sandboxed Linux packaging/distribution system (apps come from Flathub) with bundled runtimes. An optional distribution target for us. (see 15-packaging-and-distribution.md)
+- **focus transaction** — The remembered focus origin shared across a chain of
+  replacing modal dialogs. Focus returns to that connected origin only after the
+  last dialog closes. (see 37-keyboard-first-terminal-utilities.md)
 
 ## G
 
@@ -195,6 +205,10 @@
 
 - **sandbox** — A security restriction that limits what the renderer's web content can do (no direct filesystem or Node access), so a compromised page can't reach the OS. It works alongside contextIsolation. (see 05-preload-and-context-isolation.md)
 - **scrollback** — The buffer of past output lines xterm.js keeps above the visible area so you can scroll up. Its size is configurable. (see 07-xtermjs.md)
+- **SearchAddon** — The official xterm.js addon that searches logical terminal
+  scrollback, selects matches, and can render bounded match decorations. Its
+  xterm 6 decoration path requires the proposed API option. (see
+  37-keyboard-first-terminal-utilities.md)
 - **serialization** — Turning in-memory objects into a storable/transmittable form (usually JSON) and back. We serialize the Window/Workspace tree to disk to persist sessions. (see 13-session-persistence.md)
 - **Shepherd** — This project's independent AI-native terminal workspace for
   Linux. The name is used consistently across the UI, CLI, protocol, runtime,
@@ -218,6 +232,9 @@
 - **terminal chrome** — The compact workspace strip, tab rows, dividers, and
   contextual controls surrounding terminal content. It provides navigation and
   capabilities without owning PTY state. (see 27-terminal-interaction-design.md)
+- **terminal find** — Surface-targeted literal search over the current xterm
+  scrollback, with bounded query/highlight work, next/previous navigation, and
+  terminal-focus restoration. (see 37-keyboard-first-terminal-utilities.md)
 - **Tauri** — An alternative to Electron that pairs a Rust backend with the OS's _native_ webview (no bundled Chromium), yielding smaller apps. We chose Electron for its mature Node ecosystem (node-pty) and one consistent Chromium everywhere. (see 03-electron-architecture.md)
 - **teletype (TTY)** — The original electromechanical terminal (a printing keyboard); its abbreviation survives as "TTY," the kernel's word for a terminal device. A pty is a software stand-in for one. (see 02-how-terminals-work.md)
 - **tiling** — Automatically arranging panes to fill the available space without overlapping (as opposed to floating windows). Splitting a pane subdivides its rectangle; our layout tree drives the arrangement. (see 10-tiling-and-layout.md)
