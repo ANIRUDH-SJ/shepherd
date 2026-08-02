@@ -5,7 +5,8 @@ import {
   parsePullRequestJson,
   portsOwnedByProcesses,
   pullRequestFromCommandResult,
-  MAX_LISTENING_PORTS
+  MAX_LISTENING_PORTS,
+  serverProcessIds
 } from './workspaceContext'
 
 let failures = 0
@@ -120,6 +121,11 @@ const reused = portsOwnedByProcesses(
   ])
 )
 assert(reused.join(',') === '3000', 'deduplicates a port reused by owned processes')
+const servers = serverProcessIds(10, owned)
+assert(
+  !servers.has(10) && servers.has(11) && servers.has(14),
+  'excludes listener descriptors inherited by the PTY shell itself'
+)
 assert(
   normalizeListeningPorts([3000, 80, 3000, -1, 65_536, 443.5]).join(',') === '80,3000',
   'deduplicates, sorts, and validates ports'

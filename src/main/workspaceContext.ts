@@ -135,6 +135,10 @@ export function portsOwnedByProcesses(
   )
 }
 
+export function serverProcessIds(shellPid: number, ownedPids: ReadonlySet<number>): Set<number> {
+  return new Set([...ownedPids].filter((pid) => pid !== shellPid))
+}
+
 function processParent(stat: string): number | null {
   const close = stat.lastIndexOf(')')
   if (close < 0) return null
@@ -201,7 +205,11 @@ export function discoverListeningPorts(shellPid: number): number[] {
   const sockets = readListeningSockets()
   if (sockets.length === 0) return []
   const ownedPids = collectOwnedProcessIds(shellPid, readParentMap())
+  // The PTY shell can inherit Electron's own listening descriptors (for example,
+  // a development debugging port). User-started servers run as shell descendants,
+  // so exclude descriptors held only by the shell itself.
+  const reportingPids = serverProcessIds(shellPid, ownedPids)
   const inodesByPid = new Map<number, Set<string>>()
-  for (const pid of ownedPids) inodesByPid.set(pid, readSocketInodes(pid))
-  return portsOwnedByProcesses(sockets, ownedPids, inodesByPid)
+  for (const pid of reportingPids) inodesByPid.set(pid, readSocketInodes(pid))
+  return portsOwnedByProcesses(sockets, reportingPids, inodesByPid)
 }
