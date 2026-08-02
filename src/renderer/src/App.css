@@ -30,6 +30,7 @@
   --color-focus: #8db5ff;
   --color-control-overlay: rgba(255, 255, 255, 0.12);
   --color-input-overlay: rgba(0, 0, 0, 0.28);
+  --color-backdrop: rgba(0, 0, 0, 0.42);
 
   /* Semantic state */
   --color-attention: #e0a84b;
@@ -483,7 +484,7 @@ body.resizing * {
   display: grid;
   place-items: start center;
   padding: min(15vh, 110px) var(--space-4) var(--space-4);
-  background: rgba(0, 0, 0, 0.42);
+  background: var(--color-backdrop);
 }
 .utility-dialog {
   display: flex;
