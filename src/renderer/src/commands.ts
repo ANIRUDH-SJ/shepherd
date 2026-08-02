@@ -16,6 +16,7 @@ export type AppCommandId =
   | 'font.increase'
   | 'font.decrease'
   | 'font.reset'
+  | 'settings.open'
   | 'help.open'
 
 export type CommandCategory = 'Terminal' | 'Pane' | 'Workspace' | 'Attention' | 'View'
@@ -173,6 +174,14 @@ export const APP_COMMANDS: readonly AppCommand[] = [
     keywords: 'zoom default reset'
   },
   {
+    id: 'settings.open',
+    title: 'Open settings',
+    category: 'View',
+    shortcut: 'Ctrl+Shift+,',
+    shortcutKey: ',',
+    keywords: 'preferences font theme keybindings'
+  },
+  {
     id: 'help.open',
     title: 'Show contextual shortcuts',
     category: 'View',
@@ -252,5 +261,6 @@ export function commandIdForShortcut(event: ShortcutEvent): AppCommandId | null 
   if (key === '=' || key === '+') return 'font.increase'
   if (key === '_' || key === '-') return 'font.decrease'
   if (key === ')' || key === '0') return 'font.reset'
+  if (key === '<' || key === ',') return 'settings.open'
   return COMMAND_BY_KEY.get(key) ?? null
 }

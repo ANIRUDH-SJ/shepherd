@@ -27,6 +27,7 @@ import Sidebar from './components/Sidebar'
 import WorkspaceView from './components/WorkspaceView'
 import CommandPalette from './components/CommandPalette'
 import ShortcutHelp from './components/ShortcutHelp'
+import SettingsDialog from './components/SettingsDialog'
 
 // Restore the saved session synchronously at startup, else start fresh. Computed
 // once at module load. Optional chaining keeps it safe if the bridge isn't ready.
@@ -36,7 +37,7 @@ const MIN_SIDEBAR = 170
 const MAX_SIDEBAR = 420
 const DEFAULT_SIDEBAR = 240
 
-type UtilityOverlay = 'palette' | 'help'
+type UtilityOverlay = 'palette' | 'help' | 'settings'
 
 function commandContext(state: AppState, sidebarCollapsed: boolean): CommandContext {
   const workspace = state.workspaces.find((candidate) => candidate.id === state.activeWorkspaceId)
@@ -91,7 +92,7 @@ export default function App(): React.JSX.Element {
     if (!workspace) return false
     const pane = findPane(workspace.root, workspace.activePaneId)
 
-    if (id !== 'palette.open' && id !== 'help.open') {
+    if (id !== 'palette.open' && id !== 'help.open' && id !== 'settings.open') {
       setUtilityOverlay(null)
     }
     switch (id) {
@@ -175,6 +176,9 @@ export default function App(): React.JSX.Element {
       case 'font.reset':
         resetFontSize()
         break
+      case 'settings.open':
+        setUtilityOverlay('settings')
+        break
       case 'help.open':
         setUtilityOverlay('help')
         break
@@ -195,7 +199,12 @@ export default function App(): React.JSX.Element {
     const onKey = (e: KeyboardEvent): void => {
       const id = commandIdForShortcut(e)
       if (!id) return
-      if (utilityOverlayRef.current && id !== 'palette.open' && id !== 'help.open') {
+      if (
+        utilityOverlayRef.current &&
+        id !== 'palette.open' &&
+        id !== 'help.open' &&
+        id !== 'settings.open'
+      ) {
         return
       }
       if (!executeCommandRef.current(id)) return
@@ -435,6 +444,12 @@ export default function App(): React.JSX.Element {
         <ShortcutHelp
           context={commandContext(state, collapsed)}
           onOpenPalette={() => setUtilityOverlay('palette')}
+          onClose={() => setUtilityOverlay(null)}
+        />
+      )}
+      {utilityOverlay === 'settings' && (
+        <SettingsDialog
+          onOpenHelp={() => setUtilityOverlay('help')}
           onClose={() => setUtilityOverlay(null)}
         />
       )}

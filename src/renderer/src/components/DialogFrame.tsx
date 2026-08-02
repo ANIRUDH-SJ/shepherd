@@ -27,7 +27,9 @@ export default function DialogFrame({
       dialogRef.current?.querySelector<HTMLElement>('button, input, select, [tabindex="0"]')
     initial?.focus()
     return () => {
-      requestAnimationFrame(() => restoreFocusRef.current?.focus())
+      requestAnimationFrame(() => {
+        if (!document.querySelector('.utility-dialog')) restoreFocusRef.current?.focus()
+      })
     }
   }, [])
 

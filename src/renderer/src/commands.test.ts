@@ -81,6 +81,16 @@ assert(
 )
 assert(
   commandIdForShortcut({
+    key: '<',
+    ctrlKey: true,
+    shiftKey: true,
+    altKey: false,
+    metaKey: false
+  }) === 'settings.open',
+  'normalizes the shifted settings shortcut'
+)
+assert(
+  commandIdForShortcut({
     key: 'f',
     ctrlKey: true,
     shiftKey: false,
