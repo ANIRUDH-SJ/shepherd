@@ -32,6 +32,16 @@ export default function NotificationCenter({
   const popoverRef = useRef<HTMLDivElement | null>(null)
   const pending = useMemo(() => pendingNotifications(notifications), [notifications])
   const latestUnread = useMemo(() => latestUnreadNotification(notifications), [notifications])
+  const workspaceNames = useMemo(
+    () =>
+      new Map(
+        workspaces.map((workspace, index) => [
+          workspace.id,
+          workspaceIdentity(workspace, index).primary
+        ])
+      ),
+    [workspaces]
+  )
   const unreadCount = pending.reduce((total, notification) => total + Number(notification.unread), 0)
   const resolvedCount = notifications.length - pending.length
   const currentCounts = workspaceNotificationCounts(notifications, activeWorkspaceId)
@@ -140,13 +150,8 @@ export default function NotificationCenter({
           {pending.length > 0 ? (
             <ul className="notification-list" aria-label="Pending notifications">
               {pending.map((notification) => {
-                const workspaceIndex = workspaces.findIndex(
-                  (workspace) => workspace.id === notification.workspaceId
-                )
-                const workspace = workspaces[workspaceIndex]
-                const workspaceName = workspace
-                  ? workspaceIdentity(workspace, workspaceIndex).primary
-                  : 'Closed workspace'
+                const workspaceName =
+                  workspaceNames.get(notification.workspaceId) ?? 'Closed workspace'
                 return (
                   <li
                     key={notification.id}
