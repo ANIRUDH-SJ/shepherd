@@ -226,7 +226,12 @@
 
 ## U
 
-- **unread / attention state** — Two per-workspace booleans that drive the sidebar's alerts: `attention` rings/flashes a workspace that needs you now; `unread` keeps a badge until you look. Both are set by OSC parsing or a `shepherd notify`. (see 12-notifications-and-osc.md)
+- **unread notification** — A pending inbox item the user has not opened or
+  explicitly acknowledged. Reading removes its counted badge but does not resolve
+  the underlying work. (see 12-notifications-and-osc.md)
+- **unresolved notification** — A pending item whose work or attention condition
+  remains open, whether read or unread. Resolution is explicit or follows the
+  owning agent lifecycle. (see 12-notifications-and-osc.md)
 
 ## V
 

@@ -149,7 +149,7 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | --- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | 1   | **Object model** (Window→Workspace→Pane→Surface→Panel)               | the TS data model in Part 1; terminal panels only for v1                                                                                                                                 | 🟢                                                          |
 | 2   | **Vertical workspace sidebar**                                       | flat custom-name/project navigation with useful-only branch/usage/status metadata, contextual agent rows, accessible SVG actions, and restrained active state                            | 🟢                                                          |
-| 3   | **Notification rings / tab flash / unread badge**                    | React state + CSS animation, toggled by socket notify + OSC parse                                                                                                                        | 🟢                                                          |
+| 3   | **Notification rings / tab flash / unread badge**                    | one-shot active-pane pulse plus stable counted workspace badges, driven by the bounded socket/OSC/provider inbox                                                                         | 🟢                                                          |
 | 4   | **Multiple terminals**                                               | node-pty per terminal panel, map `ptyId → process` in main                                                                                                                               | 🟢                                                          |
 | 5   | **Split panes** (h/v)                                                | pure split tree + percentage tiling, one-pixel neutral dividers, flat pane geometry, contextual SVG actions, and unchanged drag targets                                                  | 🟢                                                          |
 | 6   | **Surfaces** (tabs within a pane)                                    | mounted xterm panel per surface, compact rectangular tabs, roving keyboard navigation, active-tab scrolling, and capability-aware close controls                                         | 🟢                                                          |
@@ -164,7 +164,7 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | 15  | **PR status/number in sidebar**                                      | `gh pr view --json` (or GitHub API) per workspace branch                                                                                                                                 | 🟡                                                          |
 | 16  | **Listening ports in sidebar**                                       | main scans `/proc/net` or `ss -tlnp` for the pane's process tree                                                                                                                         | 🟡                                                          |
 | 17  | **Status pills w/ icon/color/priority + progress bars**              | extend the sidebar renderer; the socket already carries these params                                                                                                                     | 🟡                                                          |
-| 18  | **Notification panel + jump-to-unread**                              | a React panel listing notifications; keybind to focus latest unread workspace                                                                                                            | 🟡                                                          |
+| 18  | **Notification panel + jump-to-unread**                              | accessible compact pending popover; cross-source deduplication, exact terminal jump, explicit read/resolve/clear, persistence, and Ctrl+Shift+U/M shortcuts                              | 🟢                                                          |
 | 19  | **Command palette + project `shepherd.json` actions**                | a React command palette; read a repo-local `shepherd.json` for custom launch actions                                                                                                     | 🟡                                                          |
 | 20  | **Read Ghostty config** for theme/font/colors                        | parse `~/.config/ghostty/config` → apply to xterm theme (compat nicety)                                                                                                                  | 🟡                                                          |
 | 21  | **Settings UI** (font, theme, shell, keybinds)                       | a React settings pane persisting to `~/.config/shepherd/config.json`                                                                                                                     | 🟡                                                          |
@@ -203,24 +203,29 @@ channels** that converge on visible workspace and agent state:
    process ancestry and publishes a safe `working`/`idle` baseline for recognized
    agents. A structured lifecycle source replaces that baseline when available.
 
-**Visual result (what we replicate):**
+**Visual result:**
 
-- The pane gets a **ring**; the workspace row in the sidebar **lights up / flashes**;
-  an **unread badge** appears.
-- A **notification panel** lists pending items; a shortcut **jumps to the latest unread**.
-- Colors: cmux lets `set-status --color` drive color; reviewers describe
-  green=done / yellow=waiting / red=error conventions. We'll support a color field
-  and ship those as the default convention.
+- New attention creates one 1.2-second active-pane ring; no row flashes forever.
+- Each workspace keeps a stable counted unread badge after the pulse ends.
+- A compact popover lists pending items and distinguishes unread, read-pending,
+  resolved, and empty state.
+- Jump-to-unread selects the exact workspace/pane/terminal. Mark-read and resolve
+  are separate actions.
+- Reduced-motion mode removes the pulse while retaining badge, text, and accessible labels.
 
 **Our pipeline (single source of truth):**
 
 ```
-[OSC parser on pty stream]  ─┐
-                             ├─► main: markWorkspaceAttention(wsId, payload)
-[socket: notify/set-status] ─┘        │
-                                      ├─► update Workspace metadata + unread/attention
-                                      ├─► webContents.send → React (ring + flash + badge)
-                                      └─► OS desktop notification (Electron Notification API)
+[OSC parser on pty stream] ───┐
+[socket: notify] ─────────────┼─► main validates/routes SocketApply
+[provider blocked/done] ──────┘                  │
+                                                ▼
+                                  renderer bounded inbox reducer
+                                      ├─► dedupe + persistence
+                                      ├─► badge + popover + exact focus
+                                      └─► one-shot ring
+
+socket/OSC main path ─► OS desktop notification when supported
 ```
 
 The semantic lifecycle path is separate but shares the same transport:
@@ -230,7 +235,7 @@ provider hook/plugin
   → shepherd agent-report
   → main validates + resolves workspace
   → renderer binds the real pane/surface
-  → agent list + derived unread/attention
+  → agent list + lifecycle-owned inbox item when blocked/done
   → click or focus-agent selects the exact terminal
 ```
 

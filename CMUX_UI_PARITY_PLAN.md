@@ -234,6 +234,8 @@ the shared accessible focus token.
 
 **Depends on:** PRs 1–3.
 
+**Status:** implemented and verified on `feat/notification-center`.
+
 **Goal:** make attention obvious without restoring a permanent agent dashboard.
 
 ### Scope
@@ -254,6 +256,11 @@ the shared accessible focus token.
 3. `renderer: add notification popover and navigation`
 4. `ui: add restrained attention rings and badges`
 5. `docs: explain notification center behavior`
+
+Delivery also includes `renderer: index notification workspace labels`, the
+post-implementation React quality pass that keeps populated rendering linear,
+and `state: document inbox persistence boundary`, which synchronizes the saved
+snapshot contract with the settled implementation.
 
 ### Verification and documentation
 

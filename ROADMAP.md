@@ -49,7 +49,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M24** — Minimal, flat workspace sidebar ✓
 - [x] **M25** — Minimal terminal tabs, headers, panes, and controls ✓
 - [x] **M26** — Neutral terminal-first theme and semantic interaction states ✓
-- [ ] **M27** — Notification center, meaningful rings, and jump-to-unread
+- [x] **M27** — Notification center, meaningful rings, and jump-to-unread ✓
 - [ ] **M28** — Compact pull-request and listening-port workspace metadata
 - [ ] **M29** — Terminal find, command palette, contextual help, and settings entry
 - [ ] **M30** — Constrained localhost preview surface
@@ -135,7 +135,7 @@ subtitle per item, active highlight, and notification markers._
 - [ ] Build the sidebar React component to match cmux styling (dark theme)
 - [ ] Active workspace highlight (blue selection block)
 - [ ] Status subtitle line under each name ("Claude is waiting for your input")
-- [ ] Notification markers: the `*` / dot + tab/row flash animation (CSS)
+- [x] Notification markers: counted unread badge + one-shot active-pane pulse (CSS)
 - [ ] Click a workspace → switch to its tab/pane group
 - [x] Rename a workspace inline or through the socket/CLI without recreating it
 - [ ] **State source = socket API:** stand up a minimal `net` unix-socket server in
@@ -156,10 +156,10 @@ restart._
 - [ ] Define the status protocol: what an agent signals
       "waiting / running / done / needs attention"
 - [ ] Ship the `shepherd` CLI client (thin socket client) + a `shepherd notify` shortcut
-- [ ] **OSC 9/99/777 parser:** scan pty output in main → auto-fire notifications
-- [ ] Wire Claude Code's `Notification` hook through `shepherd integrations setup`
-- [ ] Map incoming notifications to the right workspace (by `SHEPHERD_WORKSPACE_ID` / cwd)
-- [ ] Trigger the ring/flash + unread badge + a desktop notification (`Notification` API)
+- [x] **OSC 9/99/777 parser:** scan pty output in main → auto-fire notifications
+- [x] Wire Claude Code's `Notification` hook through `shepherd integrations setup`
+- [x] Map incoming notifications to the exact workspace and terminal
+- [x] Trigger one bounded pane pulse + stable unread badge + desktop notification
 - [ ] **Persistence:** serialize tabs/panes/cwds + workspace list to JSON on change
 - [ ] Restore the full layout on next launch (re-spawn shells in saved cwds)
 - [ ] "Restore previous session?" vs fresh-start handling
@@ -497,7 +497,7 @@ shell, then add only the cmux-inspired context and utilities that remain useful.
 - [x] **M24:** remove permanent agent/shortcut furniture and flatten the workspace sidebar
 - [x] **M25:** compact workspace/tab chrome and remove ordinary pane-card styling
 - [x] **M26:** neutralize the palette and reserve accent/motion for semantic state
-- [ ] **M27:** add bounded pending notifications, meaningful rings, and unread navigation
+- [x] **M27:** add bounded pending notifications, meaningful rings, and unread navigation
 - [ ] **M28:** add reliable, compact PR and listening-port metadata
 - [ ] **M29:** replace shortcut furniture with terminal find, palette, help, and settings
 - [ ] **M30:** add a constrained localhost preview after the terminal shell is stable
