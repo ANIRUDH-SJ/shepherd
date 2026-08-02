@@ -1,5 +1,6 @@
 import {
   collectOwnedProcessIds,
+  excludeInheritedSockets,
   normalizeListeningPorts,
   parseListeningSocketTable,
   parsePullRequestJson,
@@ -125,6 +126,12 @@ const servers = serverProcessIds(10, owned)
 assert(
   !servers.has(10) && servers.has(11) && servers.has(14),
   'excludes listener descriptors inherited by the PTY shell itself'
+)
+assert(
+  excludeInheritedSockets(sockets, new Set(['111']))
+    .map((socket) => socket.port)
+    .join(',') === '8080',
+  'removes inherited sockets even when descendants retain their descriptors'
 )
 assert(
   normalizeListeningPorts([3000, 80, 3000, -1, 65_536, 443.5]).join(',') === '80,3000',
