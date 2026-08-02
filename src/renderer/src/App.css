@@ -85,6 +85,12 @@ button,
     opacity var(--transition-fast);
 }
 
+button:focus-visible,
+input:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .ui-icon {
   width: 1em;
   height: 1em;

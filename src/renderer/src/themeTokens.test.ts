@@ -108,6 +108,12 @@ assert(
 )
 assert(token('--radius-md') === '4px', 'uses restrained default corner geometry')
 assert(!/text-transform:\s*uppercase/i.test(componentCss), 'avoids uppercase navigation chrome')
+assert(
+  /button:focus-visible,\s*input:focus-visible\s*\{[^}]*outline:\s*1px solid var\(--color-focus\)/m.test(
+    componentCss
+  ),
+  'every native control uses the accessible focus token'
+)
 
 function rule(selector: string): string {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
