@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { SearchAddon, type ISearchOptions } from '@xterm/addon-search'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
@@ -9,12 +10,30 @@ import type { TerminalLinkTarget } from '../../../shared/terminalLinks'
 import { getFontSize } from '../settings'
 import { RENDERER_EVENT } from '../events'
 import { terminalPanelId, terminalTabId } from '../terminalChrome'
+import {
+  MAX_TERMINAL_FIND_QUERY_LENGTH,
+  normalizeTerminalFindQuery,
+  terminalFindStatus,
+  TERMINAL_FIND_HIGHLIGHT_LIMIT
+} from '../terminalFind'
 import { TERMINAL_THEME } from '../terminalTheme'
 import {
   registerTerminalFileLinks,
   terminalLinkModifierPressed,
   terminalOscLinkTarget
 } from '../terminalLinks'
+import Icon from './Icon'
+
+const SEARCH_OPTIONS: ISearchOptions = {
+  decorations: {
+    matchBackground: '#333842',
+    matchBorder: '#737985',
+    matchOverviewRuler: '#737985',
+    activeMatchBackground: '#4d5665',
+    activeMatchBorder: '#c7cbd1',
+    activeMatchColorOverviewRuler: '#c7cbd1'
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TerminalHost — ONE live terminal, bound to ONE backend shell by `surfaceId`.
@@ -41,7 +60,44 @@ export default function TerminalHost({
   focused
 }: Props): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const refs = useRef<{ term: Terminal; fit: FitAddon } | null>(null)
+  const findInputRef = useRef<HTMLInputElement | null>(null)
+  const refs = useRef<{ term: Terminal; fit: FitAddon; search: SearchAddon } | null>(null)
+  const [findOpen, setFindOpen] = useState(false)
+  const [findQuery, setFindQuery] = useState('')
+  const [findResults, setFindResults] = useState({ resultIndex: 0, resultCount: 0 })
+
+  const closeFind = (restoreFocus: boolean): void => {
+    refs.current?.search.clearDecorations()
+    setFindOpen(false)
+    if (restoreFocus) requestAnimationFrame(() => refs.current?.term.focus())
+  }
+
+  const updateFind = (value: string, direction: 'next' | 'previous' = 'next'): void => {
+    const query = normalizeTerminalFindQuery(value)
+    setFindQuery(query)
+    const search = refs.current?.search
+    if (!search) return
+    if (!query) {
+      search.clearDecorations()
+      setFindResults({ resultIndex: 0, resultCount: 0 })
+      return
+    }
+    const options = { ...SEARCH_OPTIONS, incremental: direction === 'next' }
+    if (direction === 'previous') search.findPrevious(query, options)
+    else search.findNext(query, options)
+  }
+
+  useEffect(() => {
+    if (!findOpen) return
+    requestAnimationFrame(() => {
+      findInputRef.current?.focus()
+      findInputRef.current?.select()
+    })
+  }, [findOpen])
+
+  useEffect(() => {
+    if (!active && findOpen) closeFind(false)
+  }, [active, findOpen])
 
   // Create the terminal + shell once (per surfaceId).
   useEffect(() => {
@@ -73,7 +129,9 @@ export default function TerminalHost({
       }
     })
     const fit = new FitAddon()
+    const search = new SearchAddon({ highlightLimit: TERMINAL_FIND_HIGHLIGHT_LIMIT })
     term.loadAddon(fit)
+    term.loadAddon(search)
     term.loadAddon(
       new WebLinksAddon((event, url) => {
         if (terminalLinkModifierPressed(event)) openLink({ kind: 'url', url })
@@ -97,7 +155,8 @@ export default function TerminalHost({
     if (measuresStartup) window.api.performance.mark('terminal-opened')
     fit.fit()
     if (measuresStartup) window.api.performance.mark('terminal-fitted')
-    refs.current = { term, fit }
+    refs.current = { term, fit, search }
+    const searchResults = search.onDidChangeResults((results) => setFindResults(results))
 
     // GPU rendering for smooth scrolling; fall back silently if WebGL is unavailable.
     try {
@@ -183,8 +242,13 @@ export default function TerminalHost({
       resize()
       term.focus()
     }
+    const onTerminalFind = (e: Event): void => {
+      if ((e as CustomEvent<{ surfaceId?: unknown }>).detail?.surfaceId !== surfaceId) return
+      setFindOpen(true)
+    }
     window.addEventListener(RENDERER_EVENT.fontSize, onFontSize)
     window.addEventListener(RENDERER_EVENT.focusSurface, onFocusSurface)
+    window.addEventListener(RENDERER_EVENT.terminalFind, onTerminalFind)
 
     return () => {
       disposed = true
@@ -192,6 +256,8 @@ export default function TerminalHost({
       observer.disconnect()
       window.removeEventListener(RENDERER_EVENT.fontSize, onFontSize)
       window.removeEventListener(RENDERER_EVENT.focusSurface, onFocusSurface)
+      window.removeEventListener(RENDERER_EVENT.terminalFind, onTerminalFind)
+      searchResults.dispose()
       onData.dispose()
       offData()
       offExit()
@@ -216,13 +282,75 @@ export default function TerminalHost({
   }, [focused])
 
   return (
-    <div
-      id={terminalPanelId(surfaceId)}
-      className="terminal"
-      ref={containerRef}
-      role="tabpanel"
-      aria-labelledby={terminalTabId(surfaceId)}
-      hidden={!active}
-    />
+    <>
+      <div
+        id={terminalPanelId(surfaceId)}
+        className="terminal"
+        ref={containerRef}
+        role="tabpanel"
+        aria-labelledby={terminalTabId(surfaceId)}
+        hidden={!active}
+      />
+      {active && findOpen && (
+        <form
+          className="terminal-find"
+          role="search"
+          aria-label="Find in current terminal"
+          onSubmit={(event) => {
+            event.preventDefault()
+            updateFind(findQuery)
+          }}
+        >
+          <input
+            ref={findInputRef}
+            type="search"
+            value={findQuery}
+            maxLength={MAX_TERMINAL_FIND_QUERY_LENGTH}
+            aria-label="Search terminal scrollback"
+            placeholder="Find"
+            onChange={(event) => updateFind(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                updateFind(findQuery, event.shiftKey ? 'previous' : 'next')
+              } else if (event.key === 'Escape') {
+                event.preventDefault()
+                event.stopPropagation()
+                closeFind(true)
+              }
+            }}
+          />
+          <output aria-live="polite">
+            {terminalFindStatus(findQuery, findResults.resultIndex, findResults.resultCount)}
+          </output>
+          <button
+            type="button"
+            title="Previous match (Shift+Enter)"
+            aria-label="Previous match"
+            disabled={!findQuery}
+            onClick={() => updateFind(findQuery, 'previous')}
+          >
+            ↑
+          </button>
+          <button
+            type="button"
+            title="Next match (Enter)"
+            aria-label="Next match"
+            disabled={!findQuery}
+            onClick={() => updateFind(findQuery)}
+          >
+            ↓
+          </button>
+          <button
+            type="button"
+            title="Close find (Escape)"
+            aria-label="Close terminal find"
+            onClick={() => closeFind(true)}
+          >
+            <Icon name="close" />
+          </button>
+        </form>
+      )}
+    </>
   )
 }
