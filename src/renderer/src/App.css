@@ -321,7 +321,8 @@ body.resizing * {
   min-width: 0;
 }
 .ws-context,
-.ws-branch {
+.ws-branch,
+.ws-runtime-context {
   color: var(--color-text-muted);
   font-family: var(--font-mono);
   font-size: 10px;
@@ -346,6 +347,10 @@ body.resizing * {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.ws-runtime-context {
+  flex: 0 1 auto;
+  color: var(--color-text-secondary);
 }
 .ws-usage {
   flex: 0 0 auto;
