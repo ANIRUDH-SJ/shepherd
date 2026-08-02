@@ -9,6 +9,7 @@ import type { TerminalLinkTarget } from '../../../shared/terminalLinks'
 import { getFontSize } from '../settings'
 import { RENDERER_EVENT } from '../events'
 import { terminalPanelId, terminalTabId } from '../terminalChrome'
+import { TERMINAL_THEME } from '../terminalTheme'
 import {
   registerTerminalFileLinks,
   terminalLinkModifierPressed,
@@ -61,7 +62,7 @@ export default function TerminalHost({
       fontSize: getFontSize(),
       scrollback: TERMINAL_SCROLLBACK_LINES,
       cursorBlink: true,
-      theme: { background: '#0d0d0f', foreground: '#e6e6e6', cursor: '#8ab4ff' },
+      theme: TERMINAL_THEME,
       linkHandler: {
         allowNonHttpProtocols: true,
         activate: (event, value) => {

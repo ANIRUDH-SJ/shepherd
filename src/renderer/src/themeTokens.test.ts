@@ -109,5 +109,26 @@ assert(
 assert(token('--radius-md') === '4px', 'uses restrained default corner geometry')
 assert(!/text-transform:\s*uppercase/i.test(componentCss), 'avoids uppercase navigation chrome')
 
+function rule(selector: string): string {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return componentCss.match(new RegExp(`${escaped}\\s*\\{([^}]+)`, 'm'))?.[1] ?? ''
+}
+
+assert(rule('.ws-row:hover').includes('var(--color-surface-hover)'), 'ordinary hover is neutral')
+assert(rule('.ws-row.active').includes('var(--color-selection)'), 'selection owns accent usage')
+assert(rule('.ws-row.attention').includes('ws-flash'), 'attention owns repeating motion')
+assert(
+  rule('.ws-agent.state-blocked').includes('var(--color-danger)'),
+  'blocked state owns failure color'
+)
+assert(
+  rule('.ws-agent.state-working').includes('var(--color-working)'),
+  'working state owns waiting color'
+)
+assert(
+  rule('.ws-agent.state-idle').includes('var(--color-success)'),
+  'idle state owns success color'
+)
+
 console.log(failures === 0 ? '\n✅ ALL THEME TOKEN TESTS PASS' : `\n❌ ${failures} FAILURE(S)`)
 if (failures > 0) throw new Error(`${failures} theme-token test(s) failed`)
