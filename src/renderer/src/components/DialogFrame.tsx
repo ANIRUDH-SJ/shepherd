@@ -1,6 +1,8 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import Icon from './Icon'
 
+let utilityFocusOrigin: HTMLElement | null = null
+
 interface Props {
   title: string
   descriptionId?: string
@@ -17,18 +19,21 @@ export default function DialogFrame({
   onClose
 }: Props): React.JSX.Element {
   const dialogRef = useRef<HTMLElement | null>(null)
-  const restoreFocusRef = useRef(
-    document.activeElement instanceof HTMLElement ? document.activeElement : null
-  )
 
   useEffect(() => {
+    if (!utilityFocusOrigin) {
+      utilityFocusOrigin = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    }
     const initial =
       dialogRef.current?.querySelector<HTMLElement>('[data-dialog-autofocus]') ??
       dialogRef.current?.querySelector<HTMLElement>('button, input, select, [tabindex="0"]')
     initial?.focus()
     return () => {
       requestAnimationFrame(() => {
-        if (!document.querySelector('.utility-dialog')) restoreFocusRef.current?.focus()
+        if (document.querySelector('.utility-dialog')) return
+        const origin = utilityFocusOrigin
+        utilityFocusOrigin = null
+        if (origin?.isConnected) origin.focus()
       })
     }
   }, [])
