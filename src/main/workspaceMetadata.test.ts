@@ -7,6 +7,7 @@ import {
   startWorkspaceMetadataDiscovery,
   WORKSPACE_METADATA_ACTIVE_POLL_MS,
   WORKSPACE_METADATA_HIDDEN_POLL_MS,
+  LISTENING_PORT_REFRESH_MS,
   WorkspaceMetadataDiscovery
 } from './workspaceMetadata'
 import type { TerminalInspectionActivity } from './terminalInspection'
@@ -46,6 +47,14 @@ async function main(): Promise<void> {
   const emitted: SocketApply[] = []
   let head = 'ref: refs/heads/main'
   let probes = 0
+  let pullRequestProbes = 0
+  let portProbes = 0
+  let livePullRequest: WorkspaceMetadata['pullRequest'] = {
+    number: 48,
+    state: 'open',
+    url: 'https://github.com/o/r/pull/48'
+  }
+  let livePorts = [8080, 3000, 8080]
   const discovery = new WorkspaceMetadataDiscovery((command) => emitted.push(command), {
     probeGit: async (cwd) => {
       probes++
@@ -54,6 +63,14 @@ async function main(): Promise<void> {
         : null
     },
     readGitHead: () => head,
+    probePullRequest: async () => {
+      pullRequestProbes++
+      return livePullRequest
+    },
+    probeListeningPorts: async () => {
+      portProbes++
+      return livePorts
+    },
     home: '/home/dev'
   })
   discovery.updateWorkspaces([{ id: 'ws-1', name: '', activeSurfaceId: 'term-1' }])
@@ -62,27 +79,49 @@ async function main(): Promise<void> {
   const first = emitted[0]?.params.metadata as WorkspaceMetadata
   assert(first?.projectName === 'shepherd', 'reports the repository as the project')
   assert(first?.gitBranch === 'main', 'reports the current branch')
+  assert(first?.pullRequest?.number === 48, 'reports an optional pull request')
+  assert(first?.ports.join(',') === '3000,8080', 'normalizes process-owned ports')
   assert(probes === 1, 'probes Git once for the initial cwd')
+  assert(pullRequestProbes === 1 && portProbes === 1, 'probes context once initially')
 
   await discovery.scan([context('term-1', '/projects/shepherd/src')], 1_500)
   assert(emitted.length === 1, 'deduplicates unchanged metadata')
   assert(probes === 1, 'uses cached Git locations on unchanged scans')
+  assert(
+    pullRequestProbes === 1 && portProbes === 1,
+    'keeps PR and port discovery off unchanged hot-path scans'
+  )
 
   head = 'ref: refs/heads/feat/live-sidebar'
+  livePullRequest = {
+    number: 49,
+    state: 'draft',
+    url: 'https://github.com/o/r/pull/49'
+  }
   await discovery.scan([context('term-1', '/projects/shepherd/src')], 2_000)
   const branchUpdate = emitted[1]?.params.metadata as WorkspaceMetadata
   assert(branchUpdate?.gitBranch === 'feat/live-sidebar', 'detects a branch switch from HEAD')
+  assert(branchUpdate?.pullRequest?.state === 'draft', 'refreshes PR context after branch switch')
   assert(probes === 1, 'does not spawn Git to detect a branch switch')
+  assert(pullRequestProbes === 2 && portProbes === 1, 'invalidates only the changed context')
 
   await discovery.scan([context('term-1', '/tmp/scratch')], 2_500)
   const outsideGit = emitted[2]?.params.metadata as WorkspaceMetadata
   assert(outsideGit?.projectName === 'scratch', 'updates the project after cd')
   assert(outsideGit?.gitBranch === null, 'marks a non-Git directory')
+  assert(outsideGit?.pullRequest === null, 'hides PR context outside a repository')
   assert(probes === 2, 're-probes after leaving the cached repository')
+  assert(pullRequestProbes === 2, 'does not invoke gh outside a repository')
+
+  livePorts = []
+  await discovery.scan([context('term-1', '/tmp/scratch')], 2_500 + LISTENING_PORT_REFRESH_MS)
+  const portExit = emitted[3]?.params.metadata as WorkspaceMetadata
+  assert(portExit?.ports.length === 0, 'removes ports after their process exits')
+  assert(portProbes === 2, 'refreshes ports on the bounded interval')
 
   discovery.updateWorkspaces([{ id: 'ws-1', name: '', activeSurfaceId: 'term-2' }])
   await discovery.scan([context('term-1', '/projects/shepherd')], 3_000)
-  assert(emitted.length === 3, 'ignores metadata from a non-active terminal')
+  assert(emitted.length === 4, 'ignores metadata from a non-active terminal')
 
   interface ScheduledTask {
     cancelled: boolean
@@ -109,6 +148,8 @@ async function main(): Promise<void> {
         gitDir: '/projects/shepherd/.git'
       }),
       readGitHead: () => runtimeHead,
+      probePullRequest: async () => null,
+      probeListeningPorts: async () => [],
       home: '/home/dev'
     },
     now: () => runtimeNow,

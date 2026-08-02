@@ -32,7 +32,9 @@ const metadata = {
   cwd: '/projects/shepherd',
   projectName: 'shepherd',
   gitRoot: '/projects/shepherd',
-  gitBranch: 'main'
+  gitBranch: 'main',
+  pullRequest: { number: 48, state: 'open' as const, url: 'https://github.com/o/r/pull/48' },
+  ports: [3000, 8080]
 }
 assert(sameWorkspaceMetadata(metadata, { ...metadata }), 'compares identical metadata')
 assert(
@@ -41,6 +43,12 @@ assert(
 )
 assert(isWorkspaceMetadata(metadata), 'accepts complete workspace metadata')
 assert(!isWorkspaceMetadata({ ...metadata, cwd: 'relative' }), 'rejects a relative live cwd')
+assert(!isWorkspaceMetadata({ ...metadata, ports: [8080, 3000] }), 'rejects unsorted ports')
+assert(!isWorkspaceMetadata({ ...metadata, ports: [0] }), 'rejects invalid ports')
+assert(
+  !isWorkspaceMetadata({ ...metadata, pullRequest: { ...metadata.pullRequest, state: 'queued' } }),
+  'rejects unsupported pull request states'
+)
 
 if (failures > 0) throw new Error(`${failures} workspace metadata test(s) failed`)
 console.log('\n✅ ALL WORKSPACE METADATA TESTS PASS')

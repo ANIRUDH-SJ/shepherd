@@ -116,6 +116,10 @@
 - **layout tree (PaneNode)** — The recursive tree describing a workspace's splits: each node is either a _leaf_ (one pane) or a _split_ (a direction, child nodes, and sizes). Rendering it produces the tiled layout. (see 10-tiling-and-layout.md)
 - **libghostty** — The C library extracted from the Ghostty terminal that powers cmux's GPU renderer. We deliberately _don't_ use it — its C/Zig API is unstable and awkward to bind from Electron — and use xterm.js (+ WebGL addon) instead. (see 07-xtermjs.md)
 - **line discipline** — The kernel layer sitting between a pty and the program on it that processes bytes — echoing typed characters, handling backspace and Ctrl-C, and switching between canonical and raw mode. (see 02-how-terminals-work.md)
+- **listening socket** — A TCP endpoint waiting for incoming connections. Shepherd
+  associates its kernel inode with descriptors held by descendants of a PTY shell
+  before showing its port as workspace context. (see
+  36-context-from-external-tools-and-proc.md)
 - **link provider (xterm.js)** — A renderer-side object that inspects a requested
   xterm buffer line and returns text, an exact cell range, and an activation
   callback. Shepherd uses the official provider for HTTP(S) and a custom,
@@ -164,6 +168,9 @@
   socket, environment namespace, user-data path, protocol title, and repository.
   Each boundary follows its own naming rules. (see
   34-product-identity-and-compatible-rebranding.md)
+- **pull-request context** — The optional number and open/draft/merged/closed state
+  resolved for a workspace's current Git root and branch through a bounded `gh`
+  capability. (see 36-context-from-external-tools-and-proc.md)
 - **pseudo-terminal (PTY)** — A software emulation of a physical terminal: a kernel-provided pair of endpoints that lets one program feed input to, and read output from, another program (a shell) as if a human were sitting at a terminal. (see 02-how-terminals-work.md; the library that spawns them: 06-node-pty.md)
 - **PSS (proportional set size)** — Resident memory with each shared page divided
   among the processes mapping it. Summing PSS gives a fairer multi-process total

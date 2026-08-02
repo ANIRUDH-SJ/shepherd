@@ -7,7 +7,7 @@ import {
   workspaceAgentLabel
 } from '../agentView'
 import { RENDERER_EVENT } from '../events'
-import { workspaceIdentity, workspaceProjectContext } from '../sidebarView'
+import { workspaceIdentity, workspaceProjectContext, workspaceRuntimeContext } from '../sidebarView'
 import { type AppAction, createWorkspaceAction, type Workspace } from '../state/appReducer'
 import { workspaceNotificationCounts, type InboxNotification } from '../state/notificationInbox'
 import { usageDetails, usageSummary } from '../usageView'
@@ -128,16 +128,15 @@ export default function Sidebar({
           const workspaceAgents = sortAgentsForSidebar(agentsByWorkspace.get(w.id) ?? [])
           const agentSummary = agentRollupLabel(workspaceAgents)
           const projectContext = workspaceProjectContext(w, identity)
-          const hasMetadata = Boolean(projectContext || w.gitBranch || summary)
+          const runtimeContext = workspaceRuntimeContext(w)
+          const hasMetadata = Boolean(projectContext || w.gitBranch || runtimeContext || summary)
           const notificationCounts = workspaceNotificationCounts(notifications, w.id)
-          const unreadCount = notificationCounts.unread + Number(w.agentUnread && notificationCounts.unread === 0)
+          const unreadCount =
+            notificationCounts.unread + Number(w.agentUnread && notificationCounts.unread === 0)
           return (
             <div
               key={w.id}
-              className={
-                'ws-row' +
-                (w.id === activeWorkspaceId ? ' active' : '')
-              }
+              className={'ws-row' + (w.id === activeWorkspaceId ? ' active' : '')}
               onContextMenu={(event) => {
                 if (event.target instanceof HTMLInputElement) return
                 event.preventDefault()
@@ -161,7 +160,7 @@ export default function Sidebar({
                 aria-label={
                   editing
                     ? undefined
-                    : `${displayName}, ${identity.positional}, project ${w.projectName}, ${w.gitBranch ? `branch ${w.gitBranch}` : 'not a Git repository'}${w.id === activeWorkspaceId ? ', active workspace' : ''}${unreadCount > 0 ? `, ${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}` : ''}${agentSummary ? `, ${agentSummary}` : ''}`
+                    : `${displayName}, ${identity.positional}, project ${w.projectName}, ${w.gitBranch ? `branch ${w.gitBranch}` : 'not a Git repository'}${runtimeContext ? `, ${runtimeContext.description}` : ''}${w.id === activeWorkspaceId ? ', active workspace' : ''}${unreadCount > 0 ? `, ${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}` : ''}${agentSummary ? `, ${agentSummary}` : ''}`
                 }
                 onClick={() => {
                   if (!editing) dispatch({ type: 'selectWorkspace', id: w.id })
@@ -246,6 +245,15 @@ export default function Sidebar({
                       <span className="ws-branch" title={`Git branch: ${w.gitBranch}`}>
                         <Icon name="branch" />
                         <span>{w.gitBranch}</span>
+                      </span>
+                    )}
+                    {runtimeContext && (
+                      <span
+                        className="ws-runtime-context"
+                        title={runtimeContext.description}
+                        aria-label={runtimeContext.description}
+                      >
+                        {runtimeContext.label}
                       </span>
                     )}
                     {summary && (

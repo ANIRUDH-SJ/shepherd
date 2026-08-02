@@ -126,6 +126,8 @@ Think of the book in five "acts":
   compatibility retirement.
 - `35-safe-terminal-link-activation.md` — plain URLs, OSC 8, file references,
   xterm cell geometry, validated IPC activation, and desktop-opening security.
+- `36-context-from-external-tools-and-proc.md` — optional external capabilities,
+  bounded subprocess parsing, Linux socket ownership, semantic caching, and compact UI.
 
 **Reference**
 
@@ -176,6 +178,7 @@ Think of the book in five "acts":
 | `33-terminal-memory-and-ownership.md`              | Renderer/PTY ownership, cleanup races, retention bounds, aggregate diagnostics, PSS scaling, process safety, and allocator high-water behavior | 03, 04, 06, 07, 28, 31 |
 | `34-product-identity-and-compatible-rebranding.md` | Identity contracts, precedence, state selection, dual sockets, managed migrations, packaging, and compatibility retirement                     | 03, 11, 13, 15         |
 | `35-safe-terminal-link-activation.md`              | URL/file/OSC 8 detection, xterm cell ranges, live cwd resolution, IPC trust boundaries, opening policy, failure handling, and testing          | 02, 04, 05, 06, 07, 33 |
+| `36-context-from-external-tools-and-proc.md`       | Optional CLI capabilities, bounded PR parsing, process-owned listening sockets, inherited descriptors, caching, races, and compact UI          | 03, 06, 09, 22, 23, 32 |
 
 ---
 
@@ -254,3 +257,4 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `33-terminal-memory-and-ownership.md` — terminal ownership, bounded retention, and lifecycle measurement
 - `34-product-identity-and-compatible-rebranding.md` — safe product identity migration and compatibility design
 - `35-safe-terminal-link-activation.md` — safe URL, OSC 8, and local-file activation from terminal output
+- `36-context-from-external-tools-and-proc.md` — reliable optional PR and process-owned port context

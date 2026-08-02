@@ -11,7 +11,11 @@ import {
 import { workspaceReducer, type WorkspaceState, type WorkspaceAction } from './workspaceReducer'
 import { agentNeedsAttention, type AgentRecord, type AgentReport } from '../../../shared/agent'
 import { normalizeWorkspaceName } from '../../../shared/workspace'
-import { workspaceProjectName, type WorkspaceMetadata } from '../../../shared/workspaceMetadata'
+import {
+  workspaceProjectName,
+  type WorkspaceMetadata,
+  type WorkspacePullRequest
+} from '../../../shared/workspaceMetadata'
 import {
   addWorkspaceUsage,
   emptyWorkspaceUsage,
@@ -45,6 +49,8 @@ export interface Workspace {
   projectName: string
   gitRoot: string | null
   gitBranch: string | null
+  pullRequest: WorkspacePullRequest | null
+  ports: number[]
   metadataSurfaceId: string | null
   // the M2 layout state:
   root: LayoutNode
@@ -77,6 +83,8 @@ export function makeWorkspace(name?: string, cwd = '~'): Workspace {
     projectName: workspaceProjectName(cwd),
     gitRoot: null,
     gitBranch: null,
+    pullRequest: null,
+    ports: [],
     metadataSurfaceId: null,
     root: { type: 'pane', pane },
     activePaneId: pane.id,
@@ -121,6 +129,8 @@ export function sanitizeRestored(raw: unknown): AppState | null {
       projectName: workspaceProjectName(typeof entry.cwd === 'string' ? entry.cwd : '~'),
       gitRoot: null,
       gitBranch: null,
+      pullRequest: null,
+      ports: [],
       metadataSurfaceId: null,
       root,
       activePaneId: typeof entry.activePaneId === 'string' ? entry.activePaneId : firstPaneId(root),
@@ -398,7 +408,12 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           w.cwd === action.metadata.cwd &&
           w.projectName === action.metadata.projectName &&
           w.gitRoot === action.metadata.gitRoot &&
-          w.gitBranch === action.metadata.gitBranch
+          w.gitBranch === action.metadata.gitBranch &&
+          w.pullRequest?.number === action.metadata.pullRequest?.number &&
+          w.pullRequest?.state === action.metadata.pullRequest?.state &&
+          w.pullRequest?.url === action.metadata.pullRequest?.url &&
+          w.ports.length === action.metadata.ports.length &&
+          w.ports.every((port, index) => port === action.metadata.ports[index])
         ) {
           return w
         }
@@ -408,6 +423,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           projectName: action.metadata.projectName,
           gitRoot: action.metadata.gitRoot,
           gitBranch: action.metadata.gitBranch,
+          pullRequest: action.metadata.pullRequest,
+          ports: action.metadata.ports,
           metadataSurfaceId: action.metadata.surfaceId
         }
       })
@@ -564,6 +581,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
                         projectName: workspaceProjectName(candidate.cwd),
                         gitRoot: null,
                         gitBranch: null,
+                        pullRequest: null,
+                        ports: [],
                         metadataSurfaceId: null
                       }
                     : {}),
@@ -604,6 +623,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
                         projectName: workspaceProjectName(candidate.cwd),
                         gitRoot: null,
                         gitBranch: null,
+                        pullRequest: null,
+                        ports: [],
                         metadataSurfaceId: null
                       }
                     : {}),
@@ -633,6 +654,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
                 projectName: workspaceProjectName(w.cwd),
                 gitRoot: null,
                 gitBranch: null,
+                pullRequest: null,
+                ports: [],
                 metadataSurfaceId: null
               }
             : {})

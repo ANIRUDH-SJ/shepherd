@@ -50,7 +50,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M25** — Minimal terminal tabs, headers, panes, and controls ✓
 - [x] **M26** — Neutral terminal-first theme and semantic interaction states ✓
 - [x] **M27** — Notification center, meaningful rings, and jump-to-unread ✓
-- [ ] **M28** — Compact pull-request and listening-port workspace metadata
+- [x] **M28** — Compact pull-request and listening-port workspace metadata ✓
 - [ ] **M29** — Terminal find, command palette, contextual help, and settings entry
 - [ ] **M30** — Constrained localhost preview surface
 
@@ -498,7 +498,7 @@ shell, then add only the cmux-inspired context and utilities that remain useful.
 - [x] **M25:** compact workspace/tab chrome and remove ordinary pane-card styling
 - [x] **M26:** neutralize the palette and reserve accent/motion for semantic state
 - [x] **M27:** add bounded pending notifications, meaningful rings, and unread navigation
-- [ ] **M28:** add reliable, compact PR and listening-port metadata
+- [x] **M28:** add reliable, compact PR and listening-port metadata
 - [ ] **M29:** replace shortcut furniture with terminal find, palette, help, and settings
 - [ ] **M30:** add a constrained localhost preview after the terminal shell is stable
 - [ ] Deliver every milestone on its own branch and PR using the commit, verification,
@@ -515,7 +515,6 @@ shell, then add only the cmux-inspired context and utilities that remain useful.
       complete code/tests first, then update both `learning/` and `textbook/`
       before closing each feature
 - [ ] Port the React UI to **Tauri** for lean binaries (~10× smaller, less RAM)
-- [ ] PR status/number + listening ports per workspace (git branch lands in v1)
 - [ ] In-app browser panels + browser automation API (`Panel='browser'`)
 - [ ] Remote SSH workspaces + localhost routing; Claude Code Teams mode
 - [ ] Worktree cleanup and diff/review UI (creation workflow landed in M8)
