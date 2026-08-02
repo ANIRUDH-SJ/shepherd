@@ -57,6 +57,10 @@ const api: ShepherdApi = {
     }
   },
 
+  preview: {
+    openExternal: (url) => ipcRenderer.invoke(IPC.PREVIEW_OPEN_EXTERNAL, url)
+  },
+
   socket: {
     syncWorkspaces: (sync) => ipcRenderer.send(IPC.WORKSPACES_SYNC, sync),
 
