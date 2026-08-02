@@ -474,6 +474,198 @@ body.resizing * {
   box-shadow: var(--shadow-popover);
   color: var(--color-text);
 }
+
+/* Keyboard-first utilities stay out of permanent chrome. */
+.utility-backdrop {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  display: grid;
+  place-items: start center;
+  padding: min(15vh, 110px) var(--space-4) var(--space-4);
+  background: rgba(0, 0, 0, 0.42);
+}
+.utility-dialog {
+  display: flex;
+  width: min(520px, calc(100vw - 24px));
+  max-height: min(640px, calc(100vh - 48px));
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-popover);
+  color: var(--color-text);
+}
+.utility-dialog-head {
+  display: flex;
+  min-height: 38px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.utility-dialog-head strong {
+  font-size: 12px;
+}
+.utility-dialog-head button,
+.utility-dialog-footer button {
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: inherit;
+}
+.utility-dialog-head button {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  padding: 0;
+}
+.utility-dialog button:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+.utility-dialog button:focus-visible,
+.utility-dialog input:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: -1px;
+}
+.utility-description {
+  margin: 0;
+  padding: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+.utility-empty {
+  margin: 0;
+  padding: 28px var(--space-4);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  text-align: center;
+}
+.utility-dialog kbd {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-input-overlay);
+  color: var(--color-text-muted);
+  font: 9.5px var(--font-mono);
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+.utility-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+.utility-dialog-footer button {
+  padding: 5px 8px;
+  font-size: 10.5px;
+}
+.command-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+.command-search input {
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  outline: 0;
+  background: var(--color-input-overlay);
+  color: var(--color-text);
+  font: 11px var(--font-mono);
+}
+.command-results {
+  min-height: 54px;
+  overflow-y: auto;
+  padding: var(--space-2);
+}
+.command-results > button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 7px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.command-results > button.selected {
+  background: var(--color-selection);
+  color: var(--color-text);
+}
+.command-results > button[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: default;
+}
+.command-results > button > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+.command-results strong,
+.command-results small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.command-results strong {
+  font-size: 11px;
+  font-weight: 550;
+}
+.command-results small {
+  color: var(--color-text-muted);
+  font-size: 9.5px;
+}
+.shortcut-list {
+  overflow-y: auto;
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-4);
+}
+.shortcut-list > div {
+  display: flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.shortcut-list dt {
+  color: var(--color-text-secondary);
+  font-size: 10.5px;
+}
+.shortcut-list dd {
+  margin: 0;
+}
+@media (max-width: 520px) {
+  .utility-backdrop {
+    place-items: start stretch;
+    padding-top: var(--space-4);
+  }
+  .utility-dialog {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+  }
+  .command-results > button {
+    padding-block: 9px;
+  }
+}
 .notification-head,
 .notification-toolbar,
 .notification-footer {

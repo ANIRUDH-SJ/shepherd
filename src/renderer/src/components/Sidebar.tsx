@@ -27,6 +27,7 @@ interface Props {
   activeWorkspaceId: string
   dispatch: Dispatch<AppAction>
   onCollapse: () => void
+  onOpenPalette: () => void
 }
 
 interface WorkspaceContextMenu {
@@ -41,7 +42,8 @@ export default function Sidebar({
   notifications,
   activeWorkspaceId,
   dispatch,
-  onCollapse
+  onCollapse,
+  onOpenPalette
 }: Props): React.JSX.Element {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draftName, setDraftName] = useState('')
@@ -98,6 +100,15 @@ export default function Sidebar({
             activeWorkspaceId={activeWorkspaceId}
             dispatch={dispatch}
           />
+          <button
+            type="button"
+            className="icon-btn"
+            title="Commands (Ctrl+Shift+P)"
+            aria-label="Open command palette"
+            onClick={onOpenPalette}
+          >
+            <Icon name="command" />
+          </button>
           <button
             type="button"
             className="icon-btn"

@@ -12,6 +12,7 @@ export type IconName =
   | 'split-down'
   | 'bell'
   | 'check'
+  | 'command'
 
 interface Props {
   name: IconName
@@ -99,6 +100,14 @@ function iconPaths(name: IconName): ReactNode {
       )
     case 'check':
       return <path d="m5 12 4 4L19 6" />
+    case 'command':
+      return (
+        <>
+          <path d="M5 7h14" />
+          <path d="M5 12h10" />
+          <path d="M5 17h14" />
+        </>
+      )
   }
 }
 
