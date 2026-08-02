@@ -6,38 +6,38 @@
   --font-mono: 'JetBrains Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
 
   /* Surfaces */
-  --color-canvas: #0b0c0f;
-  --color-sidebar: #111218;
-  --color-surface: #17181f;
-  --color-surface-hover: #1d1f27;
-  --color-surface-raised: #242631;
-  --color-border: #282b34;
-  --color-border-strong: #393d49;
+  --color-canvas: #0b0b0b;
+  --color-sidebar: #101010;
+  --color-surface: #161616;
+  --color-surface-hover: #1c1c1c;
+  --color-surface-raised: #222222;
+  --color-border: #292929;
+  --color-border-strong: #3a3a3a;
 
   /* Content */
-  --color-text: #f0f1f4;
-  --color-text-secondary: #b0b5c0;
-  --color-text-muted: #858c9b;
-  --color-text-subdued: #697181;
-  --color-text-faint: #545b68;
+  --color-text: #eeeeee;
+  --color-text-secondary: #b8b8b8;
+  --color-text-muted: #8a8a8a;
+  --color-text-subdued: #6d6d6d;
+  --color-text-faint: #525252;
 
   /* Interaction */
-  --color-accent: #7aa2f7;
-  --color-accent-strong: #4f7ee8;
-  --color-selection: #234fbd;
-  --color-selection-hover: #2d60d4;
-  --color-selection-text: #dce7ff;
-  --color-focus: #9bbcff;
-  --color-control-overlay: rgba(255, 255, 255, 0.14);
-  --color-input-overlay: rgba(0, 0, 0, 0.3);
+  --color-accent: #6d9eff;
+  --color-accent-strong: #4e82e8;
+  --color-selection: #1f4678;
+  --color-selection-hover: #28588f;
+  --color-selection-text: #eef5ff;
+  --color-focus: #8db5ff;
+  --color-control-overlay: rgba(255, 255, 255, 0.12);
+  --color-input-overlay: rgba(0, 0, 0, 0.28);
 
   /* Semantic state */
-  --color-attention: #f2b84b;
-  --color-danger: #ff746c;
-  --color-success: #7bc47f;
-  --color-info: #76aef8;
-  --color-working: #e5ad55;
-  --color-git: #91a9d9;
+  --color-attention: #e0a84b;
+  --color-danger: #e66d65;
+  --color-success: #70b77e;
+  --color-info: #6c9ee8;
+  --color-working: #d8a24a;
+  --color-git: #929aa6;
 
   /* Geometry and motion */
   --space-1: 2px;
@@ -47,11 +47,11 @@
   --space-5: 10px;
   --space-6: 12px;
   --space-7: 14px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --shadow-popover: 0 10px 30px rgba(0, 0, 0, 0.48);
-  --transition-fast: 120ms ease;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --shadow-popover: 0 12px 32px rgba(0, 0, 0, 0.42);
+  --transition-fast: 100ms ease;
 }
 
 * {
@@ -128,7 +128,6 @@ body.resizing * {
   color: var(--color-text-secondary);
   font-size: 12.5px;
   font-weight: 600;
-  letter-spacing: 0.1px;
 }
 .sidebar-head-actions {
   display: flex;
