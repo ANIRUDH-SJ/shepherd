@@ -297,7 +297,13 @@ function sniffOsc(id: string, sender: WebContents, data: string): void {
       sender.send(IPC.SOCKET_COMMAND, {
         method: 'notify',
         workspaceId: rec.workspaceId ?? null,
-        params: { title: n.title, body: n.body }
+        params: {
+          title: n.title,
+          body: n.body,
+          surfaceId: id,
+          notificationSource: 'osc',
+          createdAt: Date.now()
+        }
       })
     }
     if (Notification.isSupported()) new Notification({ title: n.title, body: n.body }).show()

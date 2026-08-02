@@ -41,8 +41,12 @@ export interface WorkspaceNotificationCounts {
 }
 
 function normalizeText(value: string, limit: number): string {
-  return value
-    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+  return [...value]
+    .map((character) => {
+      const codePoint = character.codePointAt(0) ?? 0
+      return codePoint <= 31 || codePoint === 127 ? ' ' : character
+    })
+    .join('')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, limit)
