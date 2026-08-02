@@ -1,8 +1,14 @@
 import type { Dispatch } from 'react'
 import type { Pane, Rect } from '../layout/types'
-import { type WorkspaceAction, splitAction, newSurfaceAction } from '../state/workspaceReducer'
+import {
+  type WorkspaceAction,
+  splitAction,
+  newSurfaceAction,
+  updatePreviewUrlAction
+} from '../state/workspaceReducer'
 import TabBar from './TabBar'
 import TerminalHost from './TerminalHost'
+import PreviewHost from './PreviewHost'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PaneView — one leaf pane, absolutely positioned at its computed % rectangle.
@@ -20,7 +26,7 @@ interface Props {
   workspaceActive: boolean
   workspaceId: string
   workspaceCwd: string
-  surfaceNumbers: Map<string, number>
+  terminalNumbers: Map<string, number>
   dispatch: Dispatch<WorkspaceAction>
 }
 
@@ -34,7 +40,7 @@ export default function PaneView({
   workspaceActive,
   workspaceId,
   workspaceCwd,
-  surfaceNumbers,
+  terminalNumbers,
   dispatch
 }: Props): React.JSX.Element {
   return (
@@ -55,7 +61,7 @@ export default function PaneView({
         pane={pane}
         paneNumber={paneNumber}
         canClosePane={canClosePane}
-        surfaceNumbers={surfaceNumbers}
+        terminalNumbers={terminalNumbers}
         onSelect={(surfaceId) => dispatch({ type: 'setActiveSurface', paneId: pane.id, surfaceId })}
         onCloseSurface={(surfaceId) =>
           dispatch({ type: 'closeSurface', paneId: pane.id, surfaceId })
@@ -67,16 +73,29 @@ export default function PaneView({
       />
 
       <div className="pane-body">
-        {pane.surfaces.map((s) => (
-          <TerminalHost
-            key={s.id}
-            surfaceId={s.id}
-            workspaceId={workspaceId}
-            cwd={workspaceCwd}
-            active={s.id === pane.activeSurfaceId}
-            focused={workspaceActive && active && s.id === pane.activeSurfaceId}
-          />
-        ))}
+        {pane.surfaces.map((surface) =>
+          surface.panel.type === 'terminal' ? (
+            <TerminalHost
+              key={surface.id}
+              surfaceId={surface.id}
+              workspaceId={workspaceId}
+              cwd={workspaceCwd}
+              active={surface.id === pane.activeSurfaceId}
+              focused={workspaceActive && active && surface.id === pane.activeSurfaceId}
+            />
+          ) : (
+            <PreviewHost
+              key={surface.id}
+              surfaceId={surface.id}
+              url={surface.panel.url}
+              active={surface.id === pane.activeSurfaceId}
+              onUrlChange={(url) => {
+                const action = updatePreviewUrlAction(surface.id, url)
+                if (action) dispatch(action)
+              }}
+            />
+          )
+        )}
       </div>
       {attentionPulse > 0 && (
         <div

@@ -9,9 +9,13 @@ import {
   makePane,
   makeSurface,
   findPane,
-  firstPaneId
+  firstPaneId,
+  makePreviewSurface,
+  updatePreviewSurfaceUrl,
+  listTerminalSurfaceIds
 } from '../layout/tree'
 import type { LayoutNode, Pane, Surface } from '../layout/types'
+import { normalizePreviewUrl } from '../../../shared/preview'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WORKSPACE REDUCER
@@ -36,6 +40,7 @@ export type WorkspaceAction =
   | { type: 'closeSurface'; paneId: string; surfaceId: string }
   | { type: 'setActiveSurface'; paneId: string; surfaceId: string }
   | { type: 'setActivePane'; paneId: string }
+  | { type: 'updatePreviewUrl'; surfaceId: string; url: string }
   | { type: 'resize'; splitId: string; index: number; deltaFraction: number }
 
 export function initialWorkspace(): WorkspaceState {
@@ -48,6 +53,20 @@ export function splitAction(paneId: string, direction: 'row' | 'column'): Worksp
 }
 export function newSurfaceAction(paneId: string): WorkspaceAction {
   return { type: 'newSurface', paneId, surface: makeSurface() }
+}
+export function previewSplitAction(paneId: string, url: string): WorkspaceAction {
+  return {
+    type: 'split',
+    paneId,
+    direction: 'row',
+    newPane: makePane(makePreviewSurface(url))
+  }
+}
+export function updatePreviewUrlAction(surfaceId: string, url: string): WorkspaceAction | null {
+  const normalized = normalizePreviewUrl(url)
+  return normalized.ok && normalized.url
+    ? { type: 'updatePreviewUrl', surfaceId, url: normalized.url }
+    : null
 }
 
 /** Pick a valid active pane after the tree changed. */
@@ -64,6 +83,14 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
       }
 
     case 'closePane': {
+      const pane = findPane(state.root, action.paneId)
+      if (!pane) return state
+      const paneTerminalIds = new Set(
+        pane.surfaces
+          .filter((surface) => surface.panel.type === 'terminal')
+          .map((surface) => surface.id)
+      )
+      if (listTerminalSurfaceIds(state.root).every((id) => paneTerminalIds.has(id))) return state
       const root = closePane(state.root, action.paneId)
       if (!root) return state // never remove the last pane
       return { root, activePaneId: reselect(root, state.activePaneId) }
@@ -78,6 +105,10 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
     case 'closeSurface': {
       const pane = findPane(state.root, action.paneId)
       if (!pane) return state
+      const surface = pane.surfaces.find((candidate) => candidate.id === action.surfaceId)
+      if (surface?.panel.type === 'terminal' && listTerminalSurfaceIds(state.root).length <= 1) {
+        return state
+      }
       // closing a pane's last tab closes the pane…
       if (pane.surfaces.length <= 1) {
         const root = closePane(state.root, action.paneId)
@@ -101,6 +132,9 @@ export function workspaceReducer(state: WorkspaceState, action: WorkspaceAction)
       return state.activePaneId === action.paneId
         ? state
         : { ...state, activePaneId: action.paneId }
+
+    case 'updatePreviewUrl':
+      return { ...state, root: updatePreviewSurfaceUrl(state.root, action.surfaceId, action.url) }
 
     case 'resize':
       return {

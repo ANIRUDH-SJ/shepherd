@@ -73,7 +73,7 @@ assert(
 
 const navigated = workspaceReducer(
   previewSplit,
-  updatePreviewUrlAction(previewSurface!.id, 'http://localhost:43140/next')
+  updatePreviewUrlAction(previewSurface!.id, 'http://localhost:43140/next')!
 )
 const navigatedPane = findPane(navigated.root, navigated.activePaneId)
 assert(
@@ -85,6 +85,28 @@ assert(
   updatePreviewUrlAction(previewSurface!.id, 'https://example.com') === null,
   'rejects an unsafe preview navigation action'
 )
+
+const soleTerminalPane = makePane(makeSurface())
+const soleTerminalState: WorkspaceState = {
+  root: { type: 'pane', pane: soleTerminalPane },
+  activePaneId: soleTerminalPane.id
+}
+const soleTerminalWithPreview = workspaceReducer(
+  soleTerminalState,
+  previewSplitAction(soleTerminalPane.id, 'http://localhost:43140/')
+)
+const terminalSurfaceId = soleTerminalPane.surfaces[0].id
+const closeOnlyTerminal = workspaceReducer(soleTerminalWithPreview, {
+  type: 'closeSurface',
+  paneId: soleTerminalPane.id,
+  surfaceId: terminalSurfaceId
+})
+assert(closeOnlyTerminal === soleTerminalWithPreview, 'keeps one terminal while previews exist')
+const closeOnlyTerminalPane = workspaceReducer(soleTerminalWithPreview, {
+  type: 'closePane',
+  paneId: soleTerminalPane.id
+})
+assert(closeOnlyTerminalPane === soleTerminalWithPreview, 'keeps the only terminal pane')
 
 if (failures > 0) throw new Error(`${failures} workspace-reducer test(s) failed`)
 console.log('\n✅ ALL WORKSPACE REDUCER TESTS PASS')

@@ -2,7 +2,7 @@ export type AppCommandId =
   | 'terminal.find'
   | 'palette.open'
   | 'terminal.new-tab'
-  | 'terminal.close'
+  | 'surface.close'
   | 'pane.split-right'
   | 'pane.split-down'
   | 'pane.close'
@@ -17,14 +17,19 @@ export type AppCommandId =
   | 'font.decrease'
   | 'font.reset'
   | 'settings.open'
+  | 'preview.open'
   | 'help.open'
 
-export type CommandCategory = 'Terminal' | 'Pane' | 'Workspace' | 'Attention' | 'View'
+export type CommandCategory = 'Terminal' | 'Pane' | 'Workspace' | 'Attention' | 'Preview' | 'View'
 
 export interface CommandContext {
   workspaceCount: number
   paneCount: number
   terminalCount: number
+  surfaceCount: number
+  activePanelType: 'terminal' | 'preview'
+  activeSurfaceClosable: boolean
+  activePaneClosable: boolean
   unreadNotificationCount: number
   sidebarCollapsed: boolean
 }
@@ -37,7 +42,11 @@ export interface AppCommand {
   shortcutKey?: string
   keywords: string
   availability?:
-    'several-workspaces' | 'several-panes' | 'closable-terminal' | 'unread-notifications'
+    | 'several-workspaces'
+    | 'closable-pane'
+    | 'closable-surface'
+    | 'active-terminal'
+    | 'unread-notifications'
 }
 
 export const APP_COMMANDS: readonly AppCommand[] = [
@@ -47,7 +56,8 @@ export const APP_COMMANDS: readonly AppCommand[] = [
     category: 'Terminal',
     shortcut: 'Ctrl+Shift+F',
     shortcutKey: 'f',
-    keywords: 'search scrollback output'
+    keywords: 'search scrollback output',
+    availability: 'active-terminal'
   },
   {
     id: 'palette.open',
@@ -66,20 +76,26 @@ export const APP_COMMANDS: readonly AppCommand[] = [
     keywords: 'surface create'
   },
   {
-    id: 'terminal.close',
-    title: 'Close current terminal',
-    category: 'Terminal',
+    id: 'surface.close',
+    title: 'Close current tab',
+    category: 'View',
     shortcut: 'Ctrl+Shift+W',
     shortcutKey: 'w',
-    keywords: 'surface tab remove',
-    availability: 'closable-terminal'
+    keywords: 'surface terminal preview tab remove',
+    availability: 'closable-surface'
+  },
+  {
+    id: 'preview.open',
+    title: 'Open localhost preview',
+    category: 'Preview',
+    keywords: 'browser server port web local'
   },
   {
     id: 'pane.close',
     title: 'Close current pane',
     category: 'Pane',
     keywords: 'remove terminal split',
-    availability: 'several-panes'
+    availability: 'closable-pane'
   },
   {
     id: 'pane.split-right',
@@ -201,8 +217,9 @@ const COMMAND_BY_KEY = new Map(
 export function commandEnabled(id: AppCommandId, context: CommandContext): boolean {
   const requirement = COMMAND_BY_ID.get(id)?.availability
   if (requirement === 'several-workspaces') return context.workspaceCount > 1
-  if (requirement === 'several-panes') return context.paneCount > 1
-  if (requirement === 'closable-terminal') return context.terminalCount > 1
+  if (requirement === 'closable-pane') return context.activePaneClosable
+  if (requirement === 'closable-surface') return context.activeSurfaceClosable
+  if (requirement === 'active-terminal') return context.activePanelType === 'terminal'
   if (requirement === 'unread-notifications') return context.unreadNotificationCount > 0
   return COMMAND_BY_ID.has(id)
 }

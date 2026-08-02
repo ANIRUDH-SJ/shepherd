@@ -8,8 +8,15 @@ import {
   paneAction,
   type AppState
 } from './state/appReducer'
-import { splitAction, newSurfaceAction } from './state/workspaceReducer'
-import { computeLayout, findPane, listSurfaceIds } from './layout/tree'
+import { splitAction, newSurfaceAction, previewSplitAction } from './state/workspaceReducer'
+import {
+  activeTerminalSurfaceId,
+  computeLayout,
+  findPane,
+  findPaneBySurfaceId,
+  listSurfaceIds,
+  listTerminalSurfaceIds
+} from './layout/tree'
 import { bumpFontSize, resetFontSize } from './settings'
 import type { AgentReport } from '../../shared/agent'
 import type { UsageReport } from '../../shared/usage'
@@ -28,6 +35,7 @@ import WorkspaceView from './components/WorkspaceView'
 import CommandPalette from './components/CommandPalette'
 import ShortcutHelp from './components/ShortcutHelp'
 import SettingsDialog from './components/SettingsDialog'
+import PreviewPicker from './components/PreviewPicker'
 
 // Restore the saved session synchronously at startup, else start fresh. Computed
 // once at module load. Optional chaining keeps it safe if the bridge isn't ready.
@@ -37,14 +45,27 @@ const MIN_SIDEBAR = 170
 const MAX_SIDEBAR = 420
 const DEFAULT_SIDEBAR = 240
 
-type UtilityOverlay = 'palette' | 'help' | 'settings'
+type UtilityOverlay = 'palette' | 'help' | 'settings' | 'preview'
 
 function commandContext(state: AppState, sidebarCollapsed: boolean): CommandContext {
   const workspace = state.workspaces.find((candidate) => candidate.id === state.activeWorkspaceId)
+  const pane = workspace ? findPane(workspace.root, workspace.activePaneId) : null
+  const activeSurface = pane?.surfaces.find((surface) => surface.id === pane.activeSurfaceId)
+  const terminalCount = workspace ? listTerminalSurfaceIds(workspace.root).length : 0
+  const surfaceCount = workspace ? listSurfaceIds(workspace.root).length : 0
+  const paneCount = workspace ? computeLayout(workspace.root).panes.length : 0
   return {
     workspaceCount: state.workspaces.length,
-    paneCount: workspace ? computeLayout(workspace.root).panes.length : 0,
-    terminalCount: workspace ? listSurfaceIds(workspace.root).length : 0,
+    paneCount,
+    terminalCount,
+    surfaceCount,
+    activePanelType: activeSurface?.panel.type ?? 'terminal',
+    activeSurfaceClosable:
+      activeSurface?.panel.type === 'preview' ? surfaceCount > 1 : terminalCount > 1,
+    activePaneClosable:
+      paneCount > 1 &&
+      (pane?.surfaces.filter((surface) => surface.panel.type === 'terminal').length ?? 0) <
+        terminalCount,
     unreadNotificationCount: state.notifications.filter(
       (notification) => notification.unread && !notification.resolved
     ).length,
@@ -92,12 +113,23 @@ export default function App(): React.JSX.Element {
     if (!workspace) return false
     const pane = findPane(workspace.root, workspace.activePaneId)
 
-    if (id !== 'palette.open' && id !== 'help.open' && id !== 'settings.open') {
+    if (
+      id !== 'palette.open' &&
+      id !== 'help.open' &&
+      id !== 'settings.open' &&
+      id !== 'preview.open'
+    ) {
       setUtilityOverlay(null)
     }
     switch (id) {
       case 'terminal.find':
-        if (!pane) return false
+        if (
+          !pane ||
+          pane.surfaces.find((surface) => surface.id === pane.activeSurfaceId)?.panel.type !==
+            'terminal'
+        ) {
+          return false
+        }
         window.setTimeout(() => {
           window.dispatchEvent(
             new CustomEvent(RENDERER_EVENT.terminalFind, {
@@ -112,7 +144,7 @@ export default function App(): React.JSX.Element {
       case 'terminal.new-tab':
         dispatch(paneAction(workspace.id, newSurfaceAction(workspace.activePaneId)))
         break
-      case 'terminal.close':
+      case 'surface.close':
         if (!pane) return false
         dispatch(
           paneAction(workspace.id, {
@@ -179,6 +211,9 @@ export default function App(): React.JSX.Element {
       case 'settings.open':
         setUtilityOverlay('settings')
         break
+      case 'preview.open':
+        setUtilityOverlay('preview')
+        break
       case 'help.open':
         setUtilityOverlay('help')
         break
@@ -203,7 +238,8 @@ export default function App(): React.JSX.Element {
         utilityOverlayRef.current &&
         id !== 'palette.open' &&
         id !== 'help.open' &&
-        id !== 'settings.open'
+        id !== 'settings.open' &&
+        id !== 'preview.open'
       ) {
         return
       }
@@ -221,7 +257,7 @@ export default function App(): React.JSX.Element {
       workspaces: state.workspaces.map((w) => ({
         id: w.id,
         name: w.name,
-        activeSurfaceId: findPane(w.root, w.activePaneId)?.activeSurfaceId
+        activeSurfaceId: activeTerminalSurfaceId(w.root, w.activePaneId) ?? undefined
       })),
       activeWorkspaceId: state.activeWorkspaceId,
       agents: state.agents
@@ -288,7 +324,7 @@ export default function App(): React.JSX.Element {
             : Date.now()
         const requestedSurfaceId =
           typeof params.surfaceId === 'string' && params.surfaceId ? params.surfaceId : null
-        const activeSurfaceId = findPane(workspace.root, workspace.activePaneId)?.activeSurfaceId
+        const activeSurfaceId = activeTerminalSurfaceId(workspace.root, workspace.activePaneId)
         dispatch({
           type: 'receiveNotification',
           notification: {
@@ -336,8 +372,7 @@ export default function App(): React.JSX.Element {
           const dir = raw === 'up' || raw === 'down' ? 'column' : 'row'
           dispatch(paneAction(ws.id, splitAction(ws.activePaneId, dir)))
         } else {
-          const pane = findPane(ws.root, ws.activePaneId)
-          const surfaceId = pane ? pane.activeSurfaceId : null
+          const surfaceId = activeTerminalSurfaceId(ws.root, ws.activePaneId)
           if (!surfaceId) return
           if (method === 'send-text') {
             window.api.terminal.input({ id: surfaceId, data: String(params.text ?? '') })
@@ -450,6 +485,27 @@ export default function App(): React.JSX.Element {
       {utilityOverlay === 'settings' && (
         <SettingsDialog
           onOpenHelp={() => setUtilityOverlay('help')}
+          onClose={() => setUtilityOverlay(null)}
+        />
+      )}
+      {utilityOverlay === 'preview' && (
+        <PreviewPicker
+          ports={
+            state.workspaces.find((workspace) => workspace.id === state.activeWorkspaceId)?.ports ??
+            []
+          }
+          onOpen={(url) => {
+            const current = stateRef.current
+            const workspace = current.workspaces.find(
+              (candidate) => candidate.id === current.activeWorkspaceId
+            )
+            if (!workspace) return
+            const terminalId = activeTerminalSurfaceId(workspace.root, workspace.activePaneId)
+            const terminalPane = terminalId ? findPaneBySurfaceId(workspace.root, terminalId) : null
+            if (!terminalPane) return
+            dispatch(paneAction(workspace.id, previewSplitAction(terminalPane.id, url)))
+            setUtilityOverlay(null)
+          }}
           onClose={() => setUtilityOverlay(null)}
         />
       )}

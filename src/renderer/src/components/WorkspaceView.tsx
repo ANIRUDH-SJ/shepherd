@@ -1,5 +1,5 @@
 import { useMemo, useRef, type Dispatch } from 'react'
-import { computeLayout, listSurfaceIds } from '../layout/tree'
+import { computeLayout, listSurfaceIds, listTerminalSurfaceIds } from '../layout/tree'
 import { type AppAction, paneAction, type Workspace } from '../state/appReducer'
 import { workspaceIdentity } from '../sidebarView'
 import type { WorkspaceAction } from '../state/workspaceReducer'
@@ -32,9 +32,9 @@ export default function WorkspaceView({
 
   // Terminal labels are POSITIONAL: the k-th terminal (in tree order) is "Terminal k".
   // Recomputed on every change, so closing one renumbers the rest.
-  const surfaceNumbers = useMemo(() => {
+  const terminalNumbers = useMemo(() => {
     const m = new Map<string, number>()
-    listSurfaceIds(workspace.root).forEach((id, i) => m.set(id, i + 1))
+    listTerminalSurfaceIds(workspace.root).forEach((id, i) => m.set(id, i + 1))
     return m
   }, [workspace.root])
 
@@ -42,7 +42,8 @@ export default function WorkspaceView({
   const chromeLabel = terminalWorkspaceAriaLabel(
     identity.primary,
     panes.length,
-    surfaceNumbers.size
+    terminalNumbers.size,
+    listSurfaceIds(workspace.root).length - terminalNumbers.size
   )
 
   // Adapt pane-level (M2) actions to the app reducer, tagged with this workspace.
@@ -71,16 +72,18 @@ export default function WorkspaceView({
             key={pane.id}
             pane={pane}
             paneNumber={paneIndex + 1}
-            canClosePane={panes.length > 1}
+            canClosePane={
+              panes.length > 1 &&
+              pane.surfaces.filter((surface) => surface.panel.type === 'terminal').length <
+                terminalNumbers.size
+            }
             rect={rect}
             active={pane.id === workspace.activePaneId}
-            attentionPulse={
-              pane.id === workspace.activePaneId ? workspace.attentionPulse : 0
-            }
+            attentionPulse={pane.id === workspace.activePaneId ? workspace.attentionPulse : 0}
             workspaceActive={active}
             workspaceId={workspace.id}
             workspaceCwd={workspace.cwd}
-            surfaceNumbers={surfaceNumbers}
+            terminalNumbers={terminalNumbers}
             dispatch={paneDispatch}
           />
         ))}

@@ -5,11 +5,22 @@
 // See textbook/09 (data model) and textbook/10 (tiling).
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** A tab within a pane. One surface == one terminal, so `id` is also the pty id.
- *  There's no stored number — the "Terminal N" label is derived from POSITION at
- *  render time, so closing one renumbers the rest (see WorkspaceView). */
+export interface TerminalPanel {
+  type: 'terminal'
+}
+
+export interface PreviewPanel {
+  type: 'preview'
+  url: string
+}
+
+export type Panel = TerminalPanel | PreviewPanel
+
+/** A tab within a pane. Terminal surface ids also identify their PTYs; preview
+ *  surfaces own an isolated web guest instead. */
 export interface Surface {
   id: string
+  panel: Panel
 }
 
 /** A leaf region: holds one or more surfaces (tabs), one of them active. */
