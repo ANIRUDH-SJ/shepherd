@@ -14,6 +14,7 @@ import type { AgentReport } from '../../shared/agent'
 import type { UsageReport } from '../../shared/usage'
 import { isWorkspaceMetadata } from '../../shared/workspaceMetadata'
 import { nextAgentLifecycleDeadline } from './agentTiming'
+import { latestUnreadNotification } from './state/notificationInbox'
 import { RENDERER_EVENT } from './events'
 import Sidebar from './components/Sidebar'
 import WorkspaceView from './components/WorkspaceView'
@@ -45,6 +46,7 @@ export default function App(): React.JSX.Element {
   const [state, dispatch] = useReducer(appReducer, INITIAL_APP)
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR)
   const [collapsed, setCollapsed] = useState(false)
+  const notificationSequence = useRef(0)
 
   // Keep the latest state in a ref so the (once-installed) key handler sees it.
   const stateRef = useRef(state)
@@ -85,6 +87,22 @@ export default function App(): React.JSX.Element {
           break
         case 'b':
           setCollapsed((c) => !c)
+          break
+        case 'u': {
+          const notification = latestUnreadNotification(s.notifications)
+          if (!notification) return
+          dispatch({ type: 'focusNotification', id: notification.id })
+          if (notification.surfaceId) {
+            requestAnimationFrame(() => {
+              window.dispatchEvent(
+                new CustomEvent(RENDERER_EVENT.focusSurface, { detail: notification.surfaceId })
+              )
+            })
+          }
+          break
+        }
+        case 'm':
+          dispatch({ type: 'markWorkspaceNotificationsRead', id: ws.id })
           break
         case '+':
         case '=':
@@ -171,9 +189,31 @@ export default function App(): React.JSX.Element {
         const status = String(params.status ?? params.text ?? '')
         dispatch({ type: 'setStatus', id: workspaceId, status: status || null })
       } else if (method === 'notify') {
+        const workspace = stateRef.current.workspaces.find((item) => item.id === workspaceId)
+        if (!workspace) return
         const body = String(params.body ?? '')
         dispatch({ type: 'setStatus', id: workspaceId, status: body || 'needs your attention' })
-        dispatch({ type: 'setAttention', id: workspaceId, unread: true, attention: true })
+        const createdAt =
+          typeof params.createdAt === 'number' && Number.isFinite(params.createdAt)
+            ? params.createdAt
+            : Date.now()
+        const requestedSurfaceId =
+          typeof params.surfaceId === 'string' && params.surfaceId ? params.surfaceId : null
+        const activeSurfaceId = findPane(workspace.root, workspace.activePaneId)?.activeSurfaceId
+        dispatch({
+          type: 'receiveNotification',
+          notification: {
+            id: `notification:${createdAt}:${++notificationSequence.current}`,
+            workspaceId,
+            surfaceId: requestedSurfaceId ?? activeSurfaceId ?? null,
+            subjectId: null,
+            title: String(params.title ?? 'Shepherd'),
+            body: body || 'Needs your attention',
+            source: params.notificationSource === 'osc' ? 'osc' : 'socket',
+            severity: 'attention',
+            createdAt
+          }
+        })
       } else if (method === 'report-usage') {
         const report = params.report
         if (report && typeof report === 'object') {
@@ -227,14 +267,14 @@ export default function App(): React.JSX.Element {
     })
   }, [])
 
-  // Persist only the LAYOUT (not transient status/attention), and only when it
-  // actually changes — so agent status churn can't starve a layout save, and we
-  // don't save fields we throw away on restore. (Copilot review, PR #4)
-  const layoutJson = useMemo(() => JSON.stringify(toLayoutSnapshot(state)), [state])
+  // Persist the active layout plus its bounded inbox. JSON equality keeps status,
+  // usage, live-agent, and pulse churn from restarting the save debounce because
+  // those fields are intentionally absent from the snapshot.
+  const sessionJson = useMemo(() => JSON.stringify(toLayoutSnapshot(state)), [state])
   useEffect(() => {
-    const t = setTimeout(() => window.api.session.save(JSON.parse(layoutJson)), 500)
+    const t = setTimeout(() => window.api.session.save(JSON.parse(sessionJson)), 500)
     return () => clearTimeout(t)
-  }, [layoutJson])
+  }, [sessionJson])
 
   // Drag the sidebar's right edge to resize it (pixel-based; same idea as the
   // pane Divider, textbook/10).
@@ -256,11 +296,14 @@ export default function App(): React.JSX.Element {
   }
 
   const blockedAgents = state.agents.filter((agent) => agent.state === 'blocked').length
+  const unreadNotifications = state.notifications.filter(
+    (notification) => notification.unread && !notification.resolved
+  ).length
   const collapsedSidebarLabel = `Show sidebar (Ctrl+Shift+B)${
     state.agents.length > 0
       ? ` · ${state.agents.length} agent${state.agents.length === 1 ? '' : 's'}, ${blockedAgents} blocked`
       : ''
-  }`
+  }${unreadNotifications > 0 ? ` · ${unreadNotifications} unread notification${unreadNotifications === 1 ? '' : 's'}` : ''}`
 
   return (
     <div className="app">
@@ -279,6 +322,7 @@ export default function App(): React.JSX.Element {
             <Sidebar
               workspaces={state.workspaces}
               agents={state.agents}
+              notifications={state.notifications}
               activeWorkspaceId={state.activeWorkspaceId}
               dispatch={dispatch}
               onCollapse={() => setCollapsed(true)}

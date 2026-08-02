@@ -9,8 +9,10 @@ import {
 import { RENDERER_EVENT } from '../events'
 import { workspaceIdentity, workspaceProjectContext } from '../sidebarView'
 import { type AppAction, createWorkspaceAction, type Workspace } from '../state/appReducer'
+import { workspaceNotificationCounts, type InboxNotification } from '../state/notificationInbox'
 import { usageDetails, usageSummary } from '../usageView'
 import Icon from './Icon'
+import NotificationCenter from './NotificationCenter'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sidebar — the vertical list of workspaces. Each row shows a
@@ -21,6 +23,7 @@ import Icon from './Icon'
 interface Props {
   workspaces: Workspace[]
   agents: AgentRecord[]
+  notifications: InboxNotification[]
   activeWorkspaceId: string
   dispatch: Dispatch<AppAction>
   onCollapse: () => void
@@ -35,6 +38,7 @@ interface WorkspaceContextMenu {
 export default function Sidebar({
   workspaces,
   agents,
+  notifications,
   activeWorkspaceId,
   dispatch,
   onCollapse
@@ -88,6 +92,12 @@ export default function Sidebar({
       <div className="sidebar-head">
         <span className="brand">Shepherd</span>
         <div className="sidebar-head-actions">
+          <NotificationCenter
+            notifications={notifications}
+            workspaces={workspaces}
+            activeWorkspaceId={activeWorkspaceId}
+            dispatch={dispatch}
+          />
           <button
             type="button"
             className="icon-btn"
@@ -119,13 +129,14 @@ export default function Sidebar({
           const agentSummary = agentRollupLabel(workspaceAgents)
           const projectContext = workspaceProjectContext(w, identity)
           const hasMetadata = Boolean(projectContext || w.gitBranch || summary)
+          const notificationCounts = workspaceNotificationCounts(notifications, w.id)
+          const unreadCount = notificationCounts.unread + Number(w.agentUnread && notificationCounts.unread === 0)
           return (
             <div
               key={w.id}
               className={
                 'ws-row' +
-                (w.id === activeWorkspaceId ? ' active' : '') +
-                (w.attention || w.agentAttention ? ' attention' : '')
+                (w.id === activeWorkspaceId ? ' active' : '')
               }
               onContextMenu={(event) => {
                 if (event.target instanceof HTMLInputElement) return
@@ -150,7 +161,7 @@ export default function Sidebar({
                 aria-label={
                   editing
                     ? undefined
-                    : `${displayName}, ${identity.positional}, project ${w.projectName}, ${w.gitBranch ? `branch ${w.gitBranch}` : 'not a Git repository'}${w.id === activeWorkspaceId ? ', active workspace' : ''}${agentSummary ? `, ${agentSummary}` : ''}`
+                    : `${displayName}, ${identity.positional}, project ${w.projectName}, ${w.gitBranch ? `branch ${w.gitBranch}` : 'not a Git repository'}${w.id === activeWorkspaceId ? ', active workspace' : ''}${unreadCount > 0 ? `, ${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}` : ''}${agentSummary ? `, ${agentSummary}` : ''}`
                 }
                 onClick={() => {
                   if (!editing) dispatch({ type: 'selectWorkspace', id: w.id })
@@ -167,7 +178,15 @@ export default function Sidebar({
                 }}
               >
                 <div className="ws-row-top">
-                  {(w.unread || w.agentUnread) && <span className="ws-dot" title="unread" />}
+                  {unreadCount > 0 && (
+                    <span
+                      className="ws-badge"
+                      title={`${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`}
+                      aria-hidden="true"
+                    >
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
                   {editing ? (
                     <input
                       className="ws-name-input"

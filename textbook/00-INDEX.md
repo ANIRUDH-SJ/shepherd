@@ -78,8 +78,9 @@ Think of the book in five "acts":
 
 - `11-the-socket-api.md` — the Unix-socket API that drives the sidebar and
   automation.
-- `12-notifications-and-osc.md` — notification rings, and the OSC escape codes
-  that trigger them automatically.
+- `12-notifications-and-osc.md` — OSC parsing, bounded notification state,
+  cross-source deduplication, lifecycle resolution, persistence, navigation,
+  accessible popovers, one-shot rings, and desktop toasts.
 - `13-session-persistence.md` — session serialization and restore fundamentals.
 - `14-build-tooling-and-vite.md` — how the project is bundled and hot-reloaded.
 - `15-packaging-and-distribution.md` — turning it into an AppImage/.deb others install.
@@ -151,8 +152,8 @@ Think of the book in five "acts":
 | `09-typescript-and-the-data-model.md`              | TS essentials + our object model + the split tree                                                                                              | 08                     |
 | `10-tiling-and-layout.md`                          | The layout tree, tiling algorithm, resize, focus                                                                                               | 09                     |
 | `11-the-socket-api.md`                             | Unix sockets, the JSON protocol, the server + `shepherd` CLI                                                                                   | 04, 09                 |
-| `12-notifications-and-osc.md`                      | OSC 9/99/777, parsing the pty stream, the rings/flash pipeline                                                                                 | 06, 11                 |
-| `13-session-persistence.md`                        | Serializing + restoring the object model, snapshots                                                                                            | 09, 11                 |
+| `12-notifications-and-osc.md`                      | OSC 9/99/777, bounded inbox semantics, deduplication, persistence, navigation, accessible popovers, rings, badges, and desktop toasts          | 06, 08, 11, 13, 19     |
+| `13-session-persistence.md`                        | Serializing the active workspace, bounded owned inbox, validation, snapshots, and restore policy                                               | 09, 11, 12             |
 | `14-build-tooling-and-vite.md`                     | Vite, electron-vite, bundling main/preload/renderer, HMR                                                                                       | 03                     |
 | `15-packaging-and-distribution.md`                 | electron-builder, AppImage/.deb/Flatpak, icons, updates                                                                                        | 14                     |
 | `16-glossary.md`                                   | Every term defined                                                                                                                             | —                      |

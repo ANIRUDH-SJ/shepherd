@@ -18,6 +18,17 @@ import {
   type UsageReport,
   type WorkspaceUsage
 } from '../../../shared/usage'
+import {
+  addInboxNotification,
+  clearResolvedNotifications,
+  markWorkspaceNotificationsRead,
+  resolveNotification,
+  resolveNotificationsForSubject,
+  sanitizeNotificationInbox,
+  workspaceNotificationCounts,
+  type InboxNotification,
+  type NotificationInput
+} from './notificationInbox'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // APP REDUCER  (the top of the object model: Window → Workspace → …)
@@ -42,6 +53,7 @@ export interface Workspace {
   status: string | null // subtitle line, e.g. "Claude is waiting for your input"
   unread: boolean // new activity → a quiet badge
   attention: boolean // an agent is blocked on you right now → the ring/flash
+  attentionPulse: number // increments to remount one brief pane attention ring
   agentUnread: boolean // a blocked/done agent changed while this workspace was inactive
   agentAttention: boolean // an actionable blocked agent is currently in this workspace
   usage: WorkspaceUsage // ephemeral, agent-reported token/cost telemetry
@@ -51,6 +63,7 @@ export interface AppState {
   workspaces: Workspace[]
   activeWorkspaceId: string
   agents: AgentRecord[]
+  notifications: InboxNotification[]
 }
 
 /** Mint a new workspace with one terminal. The display NAME is positional
@@ -70,6 +83,7 @@ export function makeWorkspace(name?: string, cwd = '~'): Workspace {
     status: null,
     unread: false,
     attention: false,
+    attentionPulse: 0,
     agentUnread: false,
     agentAttention: false,
     usage: emptyWorkspaceUsage()
@@ -78,16 +92,16 @@ export function makeWorkspace(name?: string, cwd = '~'): Workspace {
 
 export function initialApp(): AppState {
   const ws = makeWorkspace() // positional name → "workspace 1"
-  return { workspaces: [ws], activeWorkspaceId: ws.id, agents: [] }
+  return { workspaces: [ws], activeWorkspaceId: ws.id, agents: [], notifications: [] }
 }
 
 /** Validate + normalise a restored session into an AppState (or null if unusable).
  *  Startup restores only the previously active workspace so every launch begins
- *  with one workspace. Its layout/cwd survive, transient state is reset, and its
- *  terminals re-spawn fresh when their panes mount. See textbook/13. */
+ *  with one workspace. Its layout/cwd and owned bounded inbox survive; live state
+ *  resets, and its terminals re-spawn fresh when their panes mount. See textbook/13. */
 export function sanitizeRestored(raw: unknown): AppState | null {
   if (!raw || typeof raw !== 'object') return null
-  const r = raw as { workspaces?: unknown; activeWorkspaceId?: unknown }
+  const r = raw as { workspaces?: unknown; activeWorkspaceId?: unknown; notifications?: unknown }
   if (!Array.isArray(r.workspaces) || r.workspaces.length === 0) return null
 
   const workspaces: Workspace[] = []
@@ -113,6 +127,7 @@ export function sanitizeRestored(raw: unknown): AppState | null {
       status: null,
       unread: false,
       attention: false,
+      attentionPulse: 0,
       agentUnread: false,
       agentAttention: false,
       usage: emptyWorkspaceUsage()
@@ -123,12 +138,18 @@ export function sanitizeRestored(raw: unknown): AppState | null {
       ? r.activeWorkspaceId
       : workspaces[0].id
   const startupWorkspace = workspaces.find((workspace) => workspace.id === active) ?? workspaces[0]
-  return { workspaces: [startupWorkspace], activeWorkspaceId: startupWorkspace.id, agents: [] }
+  const notifications = sanitizeNotificationInbox(r.notifications, new Set([startupWorkspace.id]))
+  return refreshNotificationMarkers({
+    workspaces: [startupWorkspace],
+    activeWorkspaceId: startupWorkspace.id,
+    agents: [],
+    notifications
+  })
 }
 
-/** Persist the active workspace layout only. Runtime workspaces remain independent,
- *  but relaunch is intentionally a one-workspace boundary. Transient status,
- *  unread, attention, agents, and usage are excluded. */
+/** Persist the active workspace layout and its bounded notification inbox.
+ *  Runtime workspaces remain independent, and relaunch is intentionally a
+ *  one-workspace boundary. Status, pulse state, agents, and usage are excluded. */
 export function toLayoutSnapshot(state: AppState): {
   workspaces: Array<{
     id: string
@@ -138,6 +159,7 @@ export function toLayoutSnapshot(state: AppState): {
     activePaneId: string
   }>
   activeWorkspaceId: string
+  notifications: InboxNotification[]
 } {
   const workspace =
     state.workspaces.find((candidate) => candidate.id === state.activeWorkspaceId) ??
@@ -152,7 +174,10 @@ export function toLayoutSnapshot(state: AppState): {
         activePaneId: workspace.activePaneId
       }
     ],
-    activeWorkspaceId: workspace.id
+    activeWorkspaceId: workspace.id,
+    notifications: state.notifications.filter(
+      (notification) => notification.workspaceId === workspace.id
+    )
   }
 }
 
@@ -164,6 +189,11 @@ export type AppAction =
   | { type: 'setWorkspaceMetadata'; id: string; metadata: WorkspaceMetadata }
   | { type: 'setStatus'; id: string; status: string | null }
   | { type: 'setAttention'; id: string; unread?: boolean; attention?: boolean }
+  | { type: 'receiveNotification'; notification: NotificationInput }
+  | { type: 'markWorkspaceNotificationsRead'; id: string }
+  | { type: 'resolveNotification'; id: string }
+  | { type: 'clearResolvedNotifications' }
+  | { type: 'focusNotification'; id: string }
   | { type: 'reportUsage'; id: string; report: UsageReport }
   | { type: 'reportAgent'; report: AgentReport }
   | { type: 'clearAgent'; id: string; source?: string }
@@ -184,6 +214,29 @@ export function paneAction(workspaceId: string, action: WorkspaceAction): AppAct
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function mapWorkspace(state: AppState, id: string, fn: (w: Workspace) => Workspace): AppState {
   return { ...state, workspaces: state.workspaces.map((w) => (w.id === id ? fn(w) : w)) }
+}
+
+function refreshNotificationMarkers(state: AppState): AppState {
+  return {
+    ...state,
+    workspaces: state.workspaces.map((workspace) => {
+      const counts = workspaceNotificationCounts(state.notifications, workspace.id)
+      return workspace.unread === counts.unread > 0
+        ? workspace
+        : { ...workspace, unread: counts.unread > 0 }
+    })
+  }
+}
+
+function resolveNotificationsForSurface(
+  notifications: readonly InboxNotification[],
+  surfaceId: string
+): InboxNotification[] {
+  return notifications.map((notification) =>
+    notification.surfaceId === surfaceId && !notification.resolved
+      ? { ...notification, unread: false, resolved: true }
+      : notification
+  )
 }
 
 function refreshAgentAttention(state: AppState): AppState {
@@ -228,25 +281,57 @@ function reportAgent(state: AppState, report: AgentReport): AppState {
   else agents.push(record)
 
   const unread = report.state === 'blocked' || report.state === 'done'
+  const previousWasNotifying = previous?.state === 'blocked' || previous?.state === 'done'
+  const eventChanged =
+    !previous || previous.state !== report.state || previous.message !== report.message
+  let notifications = state.notifications
+  if (unread && eventChanged) {
+    notifications = addInboxNotification(notifications, {
+      id: `agent:${report.agentId}:${revision}`,
+      workspaceId: report.workspaceId,
+      surfaceId: report.surfaceId,
+      subjectId: report.agentId,
+      title: report.displayName,
+      body:
+        report.message ??
+        (report.state === 'blocked' ? 'Waiting for your attention' : 'Completed work'),
+      source: 'agent',
+      severity: report.state === 'blocked' ? 'attention' : 'info',
+      createdAt: report.updatedAt
+    })
+  } else if (!unread && previousWasNotifying) {
+    notifications = resolveNotificationsForSubject(notifications, report.agentId)
+  }
   const next: AppState = {
     ...state,
     agents,
+    notifications,
     workspaces: state.workspaces.map((candidate) =>
-      candidate.id === report.workspaceId && candidate.id !== state.activeWorkspaceId && unread
-        ? { ...candidate, agentUnread: true }
+      candidate.id === report.workspaceId && unread
+        ? {
+            ...candidate,
+            agentUnread: candidate.id !== state.activeWorkspaceId || candidate.agentUnread,
+            attentionPulse:
+              report.state === 'blocked' && eventChanged
+                ? candidate.attentionPulse + 1
+                : candidate.attentionPulse
+          }
         : candidate
     )
   }
-  return refreshAgentAttention(next)
+  return refreshNotificationMarkers(refreshAgentAttention(next))
 }
 
 function clearAgent(state: AppState, id: string, source?: string): AppState {
   const target = state.agents.find((agent) => agent.agentId === id)
   if (!target || (source !== undefined && target.source !== source)) return state
-  return refreshAgentAttention({
-    ...state,
-    agents: state.agents.filter((agent) => agent.agentId !== id)
-  })
+  return refreshNotificationMarkers(
+    refreshAgentAttention({
+      ...state,
+      agents: state.agents.filter((agent) => agent.agentId !== id),
+      notifications: resolveNotificationsForSubject(state.notifications, id)
+    })
+  )
 }
 
 export function appReducer(state: AppState, action: AppAction): AppState {
@@ -260,17 +345,17 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'selectWorkspace': {
       if (!state.workspaces.some((w) => w.id === action.id)) return state
-      // Looking at a workspace clears its unread/attention.
+      // Navigation is not acknowledgement. The explicit mark-read action clears
+      // pending badges after the user has reviewed the destination.
       return {
         activeWorkspaceId: action.id,
         agents: state.agents,
+        notifications: state.notifications,
         workspaces: state.workspaces.map((w) =>
           w.id === action.id
             ? {
                 ...w,
-                unread: false,
                 attention: false,
-                agentUnread: false,
                 agentAttention: false
               }
             : {
@@ -291,7 +376,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return refreshAgentAttention({
         workspaces,
         activeWorkspaceId,
-        agents: state.agents.filter((agent) => agent.workspaceId !== action.id)
+        agents: state.agents.filter((agent) => agent.workspaceId !== action.id),
+        notifications: state.notifications.filter(
+          (notification) => notification.workspaceId !== action.id
+        )
       })
     }
 
@@ -334,6 +422,55 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         attention: action.attention ?? w.attention
       }))
 
+    case 'receiveNotification': {
+      const workspace = state.workspaces.find(
+        (candidate) => candidate.id === action.notification.workspaceId
+      )
+      if (!workspace) return state
+      const notification =
+        action.notification.surfaceId &&
+        !findPaneBySurfaceId(workspace.root, action.notification.surfaceId)
+          ? { ...action.notification, surfaceId: null }
+          : action.notification
+      const notifications = addInboxNotification(state.notifications, notification)
+      return refreshNotificationMarkers({
+        ...state,
+        notifications,
+        workspaces: state.workspaces.map((candidate) =>
+          candidate.id === notification.workspaceId && notification.severity === 'attention'
+            ? {
+                ...candidate,
+                attention: true,
+                attentionPulse: candidate.attentionPulse + 1
+              }
+            : candidate
+        )
+      })
+    }
+
+    case 'markWorkspaceNotificationsRead':
+      return refreshNotificationMarkers({
+        ...state,
+        notifications: markWorkspaceNotificationsRead(state.notifications, action.id),
+        workspaces: state.workspaces.map((workspace) =>
+          workspace.id === action.id
+            ? { ...workspace, attention: false, agentUnread: false }
+            : workspace
+        )
+      })
+
+    case 'resolveNotification':
+      return refreshNotificationMarkers({
+        ...state,
+        notifications: resolveNotification(state.notifications, action.id)
+      })
+
+    case 'clearResolvedNotifications':
+      return refreshNotificationMarkers({
+        ...state,
+        notifications: clearResolvedNotifications(state.notifications)
+      })
+
     case 'reportUsage':
       return mapWorkspace(state, action.id, (w) => ({
         ...w,
@@ -348,16 +485,19 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'clearAgentsForSurface': {
       const agents = state.agents.filter((agent) => agent.surfaceId !== action.surfaceId)
-      return agents.length === state.agents.length
+      const notifications = resolveNotificationsForSurface(state.notifications, action.surfaceId)
+      return agents.length === state.agents.length && notifications === state.notifications
         ? state
-        : refreshAgentAttention({ ...state, agents })
+        : refreshNotificationMarkers(refreshAgentAttention({ ...state, agents, notifications }))
     }
 
     case 'expireAgents': {
       let changed = false
+      const clearedSubjects: string[] = []
       const agents = state.agents.flatMap((agent) => {
         if (agent.expiresAt !== undefined && agent.expiresAt <= action.now) {
           changed = true
+          clearedSubjects.push(agent.agentId)
           return []
         }
         if (
@@ -366,6 +506,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           agent.state !== 'unknown'
         ) {
           changed = true
+          clearedSubjects.push(agent.agentId)
           const staleAgent: AgentRecord = {
             ...agent,
             state: 'unknown',
@@ -377,7 +518,62 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         }
         return [agent]
       })
-      return changed ? refreshAgentAttention({ ...state, agents }) : state
+      if (!changed) return state
+      let notifications = state.notifications
+      for (const subjectId of clearedSubjects) {
+        notifications = resolveNotificationsForSubject(notifications, subjectId)
+      }
+      return refreshNotificationMarkers(refreshAgentAttention({ ...state, agents, notifications }))
+    }
+
+    case 'focusNotification': {
+      const notification = state.notifications.find((candidate) => candidate.id === action.id)
+      if (!notification || notification.resolved) return state
+      const workspace = state.workspaces.find(
+        (candidate) => candidate.id === notification.workspaceId
+      )
+      if (!workspace) return state
+      const pane = notification.surfaceId
+        ? findPaneBySurfaceId(workspace.root, notification.surfaceId)
+        : null
+      const previousSurfaceId = findPane(workspace.root, workspace.activePaneId)?.activeSurfaceId
+      let focused: WorkspaceState = { root: workspace.root, activePaneId: workspace.activePaneId }
+      if (pane && notification.surfaceId) {
+        focused = workspaceReducer(focused, { type: 'setActivePane', paneId: pane.id })
+        focused = workspaceReducer(focused, {
+          type: 'setActiveSurface',
+          paneId: pane.id,
+          surfaceId: notification.surfaceId
+        })
+      }
+      const notifications = state.notifications.map((candidate) =>
+        candidate.id === action.id ? { ...candidate, unread: false } : candidate
+      )
+      return refreshNotificationMarkers(
+        refreshAgentAttention({
+          ...state,
+          activeWorkspaceId: workspace.id,
+          notifications,
+          workspaces: state.workspaces.map((candidate) =>
+            candidate.id === workspace.id
+              ? {
+                  ...candidate,
+                  ...focused,
+                  ...(notification.surfaceId && previousSurfaceId !== notification.surfaceId
+                    ? {
+                        projectName: workspaceProjectName(candidate.cwd),
+                        gitRoot: null,
+                        gitBranch: null,
+                        metadataSurfaceId: null
+                      }
+                    : {}),
+                  attention: false,
+                  agentAttention: false
+                }
+              : candidate
+          )
+        })
+      )
     }
 
     case 'focusAgent': {
@@ -393,30 +589,33 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         paneId: agent.paneId,
         surfaceId: agent.surfaceId
       })
-      return refreshAgentAttention({
-        ...state,
-        activeWorkspaceId: workspace.id,
-        workspaces: state.workspaces.map((candidate) =>
-          candidate.id === workspace.id
-            ? {
-                ...candidate,
-                ...focused,
-                ...(previousSurfaceId !== agent.surfaceId
-                  ? {
-                      projectName: workspaceProjectName(candidate.cwd),
-                      gitRoot: null,
-                      gitBranch: null,
-                      metadataSurfaceId: null
-                    }
-                  : {}),
-                unread: false,
-                attention: false,
-                agentUnread: false,
-                agentAttention: false
-              }
-            : candidate
-        )
-      })
+      return refreshNotificationMarkers(
+        refreshAgentAttention({
+          ...state,
+          activeWorkspaceId: workspace.id,
+          notifications: markWorkspaceNotificationsRead(state.notifications, workspace.id),
+          workspaces: state.workspaces.map((candidate) =>
+            candidate.id === workspace.id
+              ? {
+                  ...candidate,
+                  ...focused,
+                  ...(previousSurfaceId !== agent.surfaceId
+                    ? {
+                        projectName: workspaceProjectName(candidate.cwd),
+                        gitRoot: null,
+                        gitBranch: null,
+                        metadataSurfaceId: null
+                      }
+                    : {}),
+                  unread: false,
+                  attention: false,
+                  agentUnread: false,
+                  agentAttention: false
+                }
+              : candidate
+          )
+        })
+      )
     }
 
     case 'pane': {
@@ -442,12 +641,29 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       const workspace = next.workspaces.find((candidate) => candidate.id === action.workspaceId)
       if (!workspace) return next
       const surfaces = new Set(listSurfaceIds(workspace.root))
-      return refreshAgentAttention({
-        ...next,
-        agents: next.agents.filter(
-          (agent) => agent.workspaceId !== action.workspaceId || surfaces.has(agent.surfaceId)
-        )
-      })
+      const removedSurfaceIds = new Set(
+        listSurfaceIds(
+          state.workspaces.find((candidate) => candidate.id === action.workspaceId)?.root ??
+            workspace.root
+        ).filter((surfaceId) => !surfaces.has(surfaceId))
+      )
+      const notifications = next.notifications.map((notification) =>
+        notification.workspaceId === action.workspaceId &&
+        notification.surfaceId !== null &&
+        removedSurfaceIds.has(notification.surfaceId) &&
+        !notification.resolved
+          ? { ...notification, unread: false, resolved: true }
+          : notification
+      )
+      return refreshNotificationMarkers(
+        refreshAgentAttention({
+          ...next,
+          notifications,
+          agents: next.agents.filter(
+            (agent) => agent.workspaceId !== action.workspaceId || surfaces.has(agent.surfaceId)
+          )
+        })
+      )
     }
 
     default:

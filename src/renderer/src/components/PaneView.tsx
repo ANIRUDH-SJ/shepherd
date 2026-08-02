@@ -16,6 +16,7 @@ interface Props {
   canClosePane: boolean
   rect: Rect
   active: boolean
+  attentionPulse: number
   workspaceActive: boolean
   workspaceId: string
   workspaceCwd: string
@@ -29,6 +30,7 @@ export default function PaneView({
   canClosePane,
   rect,
   active,
+  attentionPulse,
   workspaceActive,
   workspaceId,
   workspaceCwd,
@@ -76,6 +78,13 @@ export default function PaneView({
           />
         ))}
       </div>
+      {attentionPulse > 0 && (
+        <div
+          key={`attention-${attentionPulse}`}
+          className="pane-attention-ring"
+          aria-hidden="true"
+        />
+      )}
     </div>
   )
 }

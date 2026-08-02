@@ -138,10 +138,13 @@ assert(active(s).usage.latest?.timestamp === 2, 'latest usage report is retained
 s = appReducer(s, { type: 'setAttention', id: firstWs, unread: true, attention: true })
 assert(s.workspaces.find((w) => w.id === firstWs)!.attention, 'first workspace flagged attention')
 
-// selecting it clears attention
+// Navigation clears the transient pulse request but does not silently acknowledge
+// stable unread state; the explicit mark-read action owns acknowledgement.
 s = appReducer(s, { type: 'selectWorkspace', id: firstWs })
 assert(s.activeWorkspaceId === firstWs, 'selected first workspace')
-assert(!active(s).attention && !active(s).unread, 'selecting clears unread + attention')
+assert(!active(s).attention && active(s).unread, 'selection preserves unread state')
+s = appReducer(s, { type: 'markWorkspaceNotificationsRead', id: firstWs })
+assert(!active(s).unread, 'explicit mark-read clears workspace unread state')
 
 // pane action (split) targets ONLY the active workspace's tree
 const firstPaneId = active(s).activePaneId
@@ -155,6 +158,53 @@ assert(
 // setStatus
 s = appReducer(s, { type: 'setStatus', id: firstWs, status: 'Claude is waiting for your input' })
 assert(active(s).status === 'Claude is waiting for your input', 'status subtitle set')
+
+// Notification inbox: bounded domain state receives source-aware events, deduplicates
+// equivalent sources, navigates exactly, and separates read from resolved.
+let inboxState = initialApp()
+const inboxWorkspace = inboxState.workspaces[0]
+const inboxSurfaceId = listSurfaceIds(inboxWorkspace.root)[0]
+inboxState = appReducer(inboxState, createWorkspaceAction('other'))
+const notification = {
+  id: 'notice-1',
+  workspaceId: inboxWorkspace.id,
+  surfaceId: inboxSurfaceId,
+  subjectId: null,
+  title: 'Build',
+  body: 'Waiting for approval',
+  source: 'socket' as const,
+  severity: 'attention' as const,
+  createdAt: 1_000
+}
+inboxState = appReducer(inboxState, { type: 'receiveNotification', notification })
+assert(inboxState.notifications.length === 1, 'notification enters the app inbox')
+assert(
+  inboxState.workspaces.find((w) => w.id === inboxWorkspace.id)!.attentionPulse === 1,
+  'attention arrival increments one pane pulse'
+)
+assert(
+  inboxState.workspaces.find((w) => w.id === inboxWorkspace.id)!.unread,
+  'notification creates a stable workspace unread marker'
+)
+inboxState = appReducer(inboxState, {
+  type: 'receiveNotification',
+  notification: { ...notification, id: 'notice-osc', source: 'osc', createdAt: 1_100 }
+})
+assert(inboxState.notifications.length === 1, 'equivalent sources deduplicate in app state')
+assert(inboxState.notifications[0].occurrences === 2, 'deduplicated occurrence is retained')
+inboxState = appReducer(inboxState, { type: 'selectWorkspace', id: inboxWorkspace.id })
+assert(
+  inboxState.workspaces.find((w) => w.id === inboxWorkspace.id)!.unread,
+  'navigation alone does not acknowledge a notification'
+)
+inboxState = appReducer(inboxState, { type: 'focusNotification', id: 'notice-1' })
+assert(inboxState.activeWorkspaceId === inboxWorkspace.id, 'notification jump selects workspace')
+assert(!inboxState.notifications[0].unread, 'notification jump acknowledges the selected item')
+assert(!inboxState.notifications[0].resolved, 'notification jump keeps the item pending')
+inboxState = appReducer(inboxState, { type: 'resolveNotification', id: 'notice-1' })
+assert(inboxState.notifications[0].resolved, 'resolve distinguishes cleared work from reading')
+inboxState = appReducer(inboxState, { type: 'clearResolvedNotifications' })
+assert(inboxState.notifications.length === 0, 'cleared notification history can be removed')
 
 // close a workspace
 s = appReducer(s, { type: 'closeWorkspace', id: secondWs })
@@ -201,6 +251,7 @@ const blockedReport: AgentReport = {
 }
 agentsState = appReducer(agentsState, { type: 'reportAgent', report: blockedReport })
 assert(agentsState.agents.length === 1, 'agent report creates a record')
+assert(agentsState.notifications.length === 1, 'blocked agent creates a pending notification')
 assert(agentsState.agents[0].paneId === agentWorkspace.activePaneId, 'agent binds to owning pane')
 assert(
   agentsState.workspaces.find((w) => w.id === agentWorkspace.id)!.agentAttention,
@@ -245,6 +296,7 @@ agentsState = appReducer(agentsState, {
     expiresAt: 50
   }
 })
+assert(agentsState.notifications[0].resolved, 'working transition resolves blocked lifecycle item')
 agentsState = appReducer(agentsState, { type: 'expireAgents', now: 49 })
 assert(agentsState.agents.length === 1, 'agent remains before expiry')
 agentsState = appReducer(agentsState, { type: 'expireAgents', now: 50 })
@@ -361,6 +413,28 @@ assert(restored!.workspaces[0].unread === false, 'transient flags are reset on r
 assert(restored!.workspaces[0].usage.totals.reportCount === 0, 'usage is reset on restore')
 assert(restored!.workspaces[0].usage.latest === null, 'latest usage is reset on restore')
 assert(restored!.agents.length === 0, 'agent lifecycle state is reset on restore')
+
+let notificationSnapshotState = initialApp()
+const persistedWorkspace = notificationSnapshotState.workspaces[0]
+notificationSnapshotState = appReducer(notificationSnapshotState, {
+  type: 'receiveNotification',
+  notification: {
+    id: 'persisted-notice',
+    workspaceId: persistedWorkspace.id,
+    surfaceId: listSurfaceIds(persistedWorkspace.root)[0],
+    subjectId: null,
+    title: 'Long task',
+    body: 'Finished while away',
+    source: 'osc',
+    severity: 'info',
+    createdAt: 100
+  }
+})
+const restoredNotifications = sanitizeRestored(
+  JSON.parse(JSON.stringify(toLayoutSnapshot(notificationSnapshotState)))
+)
+assert(restoredNotifications?.notifications.length === 1, 'pending inbox survives session restore')
+assert(Boolean(restoredNotifications?.workspaces[0].unread), 'restored inbox rebuilds unread marker')
 
 // Startup is a deliberate one-workspace boundary. Older snapshots may contain
 // several workspaces, but only the previously active workspace is resumed.
