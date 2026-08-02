@@ -188,6 +188,8 @@ not a permanent AI dashboard.
 
 **Depends on:** PRs 1–2.
 
+**Status:** implemented and verified on `feat/neutral-ui-theme`.
+
 **Goal:** remove the blue/purple AI-dashboard palette while keeping meaning,
 accessibility, and theme extension points.
 
@@ -209,6 +211,10 @@ accessibility, and theme extension points.
 2. `ui: neutralize shell palette and geometry`
 3. `ui: reserve accent and motion for semantic state`
 4. `docs: explain neutral terminal-first theming`
+
+Delivery also includes `ui: unify keyboard focus treatment`, a live-audit fix
+that replaces Chromium's default focus ring on secondary native controls with
+the shared accessible focus token.
 
 ### Focused verification
 
@@ -355,7 +361,7 @@ building a general-purpose browser platform.
 - [x] No generic `Pane N · Terminal N` copy in permanent top-level chrome.
 - [x] No ordinary pane rendered as a rounded dashboard card.
 - [x] No accent ring used as the default active-pane treatment.
-- [ ] No repeated project, workspace, branch, and agent information across several rows.
+- [x] No repeated project, workspace, branch, and agent information across several rows.
 - [x] Secondary controls appear on hover/focus without becoming undiscoverable.
 - [x] Empty space belongs to the terminal, not placeholder panels.
 - [x] Narrow layouts truncate intentionally and preserve actions.

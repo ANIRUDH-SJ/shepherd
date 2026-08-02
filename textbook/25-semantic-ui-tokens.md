@@ -35,17 +35,17 @@ cannot be changed safely as one global search-and-replace.
 Primitive tokens describe a value:
 
 ```css
---blue-500: #4f7ee8;
---gray-900: #111218;
+--blue-500: #6d9eff;
+--gray-900: #101010;
 ```
 
 Semantic tokens describe intent:
 
 ```css
---color-sidebar: #111218;
---color-focus: #9bbcff;
---color-selection: #234fbd;
---color-info: #76aef8;
+--color-sidebar: #101010;
+--color-focus: #8db5ff;
+--color-selection: #1f4678;
+--color-info: #6c9ee8;
 ```
 
 Shepherd uses semantic tokens directly because the UI is still one dark theme.
@@ -79,7 +79,7 @@ resolved at render time:
 
 ```css
 :root {
-  --color-border: #282b34;
+  --color-border: #292929;
 }
 .pane {
   border-color: var(--color-border);
@@ -153,9 +153,10 @@ The scale is not a command to replace every numeric value. Typography, icon
 optical alignment, and divider hit targets can require deliberate exceptions.
 Tokens cover repeated rhythm; exceptional geometry stays local and reviewable.
 
-Radii follow the same rule: small for inline controls, medium for rows/tabs, and
-large for workspace selection and popovers. This avoids the “every element is a
-different rounded card” look.
+Radii follow the same rule but stay deliberately restrained: 3px for compact
+rows, 4px for normal controls, and 6px for the rare larger container. Terminal
+panes remain square. Shadows belong to transient popovers, not permanent shell
+surfaces. This avoids the “every element is a different rounded card” look.
 
 ## 8. Motion and reduced motion
 
@@ -184,9 +185,16 @@ raw color literals appear only in :root
 reduced-motion rule remains present
 ```
 
-This does not prove that a palette is beautiful or that contrast meets every
-target. It prevents the most common code-level regressions and keeps visual review
-focused on actual design decisions.
+The M26 regression goes further. It parses RGB tokens, asserts that every shell
+surface has nearly equal red/green/blue channels, and computes contrast ratios
+for primary, secondary, muted, and focus pairs. It also checks semantic ownership:
+ordinary hover must use a neutral surface while blocked, working, and idle states
+must consume danger, working, and success roles.
+
+These checks prove boundaries and measurable contrast, not that a palette is
+beautiful or that every composition is legible. Live screenshots and keyboard
+checks remain necessary for hierarchy, clipping, simultaneous states, disabled
+controls, and browser focus behavior.
 
 Pixel screenshots remain useful for checking hierarchy, clipping, and accidental
 layout changes. They complement rather than replace semantic assertions.
@@ -201,6 +209,19 @@ create confusing overlays or content-obscuring UI even without script execution.
 Future user themes should validate against a fixed allowlist of token names and
 bounded CSS color formats. They should not load arbitrary stylesheets into the
 privileged application renderer.
+
+### The terminal palette is a separate trust and ownership boundary
+
+The shell token contract does not own xterm colors. `terminalTheme.ts` exports a
+frozen `ITheme`-compatible object for the terminal background, foreground,
+cursor, and selection. `TerminalHost.tsx` supplies that object directly when it
+constructs xterm.
+
+Keeping these graphs separate prevents a UI theme edit from changing ANSI color
+meaning or making the cursor and selection unreadable. It also creates the right
+extension seam: a validated terminal-theme setting can replace the xterm object,
+while shell themes continue to override semantic CSS roles. Neither path needs
+arbitrary stylesheet injection.
 
 ## 11. Failure behavior
 
@@ -228,8 +249,10 @@ The architecture enables later work without promising it today:
 - automated contrast checks against token pairs; and
 - component-scoped overrides for compact or spacious density.
 
-The next Shepherd UI phases consume this contract to improve sidebar hierarchy
-and terminal focus without reopening palette ownership.
+The neutral shell, flat sidebar, and compact terminal chrome now consume this
+contract. Notification, metadata, utility, and preview phases can add meaning
+without reopening palette ownership: new permanent surfaces stay neutral, and
+new colors require a semantic role with accessible non-color context.
 
 ## Checkpoint
 

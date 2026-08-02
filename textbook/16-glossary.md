@@ -204,6 +204,10 @@
 
 ## T
 
+- **terminal theme boundary** — The frozen xterm color contract in
+  `terminalTheme.ts`, kept independent from Shepherd's semantic shell tokens so
+  navigation styling cannot silently change terminal output, cursor, or
+  selection colors. (see 25-semantic-ui-tokens.md; 07-xtermjs.md)
 - **terminal chrome** — The compact workspace strip, tab rows, dividers, and
   contextual controls surrounding terminal content. It provides navigation and
   capabilities without owning PTY state. (see 27-terminal-interaction-design.md)

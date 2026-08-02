@@ -48,7 +48,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M23** — Safe clickable terminal URLs, OSC 8 links, and local file references ✓
 - [x] **M24** — Minimal, flat workspace sidebar ✓
 - [x] **M25** — Minimal terminal tabs, headers, panes, and controls ✓
-- [ ] **M26** — Neutral terminal-first theme and semantic interaction states
+- [x] **M26** — Neutral terminal-first theme and semantic interaction states ✓
 - [ ] **M27** — Notification center, meaningful rings, and jump-to-unread
 - [ ] **M28** — Compact pull-request and listening-port workspace metadata
 - [ ] **M29** — Terminal find, command palette, contextual help, and settings entry
@@ -496,7 +496,7 @@ shell, then add only the cmux-inspired context and utilities that remain useful.
 
 - [x] **M24:** remove permanent agent/shortcut furniture and flatten the workspace sidebar
 - [x] **M25:** compact workspace/tab chrome and remove ordinary pane-card styling
-- [ ] **M26:** neutralize the palette and reserve accent/motion for semantic state
+- [x] **M26:** neutralize the palette and reserve accent/motion for semantic state
 - [ ] **M27:** add bounded pending notifications, meaningful rings, and unread navigation
 - [ ] **M28:** add reliable, compact PR and listening-port metadata
 - [ ] **M29:** replace shortcut furniture with terminal find, palette, help, and settings
