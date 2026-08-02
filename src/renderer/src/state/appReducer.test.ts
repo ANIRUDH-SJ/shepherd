@@ -79,11 +79,15 @@ metadataState = appReducer(metadataState, {
     cwd: '/projects/shepherd/src',
     projectName: 'shepherd',
     gitRoot: '/projects/shepherd',
-    gitBranch: 'main'
+    gitBranch: 'main',
+    pullRequest: { number: 48, state: 'open', url: 'https://github.com/o/r/pull/48' },
+    ports: [3000, 8080]
   }
 })
 assert(active(metadataState).projectName === 'shepherd', 'applies live project metadata')
 assert(active(metadataState).gitBranch === 'main', 'applies a live Git branch')
+assert(active(metadataState).pullRequest?.number === 48, 'applies live pull request context')
+assert(active(metadataState).ports.join(',') === '3000,8080', 'applies listening ports')
 assert(active(metadataState).cwd === '/projects/shepherd/src', 'updates the workspace cwd after cd')
 const metadataBeforeStale = active(metadataState)
 metadataState = appReducer(metadataState, {
@@ -94,7 +98,9 @@ metadataState = appReducer(metadataState, {
     cwd: '/tmp/stale',
     projectName: 'stale',
     gitRoot: null,
-    gitBranch: null
+    gitBranch: null,
+    pullRequest: null,
+    ports: []
   }
 })
 assert(active(metadataState) === metadataBeforeStale, 'ignores metadata from a non-active terminal')
@@ -107,6 +113,8 @@ assert(
   'clears metadata ownership on surface change'
 )
 assert(active(metadataState).gitBranch === null, 'clears stale branch data on surface change')
+assert(active(metadataState).pullRequest === null, 'clears stale pull request on surface change')
+assert(active(metadataState).ports.length === 0, 'clears stale ports on surface change')
 
 const exactUsage: UsageReport = {
   inputTokens: 1000,
@@ -434,7 +442,10 @@ const restoredNotifications = sanitizeRestored(
   JSON.parse(JSON.stringify(toLayoutSnapshot(notificationSnapshotState)))
 )
 assert(restoredNotifications?.notifications.length === 1, 'pending inbox survives session restore')
-assert(Boolean(restoredNotifications?.workspaces[0].unread), 'restored inbox rebuilds unread marker')
+assert(
+  Boolean(restoredNotifications?.workspaces[0].unread),
+  'restored inbox rebuilds unread marker'
+)
 
 // Startup is a deliberate one-workspace boundary. Older snapshots may contain
 // several workspaces, but only the previously active workspace is resumed.

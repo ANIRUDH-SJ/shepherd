@@ -10,6 +10,11 @@ import {
 } from '../shared/workspaceMetadata'
 import { AdaptivePollingLoop } from './adaptivePolling'
 import {
+  discoverListeningPorts,
+  normalizeListeningPorts,
+  probePullRequest
+} from './workspaceContext'
+import {
   listTerminalProcessContexts,
   subscribeTerminalInspectionActivity,
   type TerminalInspectionActivity,
@@ -21,6 +26,8 @@ export const WORKSPACE_METADATA_ACTIVE_POLL_MS = 750
 export const WORKSPACE_METADATA_QUIET_POLL_MS = 3_000
 export const WORKSPACE_METADATA_HIDDEN_POLL_MS = 15_000
 export const WORKSPACE_METADATA_BURST_MS = 5_000
+export const PULL_REQUEST_REFRESH_MS = 30_000
+export const LISTENING_PORT_REFRESH_MS = 5_000
 
 interface GitLocation {
   root: string
@@ -32,6 +39,9 @@ interface CachedWorkspaceMetadata {
   cwd: string
   git: GitLocation | null
   probedAt: number
+  pullRequestContext: string | null
+  pullRequestProbedAt: number
+  portsProbedAt: number
   metadata: WorkspaceMetadata
 }
 
@@ -40,6 +50,8 @@ type WorkspaceTarget = WorkspacesSync['workspaces'][number]
 export interface WorkspaceMetadataDependencies {
   probeGit(cwd: string): Promise<GitLocation | null>
   readGitHead(gitDir: string): string | null
+  probePullRequest(cwd: string): Promise<WorkspaceMetadata['pullRequest']>
+  probeListeningPorts(shellPid: number): Promise<number[]>
   home: string
 }
 
@@ -88,6 +100,12 @@ function readGitHead(gitDir: string): string | null {
   }
 }
 
+function probePorts(shellPid: number): Promise<number[]> {
+  return new Promise((resolve) => {
+    setImmediate(() => resolve(discoverListeningPorts(shellPid)))
+  })
+}
+
 function inside(root: string, cwd: string): boolean {
   const child = relative(root, cwd)
   return child === '' || (!child.startsWith('..') && !isAbsolute(child))
@@ -98,6 +116,8 @@ function makeMetadata(
   cwd: string,
   git: GitLocation | null,
   branch: string | null,
+  pullRequest: WorkspaceMetadata['pullRequest'],
+  ports: number[],
   home: string
 ): WorkspaceMetadata {
   return {
@@ -105,7 +125,9 @@ function makeMetadata(
     cwd,
     projectName: workspaceProjectName(cwd, git?.root, home),
     gitRoot: git?.root ?? null,
-    gitBranch: branch
+    gitBranch: branch,
+    pullRequest,
+    ports
   }
 }
 
@@ -119,6 +141,8 @@ export class WorkspaceMetadataDiscovery {
     private readonly dependencies: WorkspaceMetadataDependencies = {
       probeGit,
       readGitHead,
+      probePullRequest,
+      probeListeningPorts: probePorts,
       home: homedir()
     }
   ) {}
@@ -193,8 +217,46 @@ export class WorkspaceMetadataDiscovery {
 
     if (this.targets.get(workspaceId) !== surfaceId) return
     const branch = head === null ? null : branchFromGitHead(head, previous?.metadata.gitBranch)
-    const metadata = makeMetadata(surfaceId, context.cwd, git, branch, this.dependencies.home)
-    this.cache.set(workspaceId, { surfaceId, cwd: context.cwd, git, probedAt, metadata })
+    const pullRequestContext =
+      git && branch && !branch.startsWith('detached@') ? `${git.root}\u0000${branch}` : null
+    const shouldProbePullRequest =
+      pullRequestContext !== null &&
+      (previous?.pullRequestContext !== pullRequestContext ||
+        now - (previous?.pullRequestProbedAt ?? 0) >= PULL_REQUEST_REFRESH_MS)
+    const shouldProbePorts =
+      previous?.surfaceId !== surfaceId ||
+      now - (previous?.portsProbedAt ?? 0) >= LISTENING_PORT_REFRESH_MS
+    const [pullRequest, ports] = await Promise.all([
+      shouldProbePullRequest
+        ? this.dependencies.probePullRequest(git?.root ?? context.cwd)
+        : Promise.resolve(
+            pullRequestContext === null ? null : (previous?.metadata.pullRequest ?? null)
+          ),
+      shouldProbePorts
+        ? this.dependencies.probeListeningPorts(context.shellPid)
+        : Promise.resolve(previous?.metadata.ports ?? [])
+    ])
+
+    if (this.targets.get(workspaceId) !== surfaceId) return
+    const metadata = makeMetadata(
+      surfaceId,
+      context.cwd,
+      git,
+      branch,
+      pullRequest,
+      normalizeListeningPorts(ports),
+      this.dependencies.home
+    )
+    this.cache.set(workspaceId, {
+      surfaceId,
+      cwd: context.cwd,
+      git,
+      probedAt,
+      pullRequestContext,
+      pullRequestProbedAt: shouldProbePullRequest ? now : (previous?.pullRequestProbedAt ?? 0),
+      portsProbedAt: shouldProbePorts ? now : (previous?.portsProbedAt ?? 0),
+      metadata
+    })
     if (sameWorkspaceMetadata(previous?.metadata, metadata)) return
     this.emit({ method: 'workspace-metadata', workspaceId, params: { metadata } })
   }
@@ -208,9 +270,7 @@ export interface WorkspaceMetadataRuntime {
 
 interface WorkspaceMetadataRuntimeOptions {
   listContexts?: () => TerminalProcessContext[]
-  subscribeActivity?: (
-    listener: (activity: TerminalInspectionActivity) => void
-  ) => () => void
+  subscribeActivity?: (listener: (activity: TerminalInspectionActivity) => void) => () => void
   dependencies?: WorkspaceMetadataDependencies
   now?: () => number
   schedule?: (task: () => void, delayMs: number) => () => void
@@ -231,11 +291,11 @@ export function startWorkspaceMetadataDiscovery(
     now,
     ...(options.schedule ? { schedule: options.schedule } : {})
   })
-  const unsubscribeActivity = (
-    options.subscribeActivity ?? subscribeTerminalInspectionActivity
-  )((activity) => {
-    if (activity.kind !== 'output') loop.trigger()
-  })
+  const unsubscribeActivity = (options.subscribeActivity ?? subscribeTerminalInspectionActivity)(
+    (activity) => {
+      if (activity.kind !== 'output') loop.trigger()
+    }
+  )
   loop.start()
   return {
     updateWorkspaces: (workspaces) => {
