@@ -122,7 +122,11 @@ function rule(selector: string): string {
 
 assert(rule('.ws-row:hover').includes('var(--color-surface-hover)'), 'ordinary hover is neutral')
 assert(rule('.ws-row.active').includes('var(--color-selection)'), 'selection owns accent usage')
-assert(rule('.ws-row.attention').includes('ws-flash'), 'attention owns repeating motion')
+assert(
+  rule('.pane-attention-ring').includes('pane-attention-pulse'),
+  'attention owns one bounded pane pulse'
+)
+assert(!componentCss.includes('infinite'), 'no shell attention state animates indefinitely')
 assert(
   rule('.ws-agent.state-blocked').includes('var(--color-danger)'),
   'blocked state owns failure color'

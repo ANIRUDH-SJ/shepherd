@@ -74,6 +74,9 @@ export default function WorkspaceView({
             canClosePane={panes.length > 1}
             rect={rect}
             active={pane.id === workspace.activePaneId}
+            attentionPulse={
+              pane.id === workspace.activePaneId ? workspace.attentionPulse : 0
+            }
             workspaceActive={active}
             workspaceId={workspace.id}
             workspaceCwd={workspace.cwd}
