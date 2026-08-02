@@ -128,6 +128,8 @@ Think of the book in five "acts":
   xterm cell geometry, validated IPC activation, and desktop-opening security.
 - `36-context-from-external-tools-and-proc.md` — optional external capabilities,
   bounded subprocess parsing, Linux socket ownership, semantic caching, and compact UI.
+- `37-keyboard-first-terminal-utilities.md` — terminal-safe shortcuts, bounded
+  xterm search, accessible command discovery, modal focus, and minimal settings.
 
 **Reference**
 
@@ -179,6 +181,7 @@ Think of the book in five "acts":
 | `34-product-identity-and-compatible-rebranding.md` | Identity contracts, precedence, state selection, dual sockets, managed migrations, packaging, and compatibility retirement                     | 03, 11, 13, 15         |
 | `35-safe-terminal-link-activation.md`              | URL/file/OSC 8 detection, xterm cell ranges, live cwd resolution, IPC trust boundaries, opening policy, failure handling, and testing          | 02, 04, 05, 06, 07, 33 |
 | `36-context-from-external-tools-and-proc.md`       | Optional CLI capabilities, bounded PR parsing, process-owned listening sockets, inherited descriptors, caching, races, and compact UI          | 03, 06, 09, 22, 23, 32 |
+| `37-keyboard-first-terminal-utilities.md`          | Typed commands, terminal-safe shortcuts, bounded xterm search, accessible palettes, modal focus, settings, and live interaction testing        | 07, 08, 25, 27         |
 
 ---
 
@@ -258,3 +261,4 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `34-product-identity-and-compatible-rebranding.md` — safe product identity migration and compatibility design
 - `35-safe-terminal-link-activation.md` — safe URL, OSC 8, and local-file activation from terminal output
 - `36-context-from-external-tools-and-proc.md` — reliable optional PR and process-owned port context
+- `37-keyboard-first-terminal-utilities.md` — terminal-safe commands, bounded find, modal focus, and settings

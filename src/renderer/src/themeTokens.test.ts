@@ -25,6 +25,7 @@ const requiredTokens = [
   '--color-text-muted',
   '--color-accent',
   '--color-focus',
+  '--color-backdrop',
   '--color-attention',
   '--color-danger',
   '--color-success',
