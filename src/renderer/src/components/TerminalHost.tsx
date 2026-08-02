@@ -14,7 +14,8 @@ import {
   MAX_TERMINAL_FIND_QUERY_LENGTH,
   normalizeTerminalFindQuery,
   terminalFindStatus,
-  TERMINAL_FIND_HIGHLIGHT_LIMIT
+  TERMINAL_FIND_HIGHLIGHT_LIMIT,
+  TERMINAL_FIND_TERMINAL_OPTIONS
 } from '../terminalFind'
 import { TERMINAL_THEME } from '../terminalTheme'
 import {
@@ -114,6 +115,7 @@ export default function TerminalHost({
     }
 
     const term = new Terminal({
+      ...TERMINAL_FIND_TERMINAL_OPTIONS,
       fontFamily: '"JetBrains Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace',
       fontSize: getFontSize(),
       scrollback: TERMINAL_SCROLLBACK_LINES,

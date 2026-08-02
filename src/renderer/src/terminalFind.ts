@@ -1,5 +1,6 @@
 export const MAX_TERMINAL_FIND_QUERY_LENGTH = 512
 export const TERMINAL_FIND_HIGHLIGHT_LIMIT = 1_000
+export const TERMINAL_FIND_TERMINAL_OPTIONS = { allowProposedApi: true } as const
 
 export function normalizeTerminalFindQuery(value: string): string {
   return [...value]
@@ -17,7 +18,7 @@ export function terminalFindStatus(
   resultCount: number
 ): string {
   if (!query) return 'Enter search text'
-  if (resultIndex < 0 && resultCount > TERMINAL_FIND_HIGHLIGHT_LIMIT) {
+  if (resultCount >= TERMINAL_FIND_HIGHLIGHT_LIMIT) {
     return `${TERMINAL_FIND_HIGHLIGHT_LIMIT}+ results`
   }
   if (resultCount < 1) return 'No results'
