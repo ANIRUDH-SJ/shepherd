@@ -276,6 +276,9 @@ snapshot contract with the settled implementation.
 
 **Goal:** match cmux's useful workspace context without adding dashboard panels.
 
+**Status:** implemented, documented, fully verified, and live-reviewed on
+`feat/workspace-pr-port-metadata` / PR #52. Merge is the remaining delivery step.
+
 ### Scope
 
 - Detect PR status through an optional authenticated `gh` capability.
@@ -285,12 +288,15 @@ snapshot contract with the settled implementation.
 - Cache and refresh without hot-path subprocess polling.
 - Keep GitHub optional and surface authentication errors only on explicit interaction.
 
-### Planned commits
+### Delivery commits
 
 1. `test: define workspace metadata contracts`
 2. `main: discover bounded pr and port context`
 3. `renderer: show compact workspace metadata`
-4. `docs: explain pr and port metadata`
+4. `main: exclude inherited shell listeners`
+5. `main: filter inherited listener descriptors`
+6. `renderer: prioritize live workspace context`
+7. `docs: explain pr and port metadata`
 
 ### Verification and documentation
 
