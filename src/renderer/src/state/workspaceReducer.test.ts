@@ -1,6 +1,11 @@
 import { findPane, makePane, makeSurface } from '../layout/tree'
 import type { LayoutNode } from '../layout/types'
-import { workspaceReducer, type WorkspaceState } from './workspaceReducer'
+import {
+  previewSplitAction,
+  updatePreviewUrlAction,
+  workspaceReducer,
+  type WorkspaceState
+} from './workspaceReducer'
 
 let failures = 0
 function assert(condition: boolean, message: string): void {
@@ -51,6 +56,35 @@ const invalidSurface = workspaceReducer(initial, {
   surfaceId: 'missing-surface'
 })
 assert(invalidSurface === initial, 'invalid surface selection leaves state unchanged')
+
+const previewSplit = workspaceReducer(
+  initial,
+  previewSplitAction(left.id, 'http://localhost:43140/')
+)
+const previewPane = findPane(previewSplit.root, previewSplit.activePaneId)
+const previewSurface = previewPane?.surfaces[0]
+assert(previewSplit.root.type === 'split', 'preview opens beside the terminal')
+assert(previewSurface?.panel.type === 'preview', 'preview split owns a preview panel')
+assert(
+  previewSurface?.panel.type === 'preview' &&
+    previewSurface.panel.url === 'http://localhost:43140/',
+  'preview stores the normalized local URL'
+)
+
+const navigated = workspaceReducer(
+  previewSplit,
+  updatePreviewUrlAction(previewSurface!.id, 'http://localhost:43140/next')
+)
+const navigatedPane = findPane(navigated.root, navigated.activePaneId)
+assert(
+  navigatedPane?.surfaces[0].panel.type === 'preview' &&
+    navigatedPane.surfaces[0].panel.url === 'http://localhost:43140/next',
+  'persists a safe preview navigation'
+)
+assert(
+  updatePreviewUrlAction(previewSurface!.id, 'https://example.com') === null,
+  'rejects an unsafe preview navigation action'
+)
 
 if (failures > 0) throw new Error(`${failures} workspace-reducer test(s) failed`)
 console.log('\n✅ ALL WORKSPACE REDUCER TESTS PASS')
