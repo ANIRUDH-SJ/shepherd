@@ -285,10 +285,10 @@ First, the shape we're producing. Keep these serialized types deliberately separ
 ```ts
 // shared/session-types.ts — the on-disk schema (v3)
 interface SerializedPanel {
-  type: 'terminal' | 'browser'
+  type: 'terminal' | 'preview'
   cwd?: string // terminals: the resolved working directory at save time
   scrollback?: string // terminals: optional @xterm/addon-serialize dump
-  url?: string // browser panels (future; FEATURES.md keeps the door open)
+  url?: string // preview panels: revalidated HTTP(S) loopback URL
 }
 interface SerializedSurface {
   id: string

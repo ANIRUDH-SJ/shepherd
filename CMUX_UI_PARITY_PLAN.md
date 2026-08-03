@@ -2,8 +2,9 @@
 
 ## Status
 
-Status: active delivery plan. Planning is the first PR; implementation follows in
-separate dependency-ordered PRs.
+Status: complete. Planning and all seven dependency-ordered implementation PRs
+(M24–M30) have been delivered with tests, screenshots, learning notes, and textbook
+updates.
 
 This plan responds to the current Shepherd UI reading like a generic AI dashboard:
 permanent agent furniture, shortcut cards, repeated metadata, rounded containers,
@@ -88,8 +89,7 @@ runtime behavior.
 **Goal:** make the sidebar a flat workspace list with contextual agent status,
 not a permanent AI dashboard.
 
-**Status:** implementation and documentation are complete on
-`feat/minimal-workspace-sidebar`; review and merge are the remaining delivery steps.
+**Status:** merged through PR #48.
 
 ### Scope
 
@@ -145,8 +145,7 @@ not a permanent AI dashboard.
 
 **Goal:** reduce the stacked-header and card-container appearance around the terminal.
 
-**Status:** implementation, live interaction proof, and documentation are complete on
-`feat/minimal-terminal-chrome`; review and merge are the remaining delivery steps.
+**Status:** merged through PR #49.
 
 ### Scope
 
@@ -188,7 +187,7 @@ not a permanent AI dashboard.
 
 **Depends on:** PRs 1–2.
 
-**Status:** implemented and verified on `feat/neutral-ui-theme`.
+**Status:** merged through PR #50.
 
 **Goal:** remove the blue/purple AI-dashboard palette while keeping meaning,
 accessibility, and theme extension points.
@@ -234,7 +233,7 @@ the shared accessible focus token.
 
 **Depends on:** PRs 1–3.
 
-**Status:** implemented and verified on `feat/notification-center`.
+**Status:** merged through PR #51.
 
 **Goal:** make attention obvious without restoring a permanent agent dashboard.
 
@@ -276,8 +275,7 @@ snapshot contract with the settled implementation.
 
 **Goal:** match cmux's useful workspace context without adding dashboard panels.
 
-**Status:** implemented, documented, fully verified, and live-reviewed on
-`feat/workspace-pr-port-metadata` / PR #52. Merge is the remaining delivery step.
+**Status:** merged through PR #52.
 
 ### Scope
 
@@ -310,8 +308,7 @@ snapshot contract with the settled implementation.
 
 **Goal:** replace the removed shortcut wall with useful, discoverable tools.
 
-**Status:** implemented, documented, fully verified, and live-reviewed on
-`feat/terminal-utilities`.
+**Status:** merged through PR #53.
 
 ### Scope
 
@@ -343,6 +340,9 @@ snapshot contract with the settled implementation.
 **Goal:** add cmux's useful terminal-plus-browser workflow without immediately
 building a general-purpose browser platform.
 
+**Status:** implemented, documented, fully verified, and live-reviewed on
+`feat/localhost-preview`.
+
 ### Scope
 
 - Open an explicitly selected localhost server beside a terminal.
@@ -353,7 +353,7 @@ building a general-purpose browser platform.
 - Defer general browsing, cookie import, remote routing, automation, and devtools to
   separately planned follow-up PRs.
 
-### Planned commits
+### Delivery commits
 
 1. `test: define preview panel contracts`
 2. `main: enforce preview navigation boundaries`

@@ -81,12 +81,12 @@ You saw this exact type in chapter 8's `useWorkspaces()`. A union is "OR at the 
 This is the feature people underuse, and it's the key that unlocks everything later. In TypeScript, a specific string can be its own type. The value `'terminal'` has the type `'terminal'` — a type with exactly one inhabitant.
 
 ```ts
-type PanelType = 'terminal' | 'browser' // a union of two string LITERALS
+type PanelType = 'terminal' | 'preview' // a union of two string LITERALS
 let t: PanelType = 'terminal' // ✅
 let x: PanelType = 'website' // ❌ Error: '"website"' is not assignable to 'PanelType'
 ```
 
-`PanelType` is not `string`. It is _exactly_ `'terminal'` or `'browser'` and nothing else. The compiler now rejects typos and impossible values at the door. We use literal types everywhere a field is drawn from a fixed vocabulary: panel kinds, split directions (`'row' | 'col'`), status colors, PR states, log levels.
+`PanelType` is not `string`. It is _exactly_ `'terminal'` or `'preview'` and nothing else. The compiler now rejects typos and impossible values at the door. We use literal types everywhere a field is drawn from a fixed vocabulary: panel kinds, split directions (`'row' | 'column'`), status colors, PR states, and log levels.
 
 > **⚠️ Gotcha:** literal types **widen** unless you stop them. Write `const dir = 'row'` and TypeScript infers the literal `'row'`; but write `let dir = 'row'` or put it in an object property, and it widens to `string`. That bites when you build model objects by hand — see the gotcha in §9.6.
 
@@ -96,8 +96,8 @@ Take a union of object types, give every member a **common field whose type is a
 
 ```ts
 type Panel =
-  | { type: 'terminal'; ptyId: string } // tag: type = 'terminal'
-  | { type: 'browser'; url: string } // tag: type = 'browser'
+  | { type: 'terminal' } // tag: type = 'terminal'
+  | { type: 'preview'; url: string } // tag: type = 'preview'
 ```
 
 Because the `type` field is a distinct literal in each member, checking it _tells the compiler which member you have_ — and unlocks the fields specific to that member. That's **narrowing**, and it's what makes this pattern magic.
@@ -130,7 +130,8 @@ Those five — **interfaces, unions, literals, discriminated unions, generics** 
 
 Two of this app's core shapes are naturally "a value that is _one of several kinds_, where the kind decides what other data exists":
 
-- A **panel** is either a _terminal_ (which has a `ptyId`) or a _browser_ (which has a `url`). A terminal has no url; a browser has no pty.
+- A **panel** is either a terminal or a constrained localhost preview. A terminal has no
+  URL; a preview has a validated loopback URL and does not own a PTY.
 - A **layout node** is either a _leaf_ (which holds one pane) or a _split_ (which holds child nodes and their sizes). A leaf has no children; a split has no single pane.
 
 Both are textbook discriminated unions. To feel _why_ they fit, look at the tempting wrong way first — the "bag of optional fields" you'll find in `FEATURES.md`'s first sketch:
@@ -139,9 +140,9 @@ Both are textbook discriminated unions. To feel _why_ they fit, look at the temp
 // The NAIVE panel — one interface, optional fields for every kind
 interface NaivePanel {
   id: string
-  type: 'terminal' | 'browser'
+  type: 'terminal' | 'preview'
   ptyId?: string // present... when it's a terminal? the type doesn't SAY
-  url?: string // present... when it's a browser? nothing enforces it
+  url?: string // present... when it's a preview? nothing enforces it
 }
 ```
 
@@ -166,31 +167,37 @@ The discriminated union fixes both at once:
 ```ts
 interface TerminalPanel {
   type: 'terminal' // ← the discriminant, a LITERAL
-  ptyId: string // required, and ONLY exists on a terminal
 }
-interface BrowserPanel {
-  type: 'browser' // ← distinct discriminant
-  url: string // required, and ONLY exists on a browser
+interface PreviewPanel {
+  type: 'preview' // ← distinct discriminant
+  url: string // required, and ONLY exists on a preview
 }
-type Panel = TerminalPanel | BrowserPanel
+type Panel = TerminalPanel | PreviewPanel
 ```
 
-Now `{ type: 'terminal', url: '…' }` is a **compile error** (a `TerminalPanel` has no `url` and is missing `ptyId`) — the illegal state is _unrepresentable_. And reading becomes safe without a single `!`:
+Now `{ type: 'terminal', url: '…' }` is a **compile error** because a
+`TerminalPanel` has no `url`. A preview without `url` is equally invalid. The illegal
+states are unrepresentable:
 
 ```ts
 function labelFor(panel: Panel): string {
   if (panel.type === 'terminal') {
     // Inside this branch TypeScript NARROWS `panel` to TerminalPanel.
-    return `terminal:${panel.ptyId}` // ptyId is a plain `string` — no "!" needed
+    return 'Terminal'
   }
-  // The only remaining possibility is BrowserPanel, so `panel` narrows to it here.
+  // The only remaining possibility is PreviewPanel, so `panel` narrows to it here.
   return panel.url // url is a plain `string` — no "!" needed
 }
 ```
 
-**Walkthrough:** the check `panel.type === 'terminal'` is comparing against a _literal type_. Because `type` is the discriminant and each member has a distinct literal, TypeScript can prove that inside the `if`, `panel` must be a `TerminalPanel`, so `panel.ptyId` is a guaranteed `string`. After the `if`, it has eliminated `TerminalPanel`, so `panel` must be `BrowserPanel`, and `panel.url` is available. The compiler does the bookkeeping you were doing in your head with `!`.
+**Walkthrough:** the check `panel.type === 'terminal'` compares against a literal type.
+Inside the branch, TypeScript proves that `panel` is a `TerminalPanel`. After the branch,
+it has eliminated that member, so `panel` must be a `PreviewPanel` and `panel.url` is
+available.
 
-> **🔧 In Shepherd:** this is the direct upgrade the chapter-8 code was waiting for. Once `Panel` is a discriminated union, the `ptyId!` in the `Pane` component becomes a plain `ptyId`, and the "what if a terminal has no pty?" bug class disappears — not because we're careful, but because it can't be typed. That is the whole philosophy of the data model: **make illegal states unrepresentable**, then the UI code gets simpler _and_ safer at the same time.
+> **🔧 In Shepherd:** `PaneView` uses this narrowing to choose `TerminalHost` or
+> `PreviewHost`. The surface id identifies the PTY only in the terminal branch. Helpers
+> such as `listTerminalSurfaceIds()` keep that ownership rule explicit.
 
 The mantra to carry into the rest of the chapter: **a discriminant field lets the compiler narrow a union, and narrowing is what turns "I hope this field exists" into "the compiler guarantees this field exists."**
 
@@ -198,28 +205,35 @@ The mantra to carry into the rest of the chapter: **a discriminant field lets th
 
 ## 9.4 Layer 1 — `Panel`, the content of a tab
 
-We build the model bottom-up, from the leaf content outward to the window. `Panel` is the bottom: the actual _thing_ rendered inside a tab — a terminal or (later) a browser. We just derived it:
+We build the model bottom-up, from the leaf content outward to the window. `Panel` is the
+bottom: the actual thing rendered inside a tab—a terminal or a constrained preview:
 
 ```ts
 export interface TerminalPanel {
   type: 'terminal'
-  ptyId: string // the id of the node-pty process in MAIN (chapters 6, 8)
 }
 
-export interface BrowserPanel {
-  type: 'browser'
-  url: string // reserved for a future Panel='browser' (FEATURES.md #22)
+export interface PreviewPanel {
+  type: 'preview'
+  url: string // a validated HTTP(S) loopback URL (chapter 38)
 }
 
-export type Panel = TerminalPanel | BrowserPanel
+export type Panel = TerminalPanel | PreviewPanel
 ```
 
 **Walkthrough:**
 
-- **`ptyId` is a `string`, not the pty itself.** The real node-pty process lives in _main_ and can never cross into the renderer (you can't serialize an OS process to JSON). So the panel carries only an **id** — a handle the renderer sends back to main ("write this input to pty `ptyId`", chapter 8's Loop A). This id-instead-of-object pattern repeats all over the model: the renderer holds _names of things_, main holds the _things_.
-- **`BrowserPanel` exists now, ships later.** `FEATURES.md` scopes v1 to terminals only, but keeping `'browser'` in the union from day one means the split tree, the tab bar, and the socket API are all _already_ written against "a panel is one of several kinds." Adding browsers later is filling in a branch, not a refactor.
+- **The terminal surface id is the PTY id.** The real node-pty process lives in main and
+  cannot cross into the renderer. A preview surface id instead owns an Electron guest, so
+  terminal operations must narrow the panel before treating its surface id as a PTY handle.
+- **`PreviewPanel` ships as a constrained capability.** The split tree and tab bar handle
+  it generically, while terminal-only operations explicitly filter for terminal panels.
+  The URL is revalidated during creation, navigation, restore, and external opening; see
+  chapter 38. A general browser remains a separate future capability.
 
-> **⚠️ Gotcha:** when v1 only ever constructs terminals, it's tempting to collapse `Panel` down to just `TerminalPanel` and "add browser later." Don't. A union of _one_ member is pointless, but a union of two where you only _build_ one is exactly right: the **narrowing discipline** (`if (panel.type === 'terminal')`) is in place everywhere from the start, so the day you add browsers, the compiler walks you to every spot that needs a new branch. Keeping the two-member union is cheap insurance against a future big-bang refactor.
+> **⚠️ Gotcha:** do not use `listSurfaceIds()` where PTY ownership is required. Preview
+> surfaces deliberately participate in layout and tabs but not terminal input, metadata,
+> agent focus, or final-terminal close rules.
 
 Concrete value:
 
@@ -484,8 +498,8 @@ AppWindow
          │               └─ Surface
          │                    ├─ id / title: string
          │                    └─ panel: Panel  ◄──────────────── discriminated union
-         │                         ├─ { type: 'terminal', ptyId }
-         │                         └─ { type: 'browser',  url }
+         │                         ├─ { type: 'terminal' }
+         │                         └─ { type: 'preview', url }
          │
          ├─ status:        StatusPill[]   (key, label, color, priority?)
          ├─ progress?:     Progress       (value, label?)
