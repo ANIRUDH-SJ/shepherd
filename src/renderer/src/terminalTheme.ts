@@ -6,7 +6,7 @@ export const TERMINAL_THEME: Readonly<ITheme> = Object.freeze({
   foreground: '#bdbfb4',
   cursor: '#dededd',
   cursorAccent: '#272823',
-  selectionBackground: '#3f8ff766',
+  selectionBackground: '#52534f99',
   black: '#1d1f21',
   red: '#cc6566',
   green: '#b6bd68',
