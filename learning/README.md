@@ -51,6 +51,7 @@ code as we write it.
 | **M28**   | `M28-workspace-pr-port-metadata.md`          | Optional bounded PR discovery, process-owned listeners, cache invalidation, compact context, false-positive hardening, and live proof            |
 | **M29**   | `M29-terminal-utilities.md`                  | Bounded terminal find, typed command registry, palette ranking, contextual help, minimal settings, modal focus, and live proof                   |
 | **M30**   | `M30-localhost-preview.md`                   | Localhost-only preview panels, hardened webview policy, terminal fallback, persistence, failure recovery, cleanup, and live security proof       |
+| **M31**   | `M31-cmux-terminal-derived-theme.md`         | Official cmux color research, terminal-owned backdrop, coordinated chrome/xterm palettes, selection hierarchy, tests, and live proof             |
 
 ## How to read a milestone file
 

@@ -216,9 +216,10 @@ Delivery also includes `ui: unify keyboard focus treatment`, a live-audit fix
 that replaces Chromium's default focus ring on secondary native controls with
 the shared accessible focus token.
 
-Post-M30 delivery also aligns the shell, active workspace, active tab, focus
-role, and default xterm interaction palette to the same low-chroma graphite
-system. This completes the no-blue default requested during visual acceptance.
+The later M31 acceptance pass replaces the interim no-blue correction with the
+actual cmux composition: the measured terminal backdrop owns permanent chrome,
+while one deliberate blue identifies selection, focus, and attention. The active
+workspace uses one fill and the active tab uses one edge, avoiding ambient tint.
 
 ### Focused verification
 

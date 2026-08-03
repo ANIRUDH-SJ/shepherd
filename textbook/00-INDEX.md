@@ -132,6 +132,8 @@ Think of the book in five "acts":
   xterm search, accessible command discovery, modal focus, and minimal settings.
 - `38-constrained-localhost-preview.md` — panel-type boundaries, repeated URL
   validation, hardened Electron webviews, ephemeral sessions, persistence, and cleanup.
+- `39-terminal-derived-desktop-theming.md` — backdrop ownership, coordinated
+  CSS/xterm outputs, deliberate accent state, first paint, validation, and extension.
 
 **Reference**
 
@@ -185,6 +187,7 @@ Think of the book in five "acts":
 | `36-context-from-external-tools-and-proc.md`       | Optional CLI capabilities, bounded PR parsing, process-owned listening sockets, inherited descriptors, caching, races, and compact UI          | 03, 06, 09, 22, 23, 32 |
 | `37-keyboard-first-terminal-utilities.md`          | Typed commands, terminal-safe shortcuts, bounded xterm search, accessible palettes, modal focus, settings, and live interaction testing        | 07, 08, 25, 27         |
 | `38-constrained-localhost-preview.md`              | Localhost-only panel modeling, webview isolation, network policy, guest lifecycle, persistence, failure handling, and live security testing    | 03, 04, 05, 09, 10, 13 |
+| `39-terminal-derived-desktop-theming.md`           | Terminal-owned backdrops, semantic chrome, complete xterm palettes, first paint, contrast, validation, and live visual testing                 | 03, 07, 25, 27         |
 
 ---
 
@@ -266,3 +269,4 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `36-context-from-external-tools-and-proc.md` — reliable optional PR and process-owned port context
 - `37-keyboard-first-terminal-utilities.md` — terminal-safe commands, bounded find, modal focus, and settings
 - `38-constrained-localhost-preview.md` — localhost-only browser isolation, lifecycle, and persistence
+- `39-terminal-derived-desktop-theming.md` — terminal-owned backdrop and coordinated chrome/xterm themes

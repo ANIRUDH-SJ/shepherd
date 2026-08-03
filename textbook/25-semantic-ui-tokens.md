@@ -35,17 +35,17 @@ cannot be changed safely as one global search-and-replace.
 Primitive tokens describe a value:
 
 ```css
---graphite-500: #4a4b44;
---graphite-900: #151612;
+--graphite-500: #52534f;
+--graphite-900: #272823;
 ```
 
 Semantic tokens describe intent:
 
 ```css
---color-sidebar: #1d1e19;
---color-focus: #e4e4dc;
---color-selection: #30312b;
---color-info: #9fa59d;
+--color-sidebar: #272823;
+--color-focus: #5a9af8;
+--color-selection: #3f8ff7;
+--color-info: #82a2be;
 ```
 
 Shepherd uses semantic tokens directly because the UI is still one dark theme.
@@ -126,11 +126,11 @@ a shared TypeScript field; adding several overlapping names weakens the contract
 The terminal canvas contains dense, high-contrast text that users stare at for
 long periods. Chrome should be quieter:
 
-- low-chroma graphite canvas and sidebar surfaces reduce glare;
+- one terminal-derived graphite backdrop unifies canvas, sidebar, and chrome;
 - small luminance steps create depth without card borders everywhere;
 - primary text is bright enough for labels, while metadata uses explicit muted
   roles;
-- neutral contrast distinguishes selection and keyboard focus;
+- one deliberate blue distinguishes selection, keyboard focus, and attention;
 - amber, red, green, and subdued information color communicate semantic state
   rather than permanent decoration.
 
@@ -186,12 +186,13 @@ raw color literals appear only in :root
 reduced-motion rule remains present
 ```
 
-The M26 regression goes further. It parses RGB tokens, asserts that shell surfaces
-and default interaction roles stay low-chroma, and computes contrast ratios for
-primary, secondary, muted, and focus pairs. It also checks semantic ownership:
-ordinary hover must use a neutral surface, active workspace and tab rules must not
-consume the accent token, and blocked, working, and idle states must consume
-danger, working, and success roles.
+The M26/M31 regression goes further. It parses RGB tokens, asserts that shell
+surfaces stay low-chroma and share the terminal anchor, and computes contrast
+ratios for primary, secondary, muted, and focus pairs. It also checks semantic
+ownership: ordinary hover must use a neutral surface, the active workspace must
+use one accent fill without a redundant rail, the active tab must use one accent
+edge without a raised background, and blocked, working, and idle states must
+consume danger, working, and success roles.
 
 These checks prove boundaries and measurable contrast, not that a palette is
 beautiful or that every composition is legible. Live screenshots and keyboard
@@ -216,14 +217,15 @@ privileged application renderer.
 
 The shell token contract does not own xterm colors. `terminalTheme.ts` exports a
 frozen `ITheme`-compatible object for the terminal background, foreground,
-cursor, and selection. `TerminalHost.tsx` supplies that object directly when it
-constructs xterm.
+cursor, selection, and sixteen ANSI colors. `TerminalHost.tsx` supplies that
+object directly when it constructs xterm.
 
-Keeping these graphs separate prevents a UI theme edit from changing ANSI color
-meaning or making the cursor and selection unreadable. It also creates the right
-extension seam: a validated terminal-theme setting can replace the xterm object,
-while shell themes continue to override semantic CSS roles. Neither path needs
-arbitrary stylesheet injection.
+Keeping these graphs separate prevents a UI theme edit from accidentally changing
+ANSI meaning or making the cursor and selection unreadable. M31 coordinates their
+default outputs around the same backdrop without runtime cross-reading. This also
+creates the right extension seam: a validated theme specification can generate
+both the xterm object and semantic CSS role map. Neither path needs arbitrary
+stylesheet injection.
 
 ## 11. Failure behavior
 

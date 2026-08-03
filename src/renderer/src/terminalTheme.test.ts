@@ -9,10 +9,13 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-assert(TERMINAL_THEME.background === '#0d0e0c', 'keeps a terminal-owned graphite background')
-assert(TERMINAL_THEME.foreground === '#e8e8e0', 'keeps warm terminal text independent')
-assert(TERMINAL_THEME.cursor === '#d7d7cf', 'keeps a distinct neutral terminal cursor')
-assert(TERMINAL_THEME.selectionBackground === '#3a3b34', 'keeps selection free of blue tint')
+assert(TERMINAL_THEME.background === '#272823', 'anchors the UI to the measured cmux backdrop')
+assert(TERMINAL_THEME.foreground === '#bdbfb4', 'uses the measured cmux terminal foreground')
+assert(TERMINAL_THEME.cursor === '#dededd', 'keeps a distinct neutral terminal cursor')
+assert(TERMINAL_THEME.cursorAccent === '#272823', 'keeps cursor text readable')
+assert(TERMINAL_THEME.selectionBackground === '#3f8ff766', 'uses a translucent cmux-blue selection')
+assert(TERMINAL_THEME.red === '#cc6566', 'uses the bundled cmux Ghostty red')
+assert(TERMINAL_THEME.blue === '#82a2be', 'uses the bundled cmux Ghostty blue')
 assert(Object.isFrozen(TERMINAL_THEME), 'prevents one terminal from mutating the shared theme')
 assert(
   Object.values(TERMINAL_THEME).every(

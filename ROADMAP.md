@@ -53,6 +53,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M28** — Compact pull-request and listening-port workspace metadata ✓
 - [x] **M29** — Terminal find, command palette, contextual help, and settings entry ✓
 - [x] **M30** — Constrained localhost preview surface ✓
+- [x] **M31** — cmux terminal-derived theme and unified window backdrop ✓
 
 ---
 
@@ -504,6 +505,20 @@ shell, then add only the cmux-inspired context and utilities that remain useful.
 - [x] Deliver every milestone on its own branch and PR using the commit, verification,
       screenshot, `learning/`, and `textbook/` gates in
       [`CMUX_UI_PARITY_PLAN.md`](./CMUX_UI_PARITY_PLAN.md)
+
+## M31 — cmux terminal-derived theme
+
+_Goal: make the terminal theme the visual anchor for the whole window instead of
+rendering terminal, sidebar, tabs, and first paint as separate dark rectangles._
+
+- [x] Measure the official cmux screenshot and inspect its current appearance source
+- [x] Share the `#272823` terminal backdrop across permanent renderer chrome
+- [x] Use cmux blue only for selected, focused, and attention states
+- [x] Flatten active tabs to one accent edge and remove the redundant workspace rail
+- [x] Apply the matching BrowserWindow first-paint color
+- [x] Define the full coordinated xterm ANSI palette
+- [x] Add structural, contrast, terminal-theme, and live computed-style verification
+- [x] Document implementation, architecture, alternatives, security, and extension points
 
 ---
 
