@@ -91,17 +91,12 @@ for (const name of [
   assert(Math.max(...channels) - Math.min(...channels) <= 8, `${name} stays low-chroma graphite`)
 }
 
-for (const name of [
-  '--color-accent',
-  '--color-accent-strong',
-  '--color-selection',
-  '--color-selection-hover',
-  '--color-selection-text',
-  '--color-focus'
-]) {
-  const channels = rgb(token(name))
-  assert(Math.max(...channels) - Math.min(...channels) <= 10, `${name} has no ambient blue tint`)
-}
+assert(token('--color-canvas') === '#272823', 'uses the measured cmux terminal backdrop')
+assert(token('--color-sidebar') === token('--color-canvas'), 'sidebar derives from the terminal backdrop')
+assert(token('--color-surface') === token('--color-canvas'), 'permanent chrome shares one backdrop')
+assert(token('--color-accent') === '#3f8ff7', 'uses the measured cmux selection blue')
+assert(token('--color-selection') === token('--color-accent'), 'selection owns the deliberate accent')
+assert(token('--color-selection-text') === '#f1f6fb', 'selection uses a cool readable foreground')
 
 assert(
   contrast(token('--color-text'), token('--color-canvas')) >= 12,
@@ -134,12 +129,13 @@ function rule(selector: string): string {
 }
 
 assert(rule('.ws-row:hover').includes('var(--color-surface-hover)'), 'ordinary hover is neutral')
-assert(rule('.ws-row.active').includes('var(--color-selection)'), 'workspace selection is graphite')
-assert(!rule('.ws-row.active').includes('var(--color-accent)'), 'workspace selection has no blue rail')
-assert(!rule('.tab.active').includes('var(--color-accent)'), 'active tabs have no blue underline')
+assert(rule('.ws-row.active').includes('var(--color-selection)'), 'workspace selection is explicit')
+assert(rule('.ws-row.active').includes('var(--color-selection-text)'), 'selected workspace is readable')
+assert(!rule('.ws-row.active').includes('box-shadow'), 'workspace selection avoids a redundant rail')
+assert(!rule('.tab.active').includes('background'), 'active tabs remain on the shared backdrop')
 assert(
-  rule('.tab.active').includes('var(--color-border-strong)'),
-  'active tabs use a neutral cmux-style edge'
+  rule('.tab.active').includes('var(--color-accent)'),
+  'active tabs use one restrained cmux-style edge'
 )
 assert(
   rule('.pane-attention-ring').includes('pane-attention-pulse'),
