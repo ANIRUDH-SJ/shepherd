@@ -2,10 +2,12 @@
 
 ## Goal
 
-M26 removes the blue-purple dashboard palette from Shepherd's permanent shell.
-The canvas, sidebar, tabs, controls, selection, and focus treatment now use a
-low-chroma graphite hierarchy. Saturated color is reserved for semantic states
-that change what the user should do.
+M26 introduced the semantic token boundary and removed the blue-purple dashboard
+palette from Shepherd's permanent shell. M31 later coordinated those roles with
+the terminal backdrop: permanent surfaces remain low-chroma, while one deliberate
+blue marks selection, focus, and attention. See
+[`M31-cmux-terminal-derived-theme.md`](./M31-cmux-terminal-derived-theme.md) for
+the current values and complete implementation.
 
 This milestone changes presentation boundaries only. Workspace reducers, layout
 geometry, agent reports, PTY ownership, terminal links, socket automation, and
@@ -26,8 +28,8 @@ geometry          3px / 4px / 6px radii, spacing, popover-only shadow
 ```
 
 Components ask for roles rather than literal colors. Ordinary hover consumes a
-neutral surface. The selected workspace, active terminal tab, and keyboard focus
-consume distinct graphite roles. A blocked agent consumes danger; working
+neutral surface. The selected workspace, active terminal edge, and keyboard focus
+consume the deliberate accent role. A blocked agent consumes danger; working
 consumes amber; idle consumes success; done consumes a subdued informational
 role.
 
@@ -38,7 +40,7 @@ rings. Its largest and highest-contrast region is still the terminal canvas.
 
 M26 deliberately separates state from decoration:
 
-- graphite contrast means selection or keyboard focus;
+- blue means explicit selection, keyboard focus, or bounded attention;
 - green means idle/ready success;
 - amber means working, waiting, or attention;
 - red means blocked or failed;
@@ -57,7 +59,7 @@ token instead of allowing Chromium's platform-default ring to leak through.
 theme object. `TerminalHost.tsx` passes it directly to the xterm constructor.
 
 This is intentionally not derived from the shell's CSS variables, even though
-the default terminal cursor and selection now use matching neutral graphite:
+M31 coordinates the reviewed defaults from one measured visual specification:
 
 ```text
 App.css semantic UI tokens ──→ React/Electron chrome
@@ -90,29 +92,28 @@ an untested convention.
 The isolated Electron/Xvfb review covered the final post-M30 shell. Browser
 assertions measured:
 
-- canvas `rgb(21, 22, 18)`, sidebar `rgb(29, 30, 25)`, and a near-black terminal;
-- active workspace and active tab surfaces at `rgb(48, 49, 43)`;
-- neutral active edges at `rgb(74, 75, 68)` with no accent-colored rail;
-- a neutral focus token at `rgb(228, 228, 220)`;
+- canvas, sidebar, permanent surface, and terminal at `rgb(39, 40, 35)`;
+- active workspace at `rgb(63, 143, 247)` with no redundant rail;
+- a transparent active tab with one `rgb(63, 143, 247)` edge;
+- a focus token at `rgb(90, 154, 248)`;
 - no duplicate product name in the sidebar toolbar; and
-- a neutral xterm cursor and selection palette.
+- a complete coordinated xterm cursor, selection, and ANSI palette.
 
-![M26 graphite shell](../docs/images/cmux-graphite-shell.png)
+![Current terminal-derived shell](../docs/images/cmux-terminal-derived-theme.png)
 
-## Post-M30 graphite correction
+## M31 terminal-derived refinement
 
-Later shell work exposed three residual blue treatments: the workspace selection
-block, the active tab underline, and xterm's cursor/selection defaults. The
-correction keeps cmux's dense, flat hierarchy while honoring Shepherd's no-blue
-default:
+The interim post-M30 correction removed every blue interaction. Research against
+current cmux source and the official screenshot showed that the result missed
+cmux's real organizing principle: unified terminal-derived backdrops plus one
+deliberate selection accent.
 
-1. `App.css` maps shell surfaces and interaction tokens to warm graphite roles.
-2. Active rows and tabs use neutral surface and border contrast, not an accent.
-3. `terminalTheme.ts` supplies a matching neutral xterm cursor and selection.
-4. `Sidebar.tsx` removes the duplicate product label and keeps its tools aligned
-   with the compact titlebar.
-5. Token regressions reject chromatic surface/interaction roles and reject active
-   workspace or tab rules that consume the accent token.
+1. `App.css` maps permanent shell surfaces to the terminal's `#272823` anchor.
+2. The active workspace uses one blue fill; the active tab uses one blue edge.
+3. `terminalTheme.ts` supplies the matching background, foreground, selection,
+   cursor, and full ANSI palette.
+4. BrowserWindow uses the same anchor during first paint.
+5. Token regressions reject backdrop drift and redundant active indicators.
 
 ## Failure behavior and boundaries
 
@@ -127,7 +128,7 @@ terminal palettes should continue through the dedicated xterm boundary.
 
 ## Checkpoint
 
-1. Why do hover, selection, and keyboard focus use different graphite roles?
+1. Why do permanent surfaces share a backdrop while selection uses blue?
 2. Why does `TERMINAL_THEME` not read values from `App.css`?
 3. Which assertions can a token test prove, and which still require visual review?
 4. Why are semantic states represented by text as well as color?

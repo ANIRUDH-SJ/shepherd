@@ -39,6 +39,10 @@
 
 ## B
 
+- **backdrop ownership** — The decision about which visual layer supplies the
+  base window color. Shepherd's terminal-derived theme uses the terminal
+  background for first paint, canvas, sidebar, and permanent chrome so those
+  regions read as one environment. (see 39-terminal-derived-desktop-theming.md)
 - **BrowserWindow** — Electron's class for creating an OS window; you configure its size and options, and its `webContents` loads your UI. Each BrowserWindow drives one renderer process. (see 03-electron-architecture.md)
 - **byte stream** — A continuous, unstructured flow of bytes with no built-in message boundaries — what moves between a shell and its terminal, and through a socket. Bytes arrive as they come (sometimes splitting a sequence mid-way), so you must buffer and parse them yourself. (see 02-how-terminals-work.md)
 
