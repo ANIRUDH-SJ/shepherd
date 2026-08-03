@@ -713,6 +713,55 @@ body.resizing * {
   border: 1px solid var(--color-border);
   font-size: 10.5px;
 }
+.preview-suggestions {
+  padding: 0 var(--space-4) var(--space-4);
+}
+.preview-suggestions > strong,
+.preview-picker-form > label {
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 9.5px;
+}
+.preview-suggestions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.preview-suggestions button,
+.preview-picker-form button {
+  min-height: 27px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: 10.5px var(--font-mono);
+}
+.preview-picker-form {
+  padding: 0 var(--space-4) var(--space-4);
+}
+.preview-picker-form > div {
+  display: flex;
+  gap: var(--space-2);
+}
+.preview-picker-form input {
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 7px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  outline: 0;
+  background: var(--color-input-overlay);
+  color: var(--color-text);
+  font: 10.5px var(--font-mono);
+}
+.preview-picker-form p {
+  margin: var(--space-3) 0 0;
+  color: var(--color-danger);
+  font-size: 10px;
+}
 @media (max-width: 520px) {
   .utility-backdrop {
     place-items: start stretch;
@@ -724,6 +773,10 @@ body.resizing * {
   }
   .command-results > button {
     padding-block: 9px;
+  }
+  .preview-picker-form > div {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 .notification-head,
@@ -1052,8 +1105,11 @@ body.resizing * {
   box-shadow: inset 0 -1px 0 var(--color-accent);
 }
 .tab-select {
+  display: flex;
   min-width: 0;
   height: 100%;
+  align-items: center;
+  gap: var(--space-2);
   padding: 0 var(--space-3);
   border: 0;
   border-radius: 0;
@@ -1149,6 +1205,117 @@ body.resizing * {
   position: absolute;
   inset: 0;
   padding: 4px 0 0 6px;
+}
+.preview-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  background: var(--color-canvas);
+}
+.preview-panel[hidden] {
+  display: none;
+}
+.preview-toolbar {
+  display: flex;
+  min-height: 32px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 3px var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-sidebar);
+}
+.preview-toolbar button {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font: 10px var(--font-ui);
+}
+.preview-toolbar button:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+.preview-toolbar button:disabled {
+  cursor: default;
+  opacity: 0.28;
+}
+.preview-toolbar button:focus-visible,
+.preview-toolbar input:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: -1px;
+}
+.preview-toolbar input {
+  min-width: 72px;
+  height: 24px;
+  flex: 1 1 auto;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  outline: 0;
+  background: var(--color-input-overlay);
+  color: var(--color-text-secondary);
+  font: 10px var(--font-mono);
+}
+.preview-toolbar .preview-go {
+  display: block;
+  width: auto;
+  padding: 0 var(--space-3);
+}
+.preview-webview-host,
+.preview-webview {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+}
+.preview-error {
+  position: absolute;
+  z-index: 2;
+  inset: 32px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-7);
+  background: var(--color-canvas);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+.preview-error .ui-icon {
+  width: 24px;
+  height: 24px;
+}
+.preview-error strong {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+.preview-error span {
+  max-width: 52ch;
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+.preview-error button {
+  padding: 5px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: 10.5px var(--font-ui);
 }
 .terminal-find {
   position: absolute;

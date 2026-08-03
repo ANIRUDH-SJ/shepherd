@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import type { WebviewTag } from 'electron'
-import { MAX_PREVIEW_URL_LENGTH, normalizePreviewUrl } from '../../../shared/preview'
+import {
+  MAX_PREVIEW_URL_LENGTH,
+  PREVIEW_PARTITION,
+  normalizePreviewUrl
+} from '../../../shared/preview'
+import {
+  createPreviewHistory,
+  previewHistoryTarget,
+  recordPreviewNavigation,
+  type PreviewHistory
+} from '../previewHistory'
 import { surfacePanelId, surfaceTabId } from '../terminalChrome'
 import Icon from './Icon'
 
@@ -38,24 +48,32 @@ export default function PreviewHost({
   const onUrlChangeRef = useRef(onUrlChange)
   onUrlChangeRef.current = onUrlChange
   const initialUrlRef = useRef(url)
+  const historyRef = useRef<PreviewHistory>(createPreviewHistory(url))
   const [location, setLocation] = useState(url)
   const [state, setState] = useState(INITIAL_STATE)
 
-  const updateHistory = (webview: WebviewTag): void => {
+  const updateHistoryState = (): void => {
+    const history = historyRef.current
     setState((current) => ({
       ...current,
-      canGoBack: webview.canGoBack(),
-      canGoForward: webview.canGoForward()
+      canGoBack: history.index > 0,
+      canGoForward: history.index < history.entries.length - 1
     }))
   }
 
-  const commitUrl = (nextUrl: string, webview: WebviewTag): void => {
+  const recordNavigation = (nextUrl: string): void => {
+    const history = historyRef.current
+    recordPreviewNavigation(history, nextUrl)
+    updateHistoryState()
+  }
+
+  const commitUrl = (nextUrl: string): void => {
     const normalized = normalizePreviewUrl(nextUrl)
     if (!normalized.ok || !normalized.url) return
     setLocation(normalized.url)
     setState((current) => ({ ...current, error: null }))
     onUrlChangeRef.current(normalized.url)
-    updateHistory(webview)
+    recordNavigation(normalized.url)
   }
 
   const load = (value: string): void => {
@@ -82,23 +100,22 @@ export default function PreviewHost({
     if (!host) return
     const webview = document.createElement('webview') as WebviewTag
     webview.className = 'preview-webview'
-    webview.setAttribute('partition', 'shepherd-preview')
+    webview.setAttribute('partition', PREVIEW_PARTITION)
     webview.setAttribute('webpreferences', 'contextIsolation=yes,sandbox=yes,nodeIntegration=no')
     webview.setAttribute('src', initialUrlRef.current)
     webviewRef.current = webview
 
     const onAttach = (): void => {
       webview.setAudioMuted(!activeRef.current)
-      updateHistory(webview)
+      updateHistoryState()
     }
     const onStart = (): void => setState((current) => ({ ...current, loading: true, error: null }))
     const onStop = (): void => {
       setState((current) => ({ ...current, loading: false }))
-      updateHistory(webview)
     }
     const onNavigate = (event: Event): void => {
       const nextUrl = (event as Event & { url?: unknown }).url
-      if (typeof nextUrl === 'string') commitUrl(nextUrl, webview)
+      if (typeof nextUrl === 'string') commitUrl(nextUrl)
     }
     const onWillNavigate = (event: Event): void => {
       const nextUrl = (event as Event & { url?: unknown }).url
@@ -170,6 +187,24 @@ export default function PreviewHost({
     })
   }
 
+  const navigateHistory = (offset: -1 | 1): void => {
+    const webview = webviewRef.current
+    const history = historyRef.current
+    const nextIndex = previewHistoryTarget(history, offset)
+    if (!webview || nextIndex === null) return
+    history.pendingIndex = nextIndex
+    setState((current) => ({ ...current, loading: true, error: null }))
+    void webview.executeJavaScript(offset === -1 ? 'history.back()' : 'history.forward()').catch(() => {
+      history.pendingIndex = null
+      updateHistoryState()
+      setState((current) => ({
+        ...current,
+        loading: false,
+        error: 'Preview history navigation failed'
+      }))
+    })
+  }
+
   return (
     <section
       id={surfacePanelId(surfaceId)}
@@ -192,7 +227,7 @@ export default function PreviewHost({
           aria-label="Go back"
           title="Back"
           disabled={!state.canGoBack}
-          onClick={() => webviewRef.current?.goBack()}
+          onClick={() => navigateHistory(-1)}
         >
           <Icon name="back" />
         </button>
@@ -201,7 +236,7 @@ export default function PreviewHost({
           aria-label="Go forward"
           title="Forward"
           disabled={!state.canGoForward}
-          onClick={() => webviewRef.current?.goForward()}
+          onClick={() => navigateHistory(1)}
         >
           <Icon name="forward" />
         </button>
