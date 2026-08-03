@@ -43,9 +43,9 @@ Semantic tokens describe intent:
 
 ```css
 --color-sidebar: #272823;
---color-focus: #5a9af8;
---color-selection: #3f8ff7;
---color-info: #82a2be;
+--color-focus: #bdbfb4;
+--color-selection: #393a34;
+--color-info: #9e9e9c;
 ```
 
 Shepherd uses semantic tokens directly because the UI is still one dark theme.
@@ -130,7 +130,7 @@ long periods. Chrome should be quieter:
 - small luminance steps create depth without card borders everywhere;
 - primary text is bright enough for labels, while metadata uses explicit muted
   roles;
-- one deliberate blue distinguishes selection, keyboard focus, and attention;
+- neutral contrast distinguishes selection and keyboard focus, while amber marks attention;
 - amber, red, green, and subdued information color communicate semantic state
   rather than permanent decoration.
 
@@ -190,7 +190,7 @@ The M26/M31 regression goes further. It parses RGB tokens, asserts that shell
 surfaces stay low-chroma and share the terminal anchor, and computes contrast
 ratios for primary, secondary, muted, and focus pairs. It also checks semantic
 ownership: ordinary hover must use a neutral surface, the active workspace must
-use one accent fill without a redundant rail, the active tab must use one accent
+use one graphite fill without a redundant rail, the active tab must use one neutral
 edge without a raised background, and blocked, working, and idle states must
 consume danger, working, and success roles.
 

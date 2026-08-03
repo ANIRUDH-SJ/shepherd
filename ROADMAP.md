@@ -513,7 +513,7 @@ rendering terminal, sidebar, tabs, and first paint as separate dark rectangles._
 
 - [x] Measure the official cmux screenshot and inspect its current appearance source
 - [x] Share the `#272823` terminal backdrop across permanent renderer chrome
-- [x] Use cmux blue only for selected, focused, and attention states
+- [x] Keep selected, focused, informational, Git, tab, and terminal-selection states free of blue
 - [x] Flatten active tabs to one accent edge and remove the redundant workspace rail
 - [x] Apply the matching BrowserWindow first-paint color
 - [x] Define the full coordinated xterm ANSI palette

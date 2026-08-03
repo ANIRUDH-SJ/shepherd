@@ -216,10 +216,11 @@ Delivery also includes `ui: unify keyboard focus treatment`, a live-audit fix
 that replaces Chromium's default focus ring on secondary native controls with
 the shared accessible focus token.
 
-The later M31 acceptance pass replaces the interim no-blue correction with the
-actual cmux composition: the measured terminal backdrop owns permanent chrome,
-while one deliberate blue identifies selection, focus, and attention. The active
-workspace uses one fill and the active tab uses one edge, avoiding ambient tint.
+The later M31 acceptance pass keeps the measured cmux terminal backdrop across
+permanent chrome while applying Shepherd's final no-blue interaction mapping.
+The active workspace uses one graphite fill, the active tab uses one neutral edge,
+focus is warm gray, and attention is amber, avoiding both ambient tint and
+redundant indicators.
 
 ### Focused verification
 

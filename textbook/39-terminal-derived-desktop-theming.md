@@ -46,20 +46,22 @@ The current fixed theme writes those outputs as two reviewed constants. A future
 runtime theme loader should introduce the shared validated specification and two
 pure adapters rather than making either consumer reach into the other.
 
-## 3. Use color as an event
+## 3. Use contrast as an event
 
-Low-chroma backgrounds make one saturated color extremely powerful. That accent
+Low-chroma backgrounds make small contrast changes powerful. An interaction role
 should answer a concrete question: “where am I?” or “which pane needs me?”
 
-A compact system can use the accent for:
+A compact system can use contrast for:
 
 - the selected workspace;
 - a one-pixel active-tab edge;
 - keyboard focus; and
 - bounded unread or attention feedback.
 
-This is different from tinting permanent panels, cards, and borders. The accent
-appears at state transitions and selected destinations, not as atmosphere.
+This is different from tinting permanent panels, cards, and borders. Shepherd's
+accepted default uses graphite selection, neutral focus and tab edges, and amber
+attention. Other products may use a saturated accent, but it should appear at
+state transitions and selected destinations rather than as atmosphere.
 
 Red, amber, and green remain semantic. Text, icons, and accessible names must
 carry the same state because color alone cannot explain whether an agent is
@@ -98,8 +100,10 @@ A complete theme specifies:
 - selection background and foreground behavior; and
 - normal and bright ANSI 0–15 colors.
 
-Selection can use a translucent accent so text remains visible while keeping
-selected output connected to the app's navigation language.
+Selection can use a translucent neutral role so text remains visible while
+keeping selected output connected to the app's navigation language. ANSI blue
+and cyan are a separate content contract: terminal programs may request them even
+when the application chrome has no blue interaction state.
 
 ## 6. First paint is part of the theme
 
@@ -118,7 +122,7 @@ Static regressions can prove:
 - required semantic roles exist and are consumed;
 - permanent surfaces share the intended anchor;
 - component rules do not bypass tokens with literals;
-- selection owns the accent without redundant indicators;
+- selection owns one contrast role without redundant indicators;
 - active tabs remain flat;
 - text pairs meet chosen contrast thresholds; and
 - the xterm theme is complete, frozen, and independent of CSS strings.
