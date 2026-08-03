@@ -57,7 +57,7 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     title: PRODUCT_NAME,
-    backgroundColor: '#0d0d0f',
+    backgroundColor: '#272823',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       // sandbox:false is required so the preload can later load native modules

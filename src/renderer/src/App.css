@@ -6,39 +6,39 @@
   --font-mono: 'JetBrains Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
 
   /* Surfaces */
-  --color-canvas: #151612;
-  --color-sidebar: #1d1e19;
-  --color-surface: #24251f;
-  --color-surface-hover: #2a2b25;
-  --color-surface-raised: #30312b;
+  --color-canvas: #272823;
+  --color-sidebar: #272823;
+  --color-surface: #272823;
+  --color-surface-hover: #2f302b;
+  --color-surface-raised: #34352f;
   --color-border: #363731;
-  --color-border-strong: #4a4b44;
+  --color-border-strong: #52534f;
 
   /* Content */
-  --color-text: #efefe8;
-  --color-text-secondary: #c2c2ba;
-  --color-text-muted: #94948c;
-  --color-text-subdued: #73736c;
-  --color-text-faint: #565650;
+  --color-text: #dededd;
+  --color-text-secondary: #bdbfb4;
+  --color-text-muted: #989896;
+  --color-text-subdued: #777776;
+  --color-text-faint: #52534f;
 
   /* Interaction */
-  --color-accent: #cfcfc7;
-  --color-accent-strong: #e4e4dc;
-  --color-selection: #30312b;
-  --color-selection-hover: #3a3b34;
-  --color-selection-text: #f4f4ec;
-  --color-focus: #e4e4dc;
-  --color-control-overlay: rgba(255, 255, 255, 0.12);
-  --color-input-overlay: rgba(0, 0, 0, 0.28);
+  --color-accent: #3f8ff7;
+  --color-accent-strong: #5a9af8;
+  --color-selection: #3f8ff7;
+  --color-selection-hover: #4a96f7;
+  --color-selection-text: #f1f6fb;
+  --color-focus: #5a9af8;
+  --color-control-overlay: rgba(255, 255, 255, 0.08);
+  --color-input-overlay: rgba(0, 0, 0, 0.18);
   --color-backdrop: rgba(0, 0, 0, 0.42);
 
   /* Semantic state */
-  --color-attention: #e0a84b;
-  --color-danger: #e66d65;
-  --color-success: #70b77e;
-  --color-info: #9fa59d;
-  --color-working: #d8a24a;
-  --color-git: #929aa6;
+  --color-attention: #3f8ff7;
+  --color-danger: #cc6566;
+  --color-success: #8fae70;
+  --color-info: #82a2be;
+  --color-working: #f0c674;
+  --color-git: #888eb5;
 
   /* Geometry and motion */
   --space-1: 2px;
@@ -191,10 +191,23 @@ body.resizing * {
 }
 .ws-row.active {
   background: var(--color-selection);
-  box-shadow: inset 2px 0 0 var(--color-border-strong);
+  color: var(--color-selection-text);
 }
 .ws-row.active:hover {
   background: var(--color-selection-hover);
+}
+.ws-row.active .ws-status,
+.ws-row.active .ws-context,
+.ws-row.active .ws-branch,
+.ws-row.active .ws-runtime-context,
+.ws-row.active .ws-usage,
+.ws-row.active .ws-rename,
+.ws-row.active .ws-close {
+  color: color-mix(in srgb, var(--color-selection-text) 82%, transparent);
+}
+.ws-row.active .ws-badge {
+  background: var(--color-selection-text);
+  color: var(--color-selection);
 }
 .ws-row-top {
   display: flex;
@@ -1058,9 +1071,6 @@ body.resizing * {
     opacity: 0;
   }
 }
-.pane.active .pane-tabs {
-  background: var(--color-surface);
-}
 .pane-tabs {
   display: flex;
   align-items: center;
@@ -1098,9 +1108,8 @@ body.resizing * {
   flex: 0 0 auto;
 }
 .tab.active {
-  background: var(--color-surface-raised);
   color: var(--color-text);
-  box-shadow: inset 0 -1px 0 var(--color-border-strong);
+  box-shadow: inset 0 -1px 0 var(--color-accent);
 }
 .tab-select {
   display: flex;
