@@ -7,7 +7,8 @@ palette from Shepherd's permanent shell. M31 later coordinated those roles with
 the terminal backdrop: permanent surfaces remain low-chroma, while one deliberate
 blue marks selection, focus, and attention. See
 [`M31-cmux-terminal-derived-theme.md`](./M31-cmux-terminal-derived-theme.md) for
-the current values and complete implementation.
+the current values and complete implementation. Its final acceptance correction
+keeps all Shepherd-owned interaction roles free of blue.
 
 This milestone changes presentation boundaries only. Workspace reducers, layout
 geometry, agent reports, PTY ownership, terminal links, socket automation, and
@@ -29,7 +30,7 @@ geometry          3px / 4px / 6px radii, spacing, popover-only shadow
 
 Components ask for roles rather than literal colors. Ordinary hover consumes a
 neutral surface. The selected workspace, active terminal edge, and keyboard focus
-consume the deliberate accent role. A blocked agent consumes danger; working
+consume distinct neutral contrast roles. A blocked agent consumes danger; working
 consumes amber; idle consumes success; done consumes a subdued informational
 role.
 
@@ -40,7 +41,7 @@ rings. Its largest and highest-contrast region is still the terminal canvas.
 
 M26 deliberately separates state from decoration:
 
-- blue means explicit selection, keyboard focus, or bounded attention;
+- graphite means explicit selection and keyboard focus;
 - green means idle/ready success;
 - amber means working, waiting, or attention;
 - red means blocked or failed;
@@ -93,23 +94,24 @@ The isolated Electron/Xvfb review covered the final post-M30 shell. Browser
 assertions measured:
 
 - canvas, sidebar, permanent surface, and terminal at `rgb(39, 40, 35)`;
-- active workspace at `rgb(63, 143, 247)` with no redundant rail;
-- a transparent active tab with one `rgb(63, 143, 247)` edge;
-- a focus token at `rgb(90, 154, 248)`;
+- active workspace at `rgb(57, 58, 52)` with no redundant rail;
+- a transparent active tab with one `rgb(82, 83, 79)` edge;
+- a neutral focus token at `rgb(189, 191, 180)`;
 - no duplicate product name in the sidebar toolbar; and
 - a complete coordinated xterm cursor, selection, and ANSI palette.
 
-![Current terminal-derived shell](../docs/images/cmux-terminal-derived-theme.png)
+![Current neutral terminal-derived shell](../docs/images/cmux-neutral-interactions.png)
 
 ## M31 terminal-derived refinement
 
 The interim post-M30 correction removed every blue interaction. Research against
 current cmux source and the official screenshot showed that the result missed
-cmux's real organizing principle: unified terminal-derived backdrops plus one
-deliberate selection accent.
+cmux's real organizing principle: unified terminal-derived backdrops and sparse
+state contrast. Shepherd's final accepted mapping keeps that structure without
+blue application chrome.
 
 1. `App.css` maps permanent shell surfaces to the terminal's `#272823` anchor.
-2. The active workspace uses one blue fill; the active tab uses one blue edge.
+2. The active workspace uses one graphite fill; the active tab uses one neutral edge.
 3. `terminalTheme.ts` supplies the matching background, foreground, selection,
    cursor, and full ANSI palette.
 4. BrowserWindow uses the same anchor during first paint.

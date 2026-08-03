@@ -97,12 +97,24 @@ assert(
   'sidebar derives from the terminal backdrop'
 )
 assert(token('--color-surface') === token('--color-canvas'), 'permanent chrome shares one backdrop')
-assert(token('--color-accent') === '#3f8ff7', 'uses the measured cmux selection blue')
-assert(
-  token('--color-selection') === token('--color-accent'),
-  'selection owns the deliberate accent'
-)
-assert(token('--color-selection-text') === '#f1f6fb', 'selection uses a cool readable foreground')
+
+for (const name of [
+  '--color-accent',
+  '--color-accent-strong',
+  '--color-selection',
+  '--color-selection-hover',
+  '--color-selection-text',
+  '--color-focus',
+  '--color-attention',
+  '--color-info',
+  '--color-git'
+]) {
+  const [red, green, blue] = rgb(token(name))
+  assert(blue - Math.max(red, green) <= 8, `${name} has no blue cast`)
+}
+
+assert(token('--color-selection') === '#393a34', 'selection uses measured graphite contrast')
+assert(token('--color-selection-text') === '#dededd', 'selection uses neutral readable text')
 
 assert(
   contrast(token('--color-text'), token('--color-canvas')) >= 10,
@@ -146,8 +158,8 @@ assert(
 )
 assert(!rule('.tab.active').includes('background'), 'active tabs remain on the shared backdrop')
 assert(
-  rule('.tab.active').includes('var(--color-accent)'),
-  'active tabs use one restrained cmux-style edge'
+  rule('.tab.active').includes('var(--color-border-strong)'),
+  'active tabs use one restrained neutral edge'
 )
 assert(
   rule('.pane-attention-ring').includes('pane-attention-pulse'),

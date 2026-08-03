@@ -21,7 +21,8 @@ the workspace selection color.
 The official product screenshot was measured because it is the concrete visual
 target. Its dominant terminal/sidebar/tab backdrop is `#272823`, common primary
 chrome text is `#bdbfb4`, subtle dividers include `#363731`, and the selected
-workspace is `#3f8ff7`.
+workspace is `#3f8ff7`. Shepherd adopts the backdrop system but intentionally
+uses neutral interaction colors for its accepted default.
 
 This explains why changing isolated colors did not achieve parity: cmux's quality
 comes from shared backdrop ownership and a small number of deliberate contrast
@@ -41,22 +42,22 @@ raised transient surface                = #34352f
 border / strong border                  = #363731 / #52534f
 ```
 
-Text roles use the screenshot's warm gray ladder. Blue is no longer spread
-through ambient surfaces; `#3f8ff7` belongs to explicit selection and attention,
-with `#5a9af8` for stronger focus.
+Text roles use the screenshot's warm gray ladder. Selection, hover, focus,
+informational metadata, Git metadata, and active-tab indication also stay within
+that neutral ladder. Bounded attention uses amber rather than blue.
 
-The active workspace uses one solid selection block. Its old additional left
+The active workspace uses one graphite selection block. Its old additional left
 rail was redundant, so it was removed. Metadata and row actions receive a
-selection-aware foreground, and an unread badge inverts against the blue block.
+selection-aware foreground, and an unread badge inverts against the block.
 
 Active surface tabs remain transparent on the shared backdrop and use only a
-one-pixel accent edge. The previous raised active-tab slab created an extra card
+one-pixel neutral edge. The previous raised active-tab slab created an extra card
 inside otherwise flat terminal chrome.
 
 ### `src/renderer/src/terminalTheme.ts`
 
 The frozen xterm theme now anchors the same composition with `#272823`, measured
-foreground `#bdbfb4`, neutral cursor `#dededd`, and translucent blue selection.
+foreground `#bdbfb4`, neutral cursor `#dededd`, and graphite selection.
 It also defines the complete ANSI palette from cmux's bundled Ghostty default dark
 theme instead of inheriting xterm's unrelated defaults.
 
@@ -72,9 +73,10 @@ flash before React and xterm paint and keeps startup visually continuous.
 
 ### Regression tests
 
-`themeTokens.test.ts` now verifies the shared backdrop, measured accent,
-selection foreground, flat active workspace, and transparent active tab with one
-accent edge. It retains low-chroma surface and contrast checks.
+`themeTokens.test.ts` now verifies the shared backdrop, absence of blue cast in
+every Shepherd-owned interaction role, selection foreground, flat active
+workspace, and transparent active tab with one neutral edge. It retains
+low-chroma surface and contrast checks.
 
 `terminalTheme.test.ts` verifies the terminal backdrop, foreground, cursor,
 selection, representative ANSI colors, immutability, and independence from CSS
@@ -85,12 +87,24 @@ variable strings.
 The isolated Electron/Xvfb/CDP run measured:
 
 - canvas, sidebar, and permanent surface tokens at `#272823`;
-- workspace selection and accent at `#3f8ff7`;
+- workspace selection at `#393a34` and neutral accent/focus at `#bdbfb4`;
 - no selected-workspace rail;
-- a transparent active tab with one `#3f8ff7` inset edge; and
+- a transparent active tab with one `#52534f` inset edge; and
 - two live workspaces with no duplicate sidebar product label.
 
-![M31 terminal-derived cmux theme](../docs/images/cmux-terminal-derived-theme.png)
+![M31 neutral terminal-derived theme](../docs/images/cmux-neutral-interactions.png)
+
+## Final no-blue acceptance correction
+
+The first M31 pass copied the official screenshot's blue selection. Final visual
+acceptance required no blue hint in Shepherd-owned UI. The settled mapping keeps
+cmux's measured shared backdrop and density while using graphite selection,
+neutral focus and tab edges, amber attention, neutral information/Git metadata,
+and neutral xterm selection.
+
+ANSI blue and cyan remain in the terminal palette because they are requested by
+shells and terminal programs as content. They are not used by Shepherd chrome or
+interaction state.
 
 ## Boundaries and future extension
 
