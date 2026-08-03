@@ -50,7 +50,7 @@ Each numbered PR below must:
 | 0     | Planning  | `docs/cmux-ui-parity-plan`        | Land this delivery contract only                                       |
 | 1     | M24       | `feat/minimal-workspace-sidebar`  | Flat, terminal-first sidebar without permanent AI furniture            |
 | 2     | M25       | `feat/minimal-terminal-chrome`    | Compact tabs, headers, panes, and hover controls                       |
-| 3     | M26       | `feat/neutral-ui-theme`           | Neutral palette and semantic-only accent/motion                        |
+| 3     | M26       | `feat/neutral-ui-theme`           | Graphite palette and semantic-only color/motion                        |
 | 4     | M27       | `feat/notification-center`        | cmux-style rings, badges, pending list, and jump-to-unread             |
 | 5     | M28       | `feat/workspace-pr-port-metadata` | Compact reliable PR and listening-port context                         |
 | 6     | M29       | `feat/terminal-utilities`         | Find, command palette, contextual shortcut help, and settings entry    |
@@ -194,9 +194,10 @@ accessibility, and theme extension points.
 
 ### Scope
 
-- Shift canvas, sidebar, tabs, raised surfaces, and borders to neutral near-black
-  and charcoal roles.
-- Reserve blue for active selection and true attention/focus moments.
+- Shift canvas, sidebar, tabs, raised surfaces, and borders to low-chroma
+  graphite roles.
+- Use graphite contrast for active selection and focus; reserve saturated color
+  for semantic states.
 - Reserve green, amber, and red for semantic success, waiting, and failure.
 - Reduce corner radii and eliminate decorative shadows outside popovers.
 - Remove uppercase letter-spaced micro-headings from ordinary navigation.
@@ -214,6 +215,10 @@ accessibility, and theme extension points.
 Delivery also includes `ui: unify keyboard focus treatment`, a live-audit fix
 that replaces Chromium's default focus ring on secondary native controls with
 the shared accessible focus token.
+
+Post-M30 delivery also aligns the shell, active workspace, active tab, focus
+role, and default xterm interaction palette to the same low-chroma graphite
+system. This completes the no-blue default requested during visual acceptance.
 
 ### Focused verification
 

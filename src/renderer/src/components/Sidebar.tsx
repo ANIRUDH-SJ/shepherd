@@ -92,7 +92,6 @@ export default function Sidebar({
   return (
     <div className="sidebar-inner">
       <div className="sidebar-head">
-        <span className="brand">Shepherd</span>
         <div className="sidebar-head-actions">
           <NotificationCenter
             notifications={notifications}

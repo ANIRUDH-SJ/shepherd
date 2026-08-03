@@ -88,7 +88,19 @@ for (const name of [
   '--color-border-strong'
 ]) {
   const channels = rgb(token(name))
-  assert(Math.max(...channels) - Math.min(...channels) <= 2, `${name} stays neutral`)
+  assert(Math.max(...channels) - Math.min(...channels) <= 8, `${name} stays low-chroma graphite`)
+}
+
+for (const name of [
+  '--color-accent',
+  '--color-accent-strong',
+  '--color-selection',
+  '--color-selection-hover',
+  '--color-selection-text',
+  '--color-focus'
+]) {
+  const channels = rgb(token(name))
+  assert(Math.max(...channels) - Math.min(...channels) <= 10, `${name} has no ambient blue tint`)
 }
 
 assert(
@@ -122,7 +134,13 @@ function rule(selector: string): string {
 }
 
 assert(rule('.ws-row:hover').includes('var(--color-surface-hover)'), 'ordinary hover is neutral')
-assert(rule('.ws-row.active').includes('var(--color-selection)'), 'selection owns accent usage')
+assert(rule('.ws-row.active').includes('var(--color-selection)'), 'workspace selection is graphite')
+assert(!rule('.ws-row.active').includes('var(--color-accent)'), 'workspace selection has no blue rail')
+assert(!rule('.tab.active').includes('var(--color-accent)'), 'active tabs have no blue underline')
+assert(
+  rule('.tab.active').includes('var(--color-border-strong)'),
+  'active tabs use a neutral cmux-style edge'
+)
 assert(
   rule('.pane-attention-ring').includes('pane-attention-pulse'),
   'attention owns one bounded pane pulse'

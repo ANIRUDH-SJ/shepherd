@@ -133,7 +133,7 @@ subtitle per item, active highlight, and notification markers._
 
 - [ ] Define a "workspace" model (name, cwd, status, unread/attention flag)
 - [ ] Build the sidebar React component to match cmux styling (dark theme)
-- [ ] Active workspace highlight (blue selection block)
+- [ ] Active workspace highlight (graphite selection block)
 - [ ] Status subtitle line under each name ("Claude is waiting for your input")
 - [x] Notification markers: counted unread badge + one-shot active-pane pulse (CSS)
 - [ ] Click a workspace → switch to its tab/pane group

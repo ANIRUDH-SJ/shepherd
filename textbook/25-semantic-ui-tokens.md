@@ -1,7 +1,7 @@
 # 25 — Semantic design tokens for a desktop terminal UI
 
 Design tokens are named values that sit between design intent and component CSS.
-They turn “this exact blue” into “the selection role” and “6 pixels” into “the
+They turn “this exact gray” into “the selection role” and “6 pixels” into “the
 medium radius.” That indirection matters in a terminal application because many
 compact controls must communicate hierarchy without competing with terminal
 content.
@@ -35,17 +35,17 @@ cannot be changed safely as one global search-and-replace.
 Primitive tokens describe a value:
 
 ```css
---blue-500: #6d9eff;
---gray-900: #101010;
+--graphite-500: #4a4b44;
+--graphite-900: #151612;
 ```
 
 Semantic tokens describe intent:
 
 ```css
---color-sidebar: #101010;
---color-focus: #8db5ff;
---color-selection: #1f4678;
---color-info: #6c9ee8;
+--color-sidebar: #1d1e19;
+--color-focus: #e4e4dc;
+--color-selection: #30312b;
+--color-info: #9fa59d;
 ```
 
 Shepherd uses semantic tokens directly because the UI is still one dark theme.
@@ -79,7 +79,7 @@ resolved at render time:
 
 ```css
 :root {
-  --color-border: #292929;
+  --color-border: #363731;
 }
 .pane {
   border-color: var(--color-border);
@@ -126,12 +126,13 @@ a shared TypeScript field; adding several overlapping names weakens the contract
 The terminal canvas contains dense, high-contrast text that users stare at for
 long periods. Chrome should be quieter:
 
-- near-black canvas and sidebar surfaces reduce glare;
+- low-chroma graphite canvas and sidebar surfaces reduce glare;
 - small luminance steps create depth without card borders everywhere;
 - primary text is bright enough for labels, while metadata uses explicit muted
   roles;
-- the accent is reserved for selection and keyboard focus;
-- amber, red, green, and info blue communicate state rather than decoration.
+- neutral contrast distinguishes selection and keyboard focus;
+- amber, red, green, and subdued information color communicate semantic state
+  rather than permanent decoration.
 
 Color alone is not sufficient. Agent rows still include text labels and state
 dots; workspace attention still has structure and accessible names. Tokens make
@@ -185,11 +186,12 @@ raw color literals appear only in :root
 reduced-motion rule remains present
 ```
 
-The M26 regression goes further. It parses RGB tokens, asserts that every shell
-surface has nearly equal red/green/blue channels, and computes contrast ratios
-for primary, secondary, muted, and focus pairs. It also checks semantic ownership:
-ordinary hover must use a neutral surface while blocked, working, and idle states
-must consume danger, working, and success roles.
+The M26 regression goes further. It parses RGB tokens, asserts that shell surfaces
+and default interaction roles stay low-chroma, and computes contrast ratios for
+primary, secondary, muted, and focus pairs. It also checks semantic ownership:
+ordinary hover must use a neutral surface, active workspace and tab rules must not
+consume the accent token, and blocked, working, and idle states must consume
+danger, working, and success roles.
 
 These checks prove boundaries and measurable contrast, not that a palette is
 beautiful or that every composition is legible. Live screenshots and keyboard

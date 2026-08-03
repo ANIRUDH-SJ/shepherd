@@ -6,28 +6,28 @@
   --font-mono: 'JetBrains Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
 
   /* Surfaces */
-  --color-canvas: #0b0b0b;
-  --color-sidebar: #101010;
-  --color-surface: #161616;
-  --color-surface-hover: #1c1c1c;
-  --color-surface-raised: #222222;
-  --color-border: #292929;
-  --color-border-strong: #3a3a3a;
+  --color-canvas: #151612;
+  --color-sidebar: #1d1e19;
+  --color-surface: #24251f;
+  --color-surface-hover: #2a2b25;
+  --color-surface-raised: #30312b;
+  --color-border: #363731;
+  --color-border-strong: #4a4b44;
 
   /* Content */
-  --color-text: #eeeeee;
-  --color-text-secondary: #b8b8b8;
-  --color-text-muted: #8a8a8a;
-  --color-text-subdued: #6d6d6d;
-  --color-text-faint: #525252;
+  --color-text: #efefe8;
+  --color-text-secondary: #c2c2ba;
+  --color-text-muted: #94948c;
+  --color-text-subdued: #73736c;
+  --color-text-faint: #565650;
 
   /* Interaction */
-  --color-accent: #6d9eff;
-  --color-accent-strong: #4e82e8;
-  --color-selection: #1f4678;
-  --color-selection-hover: #28588f;
-  --color-selection-text: #eef5ff;
-  --color-focus: #8db5ff;
+  --color-accent: #cfcfc7;
+  --color-accent-strong: #e4e4dc;
+  --color-selection: #30312b;
+  --color-selection-hover: #3a3b34;
+  --color-selection-text: #f4f4ec;
+  --color-focus: #e4e4dc;
   --color-control-overlay: rgba(255, 255, 255, 0.12);
   --color-input-overlay: rgba(0, 0, 0, 0.28);
   --color-backdrop: rgba(0, 0, 0, 0.42);
@@ -36,7 +36,7 @@
   --color-attention: #e0a84b;
   --color-danger: #e66d65;
   --color-success: #70b77e;
-  --color-info: #6c9ee8;
+  --color-info: #9fa59d;
   --color-working: #d8a24a;
   --color-git: #929aa6;
 
@@ -127,15 +127,10 @@ body.resizing * {
 .sidebar-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  min-height: 30px;
+  justify-content: flex-start;
+  min-height: 28px;
   margin-bottom: var(--space-2);
-  padding: 0 var(--space-3);
-}
-.brand {
-  color: var(--color-text-secondary);
-  font-size: 12.5px;
-  font-weight: 600;
+  padding: 0 var(--space-2);
 }
 .sidebar-head-actions {
   display: flex;
@@ -195,8 +190,11 @@ body.resizing * {
   background: var(--color-surface-hover);
 }
 .ws-row.active {
-  background: color-mix(in srgb, var(--color-selection) 22%, transparent);
-  box-shadow: inset 2px 0 0 var(--color-accent);
+  background: var(--color-selection);
+  box-shadow: inset 2px 0 0 var(--color-border-strong);
+}
+.ws-row.active:hover {
+  background: var(--color-selection-hover);
 }
 .ws-row-top {
   display: flex;
@@ -1102,7 +1100,7 @@ body.resizing * {
 .tab.active {
   background: var(--color-surface-raised);
   color: var(--color-text);
-  box-shadow: inset 0 -1px 0 var(--color-accent);
+  box-shadow: inset 0 -1px 0 var(--color-border-strong);
 }
 .tab-select {
   display: flex;
