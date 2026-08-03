@@ -44,13 +44,15 @@ export default function PreviewHost({
   const webviewHostRef = useRef<HTMLDivElement | null>(null)
   const webviewRef = useRef<WebviewTag | null>(null)
   const activeRef = useRef(active)
-  activeRef.current = active
   const onUrlChangeRef = useRef(onUrlChange)
-  onUrlChangeRef.current = onUrlChange
   const initialUrlRef = useRef(url)
   const historyRef = useRef<PreviewHistory>(createPreviewHistory(url))
   const [location, setLocation] = useState(url)
   const [state, setState] = useState(INITIAL_STATE)
+
+  useEffect(() => {
+    onUrlChangeRef.current = onUrlChange
+  }, [onUrlChange])
 
   const updateHistoryState = (): void => {
     const history = historyRef.current
@@ -174,6 +176,7 @@ export default function PreviewHost({
   }, [surfaceId])
 
   useEffect(() => {
+    activeRef.current = active
     try {
       webviewRef.current?.setAudioMuted(!active)
     } catch {
