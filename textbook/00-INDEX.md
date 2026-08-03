@@ -130,6 +130,8 @@ Think of the book in five "acts":
   bounded subprocess parsing, Linux socket ownership, semantic caching, and compact UI.
 - `37-keyboard-first-terminal-utilities.md` — terminal-safe shortcuts, bounded
   xterm search, accessible command discovery, modal focus, and minimal settings.
+- `38-constrained-localhost-preview.md` — panel-type boundaries, repeated URL
+  validation, hardened Electron webviews, ephemeral sessions, persistence, and cleanup.
 
 **Reference**
 
@@ -182,6 +184,7 @@ Think of the book in five "acts":
 | `35-safe-terminal-link-activation.md`              | URL/file/OSC 8 detection, xterm cell ranges, live cwd resolution, IPC trust boundaries, opening policy, failure handling, and testing          | 02, 04, 05, 06, 07, 33 |
 | `36-context-from-external-tools-and-proc.md`       | Optional CLI capabilities, bounded PR parsing, process-owned listening sockets, inherited descriptors, caching, races, and compact UI          | 03, 06, 09, 22, 23, 32 |
 | `37-keyboard-first-terminal-utilities.md`          | Typed commands, terminal-safe shortcuts, bounded xterm search, accessible palettes, modal focus, settings, and live interaction testing        | 07, 08, 25, 27         |
+| `38-constrained-localhost-preview.md`              | Localhost-only panel modeling, webview isolation, network policy, guest lifecycle, persistence, failure handling, and live security testing    | 03, 04, 05, 09, 10, 13 |
 
 ---
 
@@ -204,7 +207,7 @@ panes, and a socket API under its own product identity.
 **The object model (memorize this):**
 
 ```
-Window → Workspace → Pane → Surface → Panel(Terminal | Browser)
+Window → Workspace → Pane → Surface → Panel(Terminal | Preview)
 ```
 
 **The core data-flow loop (the whole app in one diagram):**
@@ -262,3 +265,4 @@ so the book and the codebase stay in sync. Nothing here is throwaway.
 - `35-safe-terminal-link-activation.md` — safe URL, OSC 8, and local-file activation from terminal output
 - `36-context-from-external-tools-and-proc.md` — reliable optional PR and process-owned port context
 - `37-keyboard-first-terminal-utilities.md` — terminal-safe commands, bounded find, modal focus, and settings
+- `38-constrained-localhost-preview.md` — localhost-only browser isolation, lifecycle, and persistence

@@ -19,6 +19,10 @@ const idle: CommandContext = {
   workspaceCount: 1,
   paneCount: 1,
   terminalCount: 1,
+  surfaceCount: 1,
+  activePanelType: 'terminal',
+  activeSurfaceClosable: false,
+  activePaneClosable: false,
   unreadNotificationCount: 0,
   sidebarCollapsed: false
 }
@@ -26,6 +30,10 @@ const busy: CommandContext = {
   workspaceCount: 3,
   paneCount: 2,
   terminalCount: 4,
+  surfaceCount: 5,
+  activePanelType: 'preview',
+  activeSurfaceClosable: true,
+  activePaneClosable: true,
   unreadNotificationCount: 2,
   sidebarCollapsed: true
 }
@@ -49,11 +57,17 @@ assert(
 )
 assert(rankCommands('zoom reset', idle)[0]?.id === 'font.reset', 'ranks command keywords')
 assert(
+  rankCommands('local server', idle)[0]?.id === 'preview.open',
+  'discovers localhost preview by workflow keywords'
+)
+assert(
   rankCommands('no such operation', idle).length === 0,
   'hides commands with no matching token'
 )
 assert(!commandEnabled('workspace.close', idle), 'disables closing the last workspace')
 assert(commandEnabled('workspace.close', busy), 'enables closing among several workspaces')
+assert(!commandEnabled('terminal.find', busy), 'disables terminal find on a preview panel')
+assert(commandEnabled('surface.close', busy), 'allows closing a preview among several surfaces')
 assert(
   !commandEnabled('notification.jump-unread', idle),
   'disables unread navigation without unread work'

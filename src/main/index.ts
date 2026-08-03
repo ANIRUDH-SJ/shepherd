@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { performance } from 'node:perf_hooks'
 import { join } from 'path'
 import { registerPtyIpc, killAllTerminals } from './pty'
@@ -8,6 +8,7 @@ import { DeferredBackgroundServices } from './deferredBackgroundServices'
 import { startWorkspaceMetadataDiscovery } from './workspaceMetadata'
 import { RuntimePerformanceRecorder } from './runtimePerformance'
 import { configureProductIdentity } from './productIdentity'
+import { configurePreviewHost, configurePreviewSecurity } from './previewSecurity'
 import { loadSession, saveSession } from './session'
 import { IPC, type SocketApply, type WorkspacesSync } from '../shared/ipc'
 import { PRODUCT_NAME } from '../shared/product'
@@ -63,7 +64,8 @@ function createWindow(): void {
       // (e.g. node-pty). contextIsolation stays ON — the secure default.
       sandbox: false,
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      webviewTag: true
     }
   })
   runtimePerformance.mark('window-created')
@@ -79,11 +81,10 @@ function createWindow(): void {
   mainWindow.on('restore', syncBackgroundServiceVisibility)
   mainWindow.on('closed', syncBackgroundServiceVisibility)
 
-  // Open target=_blank / external links in the user's browser, not a new window.
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
-    return { action: 'deny' }
-  })
+  // Browser guests are opt-in localhost previews; the application renderer never
+  // gets an ambient target=_blank path to the OS browser.
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  configurePreviewHost(mainWindow.webContents)
 
   // In dev, electron-vite serves the renderer and sets ELECTRON_RENDERER_URL.
   // In production, load the built HTML file from disk.
@@ -97,6 +98,7 @@ function createWindow(): void {
 app.whenReady().then(() => {
   runtimePerformance.mark('electron-ready')
   // Wire up the terminal IPC handlers before any window loads.
+  configurePreviewSecurity()
   registerPtyIpc(runtimePerformance.enabled ? (name) => runtimePerformance.mark(name) : undefined)
   ipcMain.on(IPC.PERFORMANCE_MARK, (_event, name: unknown) => {
     if (isRendererRuntimePerformanceMarkName(name)) runtimePerformance.mark(name)

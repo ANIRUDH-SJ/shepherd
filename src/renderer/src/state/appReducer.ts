@@ -1,12 +1,14 @@
 import type { LayoutNode } from '../layout/types'
 import {
   makePane,
-  uid,
   firstPaneId,
   isValidLayoutNode,
   findPane,
   findPaneBySurfaceId,
-  listSurfaceIds
+  listSurfaceIds,
+  makeSurface,
+  normalizeLayoutNode,
+  activeTerminalSurfaceId
 } from '../layout/tree'
 import { workspaceReducer, type WorkspaceState, type WorkspaceAction } from './workspaceReducer'
 import { agentNeedsAttention, type AgentRecord, type AgentReport } from '../../../shared/agent'
@@ -75,7 +77,7 @@ export interface AppState {
 /** Mint a new workspace with one terminal. The display NAME is positional
  *  ("workspace N", by sidebar position) unless a custom `name` is given. */
 export function makeWorkspace(name?: string, cwd = '~'): Workspace {
-  const pane = makePane({ id: uid('term') })
+  const pane = makePane(makeSurface())
   return {
     id: `ws-${crypto.randomUUID()}`,
     name: normalizeWorkspaceName(name ?? ''),
@@ -121,7 +123,8 @@ export function sanitizeRestored(raw: unknown): AppState | null {
     if (typeof entry.id !== 'string' || !isValidLayoutNode(entry.root)) {
       return null
     }
-    const root = entry.root as LayoutNode
+    const root = normalizeLayoutNode(entry.root)
+    if (!root) return null
     workspaces.push({
       id: entry.id,
       name: typeof entry.name === 'string' ? entry.name : '',
@@ -401,7 +404,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'setWorkspaceMetadata':
       return mapWorkspace(state, action.id, (w) => {
-        const activeSurfaceId = findPane(w.root, w.activePaneId)?.activeSurfaceId
+        const activeSurfaceId = activeTerminalSurfaceId(w.root, w.activePaneId)
         if (activeSurfaceId !== action.metadata.surfaceId) return w
         if (
           w.metadataSurfaceId === action.metadata.surfaceId &&
@@ -641,10 +644,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'pane': {
       const next = mapWorkspace(state, action.workspaceId, (w) => {
-        const previousSurfaceId = findPane(w.root, w.activePaneId)?.activeSurfaceId
+        const previousSurfaceId = activeTerminalSurfaceId(w.root, w.activePaneId)
         const sub: WorkspaceState = { root: w.root, activePaneId: w.activePaneId }
         const workspace = workspaceReducer(sub, action.action)
-        const nextSurfaceId = findPane(workspace.root, workspace.activePaneId)?.activeSurfaceId
+        const nextSurfaceId = activeTerminalSurfaceId(workspace.root, workspace.activePaneId)
         return {
           ...w,
           root: workspace.root,

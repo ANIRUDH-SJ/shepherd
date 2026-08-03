@@ -24,6 +24,7 @@ export const IPC = {
   TERM_DATA_ACK: 'terminal:data-ack',
   TERM_RESOLVE_FILE_LINKS: 'terminal:resolve-file-links',
   TERM_OPEN_LINK: 'terminal:open-link',
+  PREVIEW_OPEN_EXTERNAL: 'preview:open-external',
   // main → renderer  (push via webContents.send / ipcRenderer.on)
   TERM_DATA: 'terminal:data',
   TERM_EXIT: 'terminal:exit',
@@ -110,6 +111,8 @@ export interface WorkspacesSync {
   agents: AgentRecord[]
 }
 
+export type PreviewOpenExternalResult = { ok: true } | { ok: false; error: string }
+
 // ── The bridge surface exposed as `window.api` (implemented in preload) ───────
 export interface ShepherdApi {
   version: string
@@ -130,6 +133,10 @@ export interface ShepherdApi {
     onData(id: string, cb: (data: string, acknowledge: () => void) => void): () => void
     /** Subscribe to a shell's exit. Returns an unsubscribe function. */
     onExit(id: string, cb: (exitCode: number) => void): () => void
+  }
+  preview: {
+    /** Open one validated loopback preview URL in the system browser. */
+    openExternal(url: string): Promise<PreviewOpenExternalResult>
   }
   socket: {
     /** Mirror the renderer's workspace list to main (for id/name resolution). */

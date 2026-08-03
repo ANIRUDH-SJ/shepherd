@@ -19,7 +19,11 @@
 
 Chapter 4 ended on a principle: **never trust the renderer.** Let's take that seriously, because it's the entire reason this chapter exists.
 
-Ask yourself what your renderer actually displays. It's a terminal. Into it flows the raw output of `bash`, of `npm install`, of AI agents running arbitrary commands, and — per `FEATURES.md` — eventually the contents of real web pages in browser panels. **None of that is code you wrote.** It's untrusted bytes from the outside world, painted into a Chromium window.
+Ask yourself what your renderer actually displays. Terminals receive raw output from
+`bash`, `npm install`, and AI agents; constrained preview panels render pages supplied by
+localhost development servers. **None of that is code you wrote.** It is untrusted input
+painted inside Chromium. The preview adds its own sandbox, ephemeral session, request
+filter, and navigation policy; see chapter 38.
 
 Now imagine you took the "easy" path and gave that Chromium window full Node.js powers — so your React code could just `require('child_process')` and spawn shells directly, no IPC ceremony. Convenient! And catastrophic. Because a browser window is an _attack surface_. Terminal emulators have a long history of escape-sequence bugs; web pages have XSS; npm packages get compromised. The day _any_ of those lets a stranger run JavaScript in your renderer, look at what that JavaScript can now reach:
 

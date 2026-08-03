@@ -13,6 +13,12 @@ export type IconName =
   | 'bell'
   | 'check'
   | 'command'
+  | 'preview'
+  | 'back'
+  | 'forward'
+  | 'reload'
+  | 'external'
+  | 'stop'
 
 interface Props {
   name: IconName
@@ -108,6 +114,45 @@ function iconPaths(name: IconName): ReactNode {
           <path d="M5 17h14" />
         </>
       )
+    case 'preview':
+      return (
+        <>
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path d="M3 9h18" />
+          <circle cx="6" cy="7" r=".5" fill="currentColor" stroke="none" />
+        </>
+      )
+    case 'back':
+      return (
+        <>
+          <path d="m14 6-6 6 6 6" />
+          <path d="M8 12h10" />
+        </>
+      )
+    case 'forward':
+      return (
+        <>
+          <path d="m10 6 6 6-6 6" />
+          <path d="M6 12h10" />
+        </>
+      )
+    case 'reload':
+      return (
+        <>
+          <path d="M20 7v5h-5" />
+          <path d="M18 16a8 8 0 1 1 1-8l1 4" />
+        </>
+      )
+    case 'external':
+      return (
+        <>
+          <path d="M14 5h5v5" />
+          <path d="m19 5-8 8" />
+          <path d="M18 13v6H5V6h6" />
+        </>
+      )
+    case 'stop':
+      return <rect x="7" y="7" width="10" height="10" rx="1" />
   }
 }
 

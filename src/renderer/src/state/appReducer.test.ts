@@ -8,7 +8,7 @@ import {
   toLayoutSnapshot,
   type AppState
 } from './appReducer'
-import { splitAction } from './workspaceReducer'
+import { previewSplitAction, splitAction } from './workspaceReducer'
 import { findPane, listSurfaceIds } from '../layout/tree'
 import type { AgentReport } from '../../../shared/agent'
 import { MAX_WORKSPACE_NAME_LENGTH } from '../../../shared/workspace'
@@ -421,6 +421,73 @@ assert(restored!.workspaces[0].unread === false, 'transient flags are reset on r
 assert(restored!.workspaces[0].usage.totals.reportCount === 0, 'usage is reset on restore')
 assert(restored!.workspaces[0].usage.latest === null, 'latest usage is reset on restore')
 assert(restored!.agents.length === 0, 'agent lifecycle state is reset on restore')
+
+let previewSessionState = initialApp()
+const previewWorkspace = active(previewSessionState)
+previewSessionState = appReducer(
+  previewSessionState,
+  paneAction(
+    previewWorkspace.id,
+    previewSplitAction(previewWorkspace.activePaneId, 'http://localhost:43140/app')
+  )
+)
+const previewTerminalId = listSurfaceIds(previewWorkspace.root)[0]
+previewSessionState = appReducer(previewSessionState, {
+  type: 'setWorkspaceMetadata',
+  id: previewWorkspace.id,
+  metadata: {
+    surfaceId: previewTerminalId,
+    cwd: '/tmp/preview-project',
+    projectName: 'preview-project',
+    gitRoot: null,
+    gitBranch: null,
+    pullRequest: null,
+    ports: [43140]
+  }
+})
+assert(
+  active(previewSessionState).ports[0] === 43140,
+  'keeps terminal-owned metadata while a preview pane is active'
+)
+const restoredPreview = sanitizeRestored(
+  JSON.parse(JSON.stringify(toLayoutSnapshot(previewSessionState)))
+)
+const restoredPreviewSurfaces =
+  restoredPreview?.workspaces[0].root.type === 'split'
+    ? restoredPreview.workspaces[0].root.children.flatMap((child) =>
+        child.type === 'pane' ? child.pane.surfaces : []
+      )
+    : []
+assert(
+  restoredPreviewSurfaces.some(
+    (surface) =>
+      surface.panel.type === 'preview' && surface.panel.url === 'http://localhost:43140/app'
+  ),
+  'persists and restores a safe localhost preview panel'
+)
+
+const restoredLegacyPanel = sanitizeRestored({
+  workspaces: [
+    {
+      id: 'legacy-workspace',
+      root: {
+        type: 'pane',
+        pane: {
+          id: 'legacy-pane',
+          surfaces: [{ id: 'legacy-terminal' }],
+          activeSurfaceId: 'legacy-terminal'
+        }
+      },
+      activePaneId: 'legacy-pane'
+    }
+  ],
+  activeWorkspaceId: 'legacy-workspace'
+})
+assert(
+  restoredLegacyPanel?.workspaces[0].root.type === 'pane' &&
+    restoredLegacyPanel.workspaces[0].root.pane.surfaces[0].panel.type === 'terminal',
+  'migrates a legacy terminal-only surface during restore'
+)
 
 let notificationSnapshotState = initialApp()
 const persistedWorkspace = notificationSnapshotState.workspaces[0]

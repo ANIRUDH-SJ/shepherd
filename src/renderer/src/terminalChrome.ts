@@ -22,16 +22,30 @@ export function terminalTabId(surfaceId: string): string {
   return `terminal-tab-${surfaceId}`
 }
 
+export const surfaceTabId = terminalTabId
+
 export function terminalPanelId(surfaceId: string): string {
   return `terminal-panel-${surfaceId}`
+}
+
+export const surfacePanelId = terminalPanelId
+
+export function surfaceLabel(surface: Surface, terminalNumbers: Map<string, number>): string {
+  return surface.panel.type === 'terminal'
+    ? `Terminal ${terminalNumbers.get(surface.id) ?? '?'}`
+    : `Preview ${previewUrlLabel(surface.panel.url)}`
 }
 
 export function terminalWorkspaceAriaLabel(
   workspaceName: string,
   paneCount: number,
-  terminalCount: number
+  terminalCount: number,
+  previewCount = 0
 ): string {
   const panes = `${paneCount} ${paneCount === 1 ? 'pane' : 'panes'}`
   const terminals = `${terminalCount} ${terminalCount === 1 ? 'terminal' : 'terminals'}`
-  return `${workspaceName}, ${panes}, ${terminals}`
+  const previews = `${previewCount} ${previewCount === 1 ? 'preview' : 'previews'}`
+  return `${workspaceName}, ${panes}, ${terminals}${previewCount > 0 ? `, ${previews}` : ''}`
 }
+import type { Surface } from './layout/types'
+import { previewUrlLabel } from '../../shared/preview'

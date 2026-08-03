@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
-import type { Pane } from '../layout/types'
-import { tabNavigationTarget, terminalPanelId, terminalTabId } from '../terminalChrome'
+import type { Pane, Surface } from '../layout/types'
+import { surfaceLabel, surfacePanelId, surfaceTabId, tabNavigationTarget } from '../terminalChrome'
 import Icon from './Icon'
 
 // The tab bar at the top of a pane: one tab per surface, a "+" to add a tab, and
@@ -10,7 +10,7 @@ interface Props {
   pane: Pane
   paneNumber: number
   canClosePane: boolean
-  surfaceNumbers: Map<string, number>
+  terminalNumbers: Map<string, number>
   onSelect: (surfaceId: string) => void
   onCloseSurface: (surfaceId: string) => void
   onNewSurface: () => void
@@ -31,7 +31,7 @@ export default function TabBar(props: Props): React.JSX.Element {
     pane,
     paneNumber,
     canClosePane,
-    surfaceNumbers,
+    terminalNumbers,
     onSelect,
     onCloseSurface,
     onNewSurface,
@@ -40,15 +40,19 @@ export default function TabBar(props: Props): React.JSX.Element {
     onClosePane
   } = props
   const surfaceIds = pane.surfaces.map((surface) => surface.id)
-  const canCloseSurface = pane.surfaces.length > 1 || canClosePane
   const activeTabRef = useRef<HTMLDivElement | null>(null)
+
+  const canCloseSurface = (surface: Surface): boolean =>
+    (pane.surfaces.length > 1 || canClosePane) &&
+    (surface.panel.type === 'preview' || terminalNumbers.size > 1)
 
   useEffect(() => {
     activeTabRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   }, [pane.activeSurfaceId])
 
   const handleTabKeyDown = (event: React.KeyboardEvent, surfaceId: string): void => {
-    if (event.key === 'Delete' && canCloseSurface) {
+    const surface = pane.surfaces.find((candidate) => candidate.id === surfaceId)
+    if (event.key === 'Delete' && surface && canCloseSurface(surface)) {
       event.preventDefault()
       onCloseSurface(surfaceId)
       return
@@ -58,53 +62,54 @@ export default function TabBar(props: Props): React.JSX.Element {
     if (!target) return
     event.preventDefault()
     onSelect(target)
-    requestAnimationFrame(() => document.getElementById(terminalTabId(target))?.focus())
+    requestAnimationFrame(() => document.getElementById(surfaceTabId(target))?.focus())
   }
 
   return (
     <div className="pane-tabs">
-      <div className="tab-list" role="tablist" aria-label={`Pane ${paneNumber} terminal tabs`}>
-        {pane.surfaces.map((s) => (
-          <div
-            key={s.id}
-            ref={s.id === pane.activeSurfaceId ? activeTabRef : undefined}
-            role="presentation"
-            className={'tab' + (s.id === pane.activeSurfaceId ? ' active' : '')}
-          >
-            <button
-              type="button"
-              id={terminalTabId(s.id)}
-              className="tab-select"
-              role="tab"
-              aria-selected={s.id === pane.activeSurfaceId}
-              aria-controls={terminalPanelId(s.id)}
-              aria-keyshortcuts={canCloseSurface ? 'Delete' : undefined}
-              tabIndex={s.id === pane.activeSurfaceId ? 0 : -1}
-              title={`Terminal ${surfaceNumbers.get(s.id) ?? '?'}${canCloseSurface ? ' (Delete to close)' : ''}`}
-              onMouseDown={stop}
-              onClick={() => onSelect(s.id)}
-              onKeyDown={(event) => handleTabKeyDown(event, s.id)}
+      <div className="tab-list" role="tablist" aria-label={`Pane ${paneNumber} tabs`}>
+        {pane.surfaces.map((s) => {
+          const label = surfaceLabel(s, terminalNumbers)
+          const closeable = canCloseSurface(s)
+          return (
+            <div
+              key={s.id}
+              ref={s.id === pane.activeSurfaceId ? activeTabRef : undefined}
+              role="presentation"
+              className={'tab' + (s.id === pane.activeSurfaceId ? ' active' : '')}
             >
-              <span className="tab-title">Terminal {surfaceNumbers.get(s.id) ?? '?'}</span>
-            </button>
-            <button
-              type="button"
-              className="tab-close"
-              title={
-                canCloseSurface
-                  ? `Close Terminal ${surfaceNumbers.get(s.id) ?? '?'}`
-                  : 'The last terminal cannot be closed'
-              }
-              aria-label={`Close Terminal ${surfaceNumbers.get(s.id) ?? '?'}`}
-              tabIndex={-1}
-              disabled={!canCloseSurface}
-              onMouseDown={stop}
-              onClick={() => onCloseSurface(s.id)}
-            >
-              <Icon name="close" />
-            </button>
-          </div>
-        ))}
+              <button
+                type="button"
+                id={surfaceTabId(s.id)}
+                className="tab-select"
+                role="tab"
+                aria-selected={s.id === pane.activeSurfaceId}
+                aria-controls={surfacePanelId(s.id)}
+                aria-keyshortcuts={closeable ? 'Delete' : undefined}
+                tabIndex={s.id === pane.activeSurfaceId ? 0 : -1}
+                title={`${label}${closeable ? ' (Delete to close)' : ''}`}
+                onMouseDown={stop}
+                onClick={() => onSelect(s.id)}
+                onKeyDown={(event) => handleTabKeyDown(event, s.id)}
+              >
+                {s.panel.type === 'preview' && <Icon name="preview" />}
+                <span className="tab-title">{label}</span>
+              </button>
+              <button
+                type="button"
+                className="tab-close"
+                title={closeable ? `Close ${label}` : 'The last tab cannot be closed'}
+                aria-label={`Close ${label}`}
+                tabIndex={-1}
+                disabled={!closeable}
+                onMouseDown={stop}
+                onClick={() => onCloseSurface(s.id)}
+              >
+                <Icon name="close" />
+              </button>
+            </div>
+          )
+        })}
       </div>
 
       <button
@@ -144,7 +149,7 @@ export default function TabBar(props: Props): React.JSX.Element {
         <button
           type="button"
           className="pane-btn"
-          title={canClosePane ? 'Close pane (Ctrl+Shift+W)' : 'The last pane cannot be closed'}
+          title={canClosePane ? 'Close pane' : 'A workspace must keep at least one terminal pane'}
           aria-label={`Close Pane ${paneNumber}`}
           disabled={!canClosePane}
           onMouseDown={stop}

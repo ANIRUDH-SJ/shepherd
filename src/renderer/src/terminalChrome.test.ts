@@ -2,7 +2,8 @@ import {
   tabNavigationTarget,
   terminalPanelId,
   terminalTabId,
-  terminalWorkspaceAriaLabel
+  terminalWorkspaceAriaLabel,
+  surfaceLabel
 } from './terminalChrome'
 
 let failures = 0
@@ -32,6 +33,17 @@ assert(
 assert(
   terminalWorkspaceAriaLabel('review', 4, 6) === 'review, 4 panes, 6 terminals',
   'pluralizes compact workspace counts'
+)
+assert(
+  terminalWorkspaceAriaLabel('serve', 2, 1, 1) === 'serve, 2 panes, 1 terminal, 1 preview',
+  'includes preview panels in workspace context'
+)
+assert(
+  surfaceLabel(
+    { id: 'preview-a', panel: { type: 'preview', url: 'http://localhost:43140/app' } },
+    new Map()
+  ) === 'Preview localhost:43140/app',
+  'labels preview tabs by local address'
 )
 
 assert(

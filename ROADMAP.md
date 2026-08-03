@@ -52,7 +52,7 @@ frontend", IPC = "the API calls between them".
 - [x] **M27** — Notification center, meaningful rings, and jump-to-unread ✓
 - [x] **M28** — Compact pull-request and listening-port workspace metadata ✓
 - [x] **M29** — Terminal find, command palette, contextual help, and settings entry ✓
-- [ ] **M30** — Constrained localhost preview surface
+- [x] **M30** — Constrained localhost preview surface ✓
 
 ---
 
@@ -69,11 +69,11 @@ frontend", IPC = "the API calls between them".
 > feature requires both `learning/` and `textbook/` updates after its behavior
 > settles.
 
-> **Active cmux-parity delivery plan:**
+> **Completed cmux-parity delivery plan:**
 > [`CMUX_UI_PARITY_PLAN.md`](./CMUX_UI_PARITY_PLAN.md) — the one-PR-per-milestone
 > sequence for removing dashboard-like UI, restoring terminal-first hierarchy,
 > and then adding cmux-inspired notifications, metadata, utilities, and preview.
-> Complete M24–M26 before beginning the deferred agent-workspace panels.
+> M24–M30 are complete; the deferred agent-workspace panels remain separately planned.
 
 ## M0 — Project setup & scaffolding
 
@@ -500,8 +500,8 @@ shell, then add only the cmux-inspired context and utilities that remain useful.
 - [x] **M27:** add bounded pending notifications, meaningful rings, and unread navigation
 - [x] **M28:** add reliable, compact PR and listening-port metadata
 - [x] **M29:** replace shortcut furniture with terminal find, palette, help, and settings
-- [ ] **M30:** add a constrained localhost preview after the terminal shell is stable
-- [ ] Deliver every milestone on its own branch and PR using the commit, verification,
+- [x] **M30:** add a constrained localhost preview after the terminal shell is stable
+- [x] Deliver every milestone on its own branch and PR using the commit, verification,
       screenshot, `learning/`, and `textbook/` gates in
       [`CMUX_UI_PARITY_PLAN.md`](./CMUX_UI_PARITY_PLAN.md)
 
@@ -515,7 +515,7 @@ shell, then add only the cmux-inspired context and utilities that remain useful.
       complete code/tests first, then update both `learning/` and `textbook/`
       before closing each feature
 - [ ] Port the React UI to **Tauri** for lean binaries (~10× smaller, less RAM)
-- [ ] In-app browser panels + browser automation API (`Panel='browser'`)
+- [ ] General browser panels + browser automation API beyond the constrained localhost preview
 - [ ] Remote SSH workspaces + localhost routing; Claude Code Teams mode
 - [ ] Worktree cleanup and diff/review UI (creation workflow landed in M8)
 - [ ] Cross-platform builds (Windows/Mac) — Electron makes this nearly free

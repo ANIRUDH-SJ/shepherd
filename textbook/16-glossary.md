@@ -135,6 +135,10 @@
   callback. Shepherd uses the official provider for HTTP(S) and a custom,
   existence-checked provider for local file references. (see
   35-safe-terminal-link-activation.md)
+- **loopback address** — A network address that routes back to the same machine,
+  including `localhost`, `[::1]`, and IPv4 `127.0.0.0/8`. Shepherd's preview accepts
+  only HTTP(S) loopback documents and local development subresources. (see
+  38-constrained-localhost-preview.md)
 
 ## M
 
@@ -170,7 +174,13 @@
 ## P
 
 - **Pane** — In our object model, a resizable split region inside a workspace (⌘D / Ctrl-D splits it). Panes are the rectangles you tile. (see 09-typescript-and-the-data-model.md; how they tile: 10-tiling-and-layout.md)
-- **Panel** — The actual content rendered in a surface — a Terminal (v1) or, later, a Browser. It's the leaf of the object model. (see 09-typescript-and-the-data-model.md)
+- **Panel** — The actual content rendered in a surface: a terminal or a constrained
+  localhost preview. It is the leaf of the object model. (see
+  09-typescript-and-the-data-model.md; 38-constrained-localhost-preview.md)
+- **preview partition** — Shepherd's dedicated in-memory Electron session for preview
+  guests. Its missing `persist:` prefix keeps cookies/cache non-durable, while its shared
+  policy denies remote requests, downloads, and permissions. (see
+  38-constrained-localhost-preview.md)
 - **preload script** — A special script Electron runs in the renderer _before_ the web page loads, with access to a limited bridge API. It's where we use contextBridge to build `window.api`. (see 05-preload-and-context-isolation.md)
 - **primary / subordinate (master / slave)** — The two ends of a pty pair. The controlling program (our app, via node-pty) holds the _primary_ end; the shell runs attached to the _subordinate_ end, which looks like a real terminal to it. (Older docs call these master/slave.) (see 02-how-terminals-work.md)
 - **product identity contract** — The coordinated set of human and machine
@@ -271,6 +281,10 @@
   activation callback and sends the URL through validated main-process IPC
   instead of letting the renderer open it directly. (see
   35-safe-terminal-link-activation.md)
+- **webview guest** — A separate Electron web contents embedded by a host renderer.
+  Shepherd permits it only for a validated localhost preview, hardens its preferences in
+  main, and removes it when the owning preview surface closes. (see
+  38-constrained-localhost-preview.md)
 - **Window** — In our object model, an OS window with its own sidebar and independent set of workspaces. (Distinct from Electron's BrowserWindow, which _implements_ it.) (see 09-typescript-and-the-data-model.md)
 - **window.api** — The object our preload script exposes (via contextBridge) onto the renderer's global `window`, bundling the safe functions the React UI calls to reach main — e.g. `window.api.sendInput(...)`. (see 05-preload-and-context-isolation.md)
 - **Workspace** — In our object model, one row in the sidebar: a named context (a project or agent) with its own layout, cwd, git branch, status, and notification state. (see 09-typescript-and-the-data-model.md)

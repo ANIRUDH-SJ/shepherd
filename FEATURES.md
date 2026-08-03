@@ -21,7 +21,7 @@ Window
  └─ Workspace        ← a sidebar entry (what you see in the left list)
      └─ Pane          ← a split region (⌘D right / ⌘⇧D down)
          └─ Surface    ← a tab WITHIN a pane (each pane has its own tab bar)
-             └─ Panel   ← the actual content: a Terminal OR a Browser
+             └─ Panel   ← the actual content: a Terminal OR a localhost Preview
 ```
 
 - **Window** — an OS window; each has its own sidebar + independent workspaces.
@@ -29,7 +29,8 @@ Window
   ports, status pills, progress, and notification/unread state. Env: `SHEPHERD_WORKSPACE_ID`.
 - **Pane** — a resizable split region inside a workspace (the tiling).
 - **Surface** — a tab inside a pane; a pane can hold several surfaces. Env: `SHEPHERD_SURFACE_ID`.
-- **Panel** — what's rendered in a surface: a **Terminal** (Ghostty session) or a **Browser**.
+- **Panel** — what's rendered in a surface: an xterm.js **Terminal** or a constrained
+  localhost **Preview**.
 
 **Mapping to the screenshot you shared:** the left list = _workspaces_; each big
 tiled region = a _pane_; the little tab bars on top of some regions = _surfaces_;
@@ -38,17 +39,9 @@ the terminal content = a _terminal panel_.
 ### Our data model (React/TypeScript)
 
 ```ts
-type PanelType = 'terminal' | 'browser'
-
-interface Panel {
-  id: string
-  type: PanelType
-  ptyId?: string
-  url?: string
-}
+type Panel = { type: 'terminal' } | { type: 'preview'; url: string }
 interface Surface {
   id: string
-  title: string
   panel: Panel
 } // a tab
 interface Pane {
@@ -57,14 +50,21 @@ interface Pane {
   activeSurfaceId: string
 }
 type PaneNode =
-  | { kind: 'leaf'; pane: Pane }
-  | { kind: 'split'; dir: 'row' | 'col'; sizes: number[]; children: PaneNode[] }
+  | { type: 'pane'; pane: Pane }
+  | {
+      type: 'split'
+      id: string
+      direction: 'row' | 'column'
+      sizes: number[]
+      children: PaneNode[]
+    }
 
 interface Workspace {
   id: string
   name: string
   cwd: string
-  layout: PaneNode // the split tree
+  root: PaneNode // the split tree
+  activePaneId: string
   // --- sidebar metadata, all pushed via the socket API (Part 2) ---
   status: StatusPill[] // set-status
   progress?: { value: number; label?: string }
@@ -82,8 +82,9 @@ interface Window {
 }
 ```
 
-> **Scope call for v1:** implement `Panel = 'terminal'` only. Keep the `type`
-> field so a `'browser'` panel can slot in later without a refactor.
+> **Current boundary:** terminal and localhost-preview panels ship. A preview URL is
+> repeatedly validated as HTTP(S) loopback, and preview surface ids never become PTY ids.
+> General browser panels and automation remain separate future work.
 
 ---
 
@@ -168,7 +169,7 @@ Tiers: **🟢 Core v1** (needed for the cmux feel) · **🟡 v2** (polish/depth)
 | 19  | **Command palette + project `shepherd.json` actions**                | typed contextual palette over existing workspace, terminal, pane, attention, and view actions; validated repo-local actions remain deferred                                              | 🟢 palette · 🟡 project actions                             |
 | 20  | **Read Ghostty config** for theme/font/colors                        | parse `~/.config/ghostty/config` → apply to xterm theme (compat nicety)                                                                                                                  | 🟡                                                          |
 | 21  | **Settings UI** (font, theme, shell, keybinds)                       | compact modal entry with live persisted font controls plus honest theme/keybinding status; main-owned shell/config editing remains deferred                                              | 🟢 entry/font · 🟡 deeper settings                          |
-| 22  | **In-app browser panels** + browser automation API                   | `Panel='browser'` via a `<webview>`/`BrowserView`; automation over the socket                                                                                                            | 🔵                                                          |
+| 22  | **Constrained localhost preview** + later browser automation         | shipped `Panel='preview'` in an ephemeral hardened webview with loopback-only requests, persistence, and cleanup; general browsing and automation remain separate future work            | 🟢 preview · 🔵 general browser/automation                  |
 | 23  | **Remote SSH workspaces** (`shepherd ssh`, remote tmux, routing)     | spawn `ssh`/attach `tmux` in a pane; network routing is hard — defer                                                                                                                     | 🔵                                                          |
 | 24  | **Claude Code Teams mode** (`claude-teams` → teammates as splits)    | orchestrate multiple agent panes via the socket API                                                                                                                                      | 🔵                                                          |
 | 25  | **Skills system** (reusable agent workflows)                         | ship prompt/workflow snippets invokable from the palette                                                                                                                                 | 🔵                                                          |
@@ -263,8 +264,9 @@ shepherd watch-agents + query filters
 
 ## Part 5 — What we deliberately cut for v1 (and why)
 
-- **In-app browser + browser automation (#22)** — big surface area; the terminal
-  experience is the core. Data model leaves room (`Panel='browser'`) to add later.
+- **General browser + browser automation beyond the localhost preview (#22)** — the
+  constrained loopback workflow ships, while arbitrary origins, durable browser state,
+  downloads, permissions, remote routing, and automation remain outside v1.
 - **Remote SSH network routing (#23)** — cmux routes browser panes through the
   remote's network; that's deep plumbing. Plain `ssh` in a pane works day one; the
   fancy routing is Stretch.

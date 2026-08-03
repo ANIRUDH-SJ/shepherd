@@ -10,10 +10,15 @@ import {
   resizeSplit,
   computeLayout,
   listSurfaceIds,
+  listTerminalSurfaceIds,
+  activeTerminalSurfaceId,
   findPane,
   findPaneBySurfaceId,
   makePane,
-  makeSurface
+  makeSurface,
+  makePreviewSurface,
+  isValidLayoutNode,
+  normalizeLayoutNode
 } from './tree'
 import type { LayoutNode } from './types'
 
@@ -37,6 +42,44 @@ assert(listSurfaceIds(root).length === 1, 'initial tree has exactly 1 surface')
 const firstSurfaceId = listSurfaceIds(root)[0]
 assert(findPaneBySurfaceId(root, firstSurfaceId)?.id === firstId, 'finds a pane by surface id')
 assert(findPaneBySurfaceId(root, 'missing') === null, 'missing surface has no pane')
+assert(makeSurface().panel.type === 'terminal', 'new surfaces own terminal panels')
+
+const preview = makePreviewSurface('http://localhost:43140/')
+const previewPane = makePane(preview)
+const withPreview = splitPane(root, firstId, 'row', previewPane)
+assert(preview.panel.type === 'preview', 'creates a discriminated preview panel')
+assert(listSurfaceIds(withPreview).length === 2, 'preview remains a normal surface')
+assert(listTerminalSurfaceIds(withPreview).length === 1, 'preview is not counted as a terminal')
+assert(
+  activeTerminalSurfaceId(withPreview, previewPane.id) === firstSurfaceId,
+  'preview focus falls back to the workspace terminal'
+)
+assert(
+  isValidLayoutNode({
+    type: 'pane',
+    pane: { id: 'legacy-pane', surfaces: [{ id: 'legacy-term' }], activeSurfaceId: 'legacy-term' }
+  }),
+  'accepts the legacy terminal-only session shape'
+)
+const normalizedLegacy = normalizeLayoutNode({
+  type: 'pane',
+  pane: { id: 'legacy-pane', surfaces: [{ id: 'legacy-term' }], activeSurfaceId: 'legacy-term' }
+})
+assert(
+  normalizedLegacy?.type === 'pane' && normalizedLegacy.pane.surfaces[0].panel.type === 'terminal',
+  'upgrades a legacy surface to a terminal panel'
+)
+assert(
+  !isValidLayoutNode({
+    type: 'pane',
+    pane: {
+      id: 'unsafe-pane',
+      surfaces: [{ id: 'unsafe-preview', panel: { type: 'preview', url: 'https://example.com' } }],
+      activeSurfaceId: 'unsafe-preview'
+    }
+  }),
+  'rejects a persisted remote preview'
+)
 
 // ── split right (row) ────────────────────────────────────────
 const paneB = makePane(makeSurface())
@@ -46,7 +89,10 @@ assert(root.type === 'split' && root.direction === 'row', 'split-right makes a r
 assert(listSurfaceIds(root).length === 2, '2 surfaces after split')
 let layout = computeLayout(root)
 assert(layout.panes.length === 2, 'computeLayout: 2 panes')
-assert(approx(layout.panes[0].rect.width, 50) && approx(layout.panes[1].rect.width, 50), 'panes are 50/50 wide')
+assert(
+  approx(layout.panes[0].rect.width, 50) && approx(layout.panes[1].rect.width, 50),
+  'panes are 50/50 wide'
+)
 assert(layout.dividers.length === 1 && layout.dividers[0].direction === 'row', 'one row divider')
 assert(approx(layout.dividers[0].leftPct, 50), 'divider sits at 50%')
 
@@ -58,8 +104,14 @@ layout = computeLayout(root)
 assert(layout.panes.length === 3, 'computeLayout: 3 panes')
 const rightPanes = layout.panes.filter((p) => approx(p.rect.left, 50))
 assert(rightPanes.length === 2, 'two panes stacked on the right half')
-assert(rightPanes.every((p) => approx(p.rect.width, 50)), 'right panes are 50% wide')
-assert(rightPanes.every((p) => approx(p.rect.height, 50)), 'right panes are 50% tall each')
+assert(
+  rightPanes.every((p) => approx(p.rect.width, 50)),
+  'right panes are 50% wide'
+)
+assert(
+  rightPanes.every((p) => approx(p.rect.height, 50)),
+  'right panes are 50% tall each'
+)
 
 // ── resize the outer split: left pane → 70% ──────────────────
 root = resizeSplit(root, outer, 0, 0.2)
@@ -80,13 +132,19 @@ assert(findPane(root, firstId)!.surfaces.length === 2, 'pane has 2 surfaces afte
 assert(findPane(root, firstId)!.activeSurfaceId === extra.id, 'new surface becomes active')
 root = closeSurface(root, firstId, extra.id)
 assert(findPane(root, firstId)!.surfaces.length === 1, 'back to 1 surface after closeSurface')
-assert(findPane(root, firstId)!.activeSurfaceId !== extra.id, 'active reassigned after closing active tab')
+assert(
+  findPane(root, firstId)!.activeSurfaceId !== extra.id,
+  'active reassigned after closing active tab'
+)
 
 // ── close a pane → collapse ──────────────────────────────────
 const before = listSurfaceIds(root).length
 const collapsed = closePane(root, paneB.id)
 assert(collapsed !== null, 'tree not empty after closing one pane')
-assert(listSurfaceIds(collapsed!).length === before - 1, 'exactly one fewer surface after closePane')
+assert(
+  listSurfaceIds(collapsed!).length === before - 1,
+  'exactly one fewer surface after closePane'
+)
 
 // ── positional numbering: order in listSurfaceIds IS the number ──
 // (after the ops above there are 3 surfaces across 3 panes)
