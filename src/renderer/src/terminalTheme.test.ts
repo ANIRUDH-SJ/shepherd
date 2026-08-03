@@ -9,10 +9,10 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-assert(TERMINAL_THEME.background === '#0d0d0d', 'keeps a terminal-owned background')
-assert(TERMINAL_THEME.foreground === '#e6e6e6', 'keeps terminal text independent')
-assert(TERMINAL_THEME.cursor === '#8ab4ff', 'keeps a distinct terminal cursor')
-assert(TERMINAL_THEME.selectionBackground === '#294366', 'defines terminal selection locally')
+assert(TERMINAL_THEME.background === '#0d0e0c', 'keeps a terminal-owned graphite background')
+assert(TERMINAL_THEME.foreground === '#e8e8e0', 'keeps warm terminal text independent')
+assert(TERMINAL_THEME.cursor === '#d7d7cf', 'keeps a distinct neutral terminal cursor')
+assert(TERMINAL_THEME.selectionBackground === '#3a3b34', 'keeps selection free of blue tint')
 assert(Object.isFrozen(TERMINAL_THEME), 'prevents one terminal from mutating the shared theme')
 assert(
   Object.values(TERMINAL_THEME).every(
