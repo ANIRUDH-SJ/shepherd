@@ -17,3 +17,10 @@ npm-debug.log*
 .DS_Store
 .eslintcache
 *.tsbuildinfo
+
+# local planning and study material
+/learning/
+/textbook/
+/*_PLAN.md
+/ROADMAP.md
+/FEATURES.md
