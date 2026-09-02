@@ -1,6 +1,9 @@
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import './App.css'
+import { initializeAppearance } from './appearance'
+
+initializeAppearance()
 
 if (window.api.performance.enabled) window.api.performance.mark('renderer-bootstrap')
 

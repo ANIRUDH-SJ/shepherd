@@ -1,20 +1,20 @@
-// Headless tests for the renderer settings store (terminal font size).
-// Run via `npm test` (tsx). settings.ts reads `localStorage` and dispatches a
-// window event — neither exists in Node, so we stub them.
-// (The static import below is side-effect-free at module load; the stubs are in
-// place before any settings function is actually called.)
 import {
-  getFontSize,
-  setFontSize,
+  DEFAULT_FONT_SIZE,
+  DEFAULT_RENDERER_PREFERENCES,
+  RENDERER_PREFERENCES_KEY,
+  RENDERER_PREFERENCES_VERSION,
   bumpFontSize,
+  getFontSize,
+  getRendererPreferences,
   resetFontSize,
-  DEFAULT_FONT_SIZE
+  setAppearanceMode,
+  setFontSize,
+  updateRendererPreferences
 } from './settings'
 import { RENDERER_EVENT } from './events'
 
-// ── minimal browser-global stubs ────────────────────────────────────────────
 const store = new Map<string, string>()
-let lastDetail: number | null = null
+let lastDetail: unknown = null
 let lastType = ''
 const g = globalThis as unknown as {
   localStorage: { getItem(k: string): string | null; setItem(k: string, v: string): void }
@@ -22,10 +22,8 @@ const g = globalThis as unknown as {
   window: { dispatchEvent(e: { type?: string; detail?: unknown }): boolean }
 }
 g.localStorage = {
-  getItem: (k) => (store.has(k) ? (store.get(k) as string) : null),
-  setItem: (k, v) => {
-    store.set(k, v)
-  }
+  getItem: (key) => store.get(key) ?? null,
+  setItem: (key, value) => store.set(key, value)
 }
 g.CustomEvent = class {
   type: string
@@ -36,60 +34,87 @@ g.CustomEvent = class {
   }
 }
 g.window = {
-  dispatchEvent: (e) => {
-    lastType = typeof e.type === 'string' ? e.type : ''
-    lastDetail = (e.detail as number) ?? null
+  dispatchEvent: (event) => {
+    lastType = event.type ?? ''
+    lastDetail = event.detail
     return true
   }
 }
 
-// ── harness ─────────────────────────────────────────────────────────────────
 let failures = 0
-const assert = (c: boolean, m: string): void => {
-  if (c) console.log('  ok:', m)
+function assert(condition: boolean, message: string): void {
+  if (condition) console.log('  ok:', message)
   else {
-    console.error('FAIL:', m)
+    console.error('FAIL:', message)
     failures++
   }
 }
 
-// default when unset
 store.clear()
-assert(getFontSize() === DEFAULT_FONT_SIZE, 'unset → default')
+assert(
+  JSON.stringify(getRendererPreferences()) === JSON.stringify(DEFAULT_RENDERER_PREFERENCES),
+  'unset preferences migrate to versioned defaults'
+)
+assert(
+  JSON.parse(store.get(RENDERER_PREFERENCES_KEY) ?? '{}').version ===
+    RENDERER_PREFERENCES_VERSION,
+  'persists the current schema version'
+)
 
-// set persists, returns the clamped value, and broadcasts the detail
-assert(setFontSize(16) === 16 && getFontSize() === 16, 'set 16 → persisted')
-assert(lastType === RENDERER_EVENT.fontSize, 'set broadcasts the Shepherd font event')
-assert(lastDetail === 16, 'set broadcasts font-size detail')
-
-// clamps to the [8, 28] range
-assert(setFontSize(999) === 28, 'clamp above MAX → 28')
-assert(setFontSize(1) === 8, 'clamp below MIN → 8')
-
-// rounds fractional input before storing
-assert(setFontSize(13.6) === 14, 'round fractional input')
-
-// getFontSize normalizes a fractional stored value to an integer (Copilot, PR #10)
 store.clear()
 store.set('cmux.fontSize', '17.8')
-assert(getFontSize() === 18, 'stored fractional → rounded on read')
-assert(store.get('shepherd.fontSize') === '18', 'migrates a valid legacy font size')
+assert(getFontSize() === 18, 'migrates and rounds the legacy cmux font size')
+assert(
+  JSON.parse(store.get(RENDERER_PREFERENCES_KEY) ?? '{}').terminalFontSize === 18,
+  'stores migrated font size inside the preference object'
+)
 
-// out-of-range / garbage stored values fall back to the default
 store.clear()
-store.set('cmux.fontSize', '500')
-assert(getFontSize() === DEFAULT_FONT_SIZE, 'stored out-of-range → default')
+store.set('shepherd.fontSize', '19')
+assert(getFontSize() === 19, 'migrates the previous Shepherd font key')
+
 store.clear()
-store.set('cmux.fontSize', 'nope')
-assert(getFontSize() === DEFAULT_FONT_SIZE, 'stored garbage → default')
+store.set(RENDERER_PREFERENCES_KEY, '{broken')
+assert(getFontSize() === DEFAULT_FONT_SIZE, 'corrupt JSON falls back safely')
 
-// bump is relative to the current value
-setFontSize(13)
-assert(bumpFontSize(2) === 15, 'bump +2 → 15')
-assert(bumpFontSize(-3) === 12, 'bump -3 → 12')
+store.clear()
+store.set(
+  RENDERER_PREFERENCES_KEY,
+  JSON.stringify({
+    version: RENDERER_PREFERENCES_VERSION,
+    terminalFontSize: 14,
+    appearanceMode: 'sepia',
+    terminalPaletteId: 'graphite'
+  })
+)
+assert(
+  getRendererPreferences().appearanceMode === 'system',
+  'invalid appearance mode resets to safe defaults'
+)
 
-// reset returns to the default
-assert(resetFontSize() === DEFAULT_FONT_SIZE, 'reset → default')
+store.clear()
+assert(setFontSize(16) === 16 && getFontSize() === 16, 'font setter persists in schema')
+assert(lastType === RENDERER_EVENT.fontSize && lastDetail === 16, 'font setter broadcasts detail')
+assert(setFontSize(999) === 28, 'clamps above the terminal range')
+assert(setFontSize(1) === 8, 'clamps below the terminal range')
+assert(setFontSize(13.6) === 14, 'rounds fractional font input')
+assert(bumpFontSize(2) === 16, 'font bump is relative to current value')
+assert(resetFontSize() === DEFAULT_FONT_SIZE, 'font reset restores the default')
+assert(
+  updateRendererPreferences({ terminalFontSize: Number.NaN }).terminalFontSize === DEFAULT_FONT_SIZE,
+  'non-finite font updates preserve the current valid size'
+)
+
+const appearance = setAppearanceMode('light')
+assert(appearance.appearanceMode === 'light', 'appearance setter persists a valid mode')
+assert(
+  appearance.terminalFontSize === DEFAULT_FONT_SIZE && appearance.terminalPaletteId === 'graphite',
+  'appearance update preserves unrelated preferences'
+)
+assert(lastType === RENDERER_EVENT.preferences, 'preference update broadcasts the full schema')
+
+const invalid = updateRendererPreferences({ appearanceMode: 'invalid' as 'system' })
+assert(invalid.appearanceMode === 'light', 'invalid patch does not replace a valid mode')
 
 console.log(failures === 0 ? '\n✅ ALL SETTINGS TESTS PASS' : `\n❌ ${failures} FAILURE(S)`)
 if (failures > 0) throw new Error(`${failures} settings test(s) failed`)
