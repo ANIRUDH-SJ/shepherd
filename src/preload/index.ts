@@ -61,6 +61,17 @@ const api: ShepherdApi = {
     openExternal: (url) => ipcRenderer.invoke(IPC.PREVIEW_OPEN_EXTERNAL, url)
   },
 
+  appearance: {
+    getSync: () => ipcRenderer.sendSync(IPC.APPEARANCE_GET_SYNC),
+    setMode: (mode) => ipcRenderer.invoke(IPC.APPEARANCE_SET, mode),
+    onChanged: (cb) => {
+      const listener = (_event: IpcRendererEvent, snapshot: Parameters<typeof cb>[0]): void =>
+        cb(snapshot)
+      ipcRenderer.on(IPC.APPEARANCE_UPDATED, listener)
+      return () => ipcRenderer.removeListener(IPC.APPEARANCE_UPDATED, listener)
+    }
+  },
+
   socket: {
     syncWorkspaces: (sync) => ipcRenderer.send(IPC.WORKSPACES_SYNC, sync),
 

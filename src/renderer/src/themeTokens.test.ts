@@ -42,8 +42,10 @@ for (const token of requiredTokens) {
 }
 
 const rootBlock = css.match(/:root\s*\{[\s\S]*?\n\}/)?.[0] ?? ''
-const componentCss = css.replace(rootBlock, '')
+const lightBlock = css.match(/:root\[data-theme='light'\]\s*\{[\s\S]*?\n\}/)?.[0] ?? ''
+const componentCss = css.replace(rootBlock, '').replace(lightBlock, '')
 assert(rootBlock.length > 0, 'defines a root token boundary')
+assert(lightBlock.length > 0, 'defines a light token boundary')
 assert(
   !/(?:#[\da-f]{3,8}|rgba?\()/i.test(componentCss),
   'keeps raw color values inside the token boundary'
@@ -52,6 +54,10 @@ assert(css.includes('@media (prefers-reduced-motion: reduce)'), 'preserves reduc
 
 function token(name: string): string {
   return rootBlock.match(new RegExp(`${name}:\\s*([^;]+)`))?.[1]?.trim() ?? ''
+}
+
+function lightToken(name: string): string {
+  return lightBlock.match(new RegExp(`${name}:\\s*([^;]+)`))?.[1]?.trim() ?? ''
 }
 
 function rgb(hex: string): [number, number, number] {
@@ -133,6 +139,15 @@ assert(
   'keyboard focus remains distinct on the canvas'
 )
 assert(token('--radius-md') === '4px', 'uses restrained default corner geometry')
+assert(lightBlock.includes('color-scheme: light'), 'light appearance advertises native light chrome')
+assert(
+  contrast(lightToken('--color-text'), lightToken('--color-canvas')) >= 10,
+  'light primary text has strong canvas contrast'
+)
+assert(
+  contrast(lightToken('--color-text-muted'), lightToken('--color-sidebar')) >= 4.5,
+  'light muted text remains readable on the sidebar'
+)
 assert(!/text-transform:\s*uppercase/i.test(componentCss), 'avoids uppercase navigation chrome')
 assert(
   /button:focus-visible,\s*input:focus-visible\s*\{[^}]*outline:\s*1px solid var\(--color-focus\)/m.test(

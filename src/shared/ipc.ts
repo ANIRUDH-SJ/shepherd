@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { AgentRecord } from './agent'
+import type { AppearanceMode, AppearanceSnapshot } from './appearance'
 import type { RendererRuntimePerformanceMarkName } from './runtimePerformance'
 import type {
   OpenTerminalLinkRequest,
@@ -25,9 +26,12 @@ export const IPC = {
   TERM_RESOLVE_FILE_LINKS: 'terminal:resolve-file-links',
   TERM_OPEN_LINK: 'terminal:open-link',
   PREVIEW_OPEN_EXTERNAL: 'preview:open-external',
+  APPEARANCE_GET_SYNC: 'appearance:get-sync',
+  APPEARANCE_SET: 'appearance:set',
   // main → renderer  (push via webContents.send / ipcRenderer.on)
   TERM_DATA: 'terminal:data',
   TERM_EXIT: 'terminal:exit',
+  APPEARANCE_UPDATED: 'appearance:updated',
   // app ⇄ socket
   SOCKET_COMMAND: 'socket:command', // main → renderer
   WORKSPACES_SYNC: 'workspaces:sync', // renderer → main
@@ -137,6 +141,14 @@ export interface ShepherdApi {
   preview: {
     /** Open one validated loopback preview URL in the system browser. */
     openExternal(url: string): Promise<PreviewOpenExternalResult>
+  }
+  appearance: {
+    /** Read the current Electron/OS appearance before the first React paint. */
+    getSync(): AppearanceSnapshot
+    /** Set System, Light, or Dark chrome and return the resolved OS state. */
+    setMode(mode: AppearanceMode): Promise<AppearanceSnapshot>
+    /** Subscribe to OS or explicit appearance changes. */
+    onChanged(cb: (snapshot: AppearanceSnapshot) => void): () => void
   }
   socket: {
     /** Mirror the renderer's workspace list to main (for id/name resolution). */

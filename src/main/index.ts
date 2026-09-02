@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, nativeTheme } from 'electron'
 import { performance } from 'node:perf_hooks'
 import { join } from 'path'
 import { registerPtyIpc, killAllTerminals } from './pty'
@@ -11,6 +11,11 @@ import { configureProductIdentity } from './productIdentity'
 import { configurePreviewHost, configurePreviewSecurity } from './previewSecurity'
 import { loadSession, saveSession } from './session'
 import { IPC, type SocketApply, type WorkspacesSync } from '../shared/ipc'
+import {
+  isAppearanceMode,
+  resolvedAppearance,
+  type AppearanceSnapshot
+} from '../shared/appearance'
 import { PRODUCT_NAME } from '../shared/product'
 import {
   isRendererRuntimePerformanceMarkName,
@@ -43,6 +48,24 @@ function syncBackgroundServiceVisibility(): void {
   deferredBackgroundServices?.setVisible(backgroundServicesVisible())
 }
 
+function appearanceSnapshot(): AppearanceSnapshot {
+  return {
+    mode: isAppearanceMode(nativeTheme.themeSource) ? nativeTheme.themeSource : 'system',
+    resolved: resolvedAppearance(nativeTheme.shouldUseDarkColors),
+    highContrast: nativeTheme.shouldUseHighContrastColors,
+    inverted: nativeTheme.shouldUseInvertedColorScheme
+  }
+}
+
+function syncWindowAppearance(snapshot = appearanceSnapshot()): void {
+  const background = snapshot.resolved === 'dark' ? '#272823' : '#f7f7f8'
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (window.isDestroyed()) continue
+    window.setBackgroundColor(background)
+    window.webContents.send(IPC.APPEARANCE_UPDATED, snapshot)
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN PROCESS  (the "backend" — full Node.js + OS access)
 // For M0 its only job is to open one window and load the React renderer into it.
@@ -51,13 +74,14 @@ function syncBackgroundServiceVisibility(): void {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function createWindow(): void {
+  const appearance = appearanceSnapshot()
   const mainWindow = new BrowserWindow({
     width: 1100,
     height: 720,
     show: false,
     autoHideMenuBar: true,
     title: PRODUCT_NAME,
-    backgroundColor: '#272823',
+    backgroundColor: appearance.resolved === 'dark' ? '#272823' : '#f7f7f8',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       // sandbox:false is required so the preload can later load native modules
@@ -103,6 +127,17 @@ app.whenReady().then(() => {
   ipcMain.on(IPC.PERFORMANCE_MARK, (_event, name: unknown) => {
     if (isRendererRuntimePerformanceMarkName(name)) runtimePerformance.mark(name)
   })
+  ipcMain.on(IPC.APPEARANCE_GET_SYNC, (event) => {
+    event.returnValue = appearanceSnapshot()
+  })
+  ipcMain.handle(IPC.APPEARANCE_SET, (_event, mode: unknown) => {
+    if (!isAppearanceMode(mode)) throw new Error('Invalid appearance mode')
+    nativeTheme.themeSource = mode
+    const snapshot = appearanceSnapshot()
+    syncWindowAppearance(snapshot)
+    return snapshot
+  })
+  nativeTheme.on('updated', () => syncWindowAppearance())
 
   // Socket server: route incoming commands to the renderer to update app state.
   startSocketServer(sendSocketCommand)
