@@ -182,16 +182,16 @@ assert(
 )
 assert(!componentCss.includes('infinite'), 'no shell attention state animates indefinitely')
 assert(
-  rule('.ws-agent.state-blocked').includes('var(--color-danger)'),
-  'blocked state owns failure color'
+  rule('.attention-item.state-blocked .attention-marker').includes('var(--color-danger)'),
+  'blocked attention owns failure color'
 )
 assert(
-  rule('.ws-agent.state-working').includes('var(--color-working)'),
-  'working state owns waiting color'
+  rule('.attention-marker').includes('var(--color-info)'),
+  'completed attention owns a restrained information color'
 )
 assert(
-  rule('.ws-agent.state-idle').includes('var(--color-success)'),
-  'idle state owns success color'
+  rule('.ws-summary').includes('var(--color-text-muted)'),
+  'workspace agent states remain readable as semantic text rather than color alone'
 )
 
 console.log(failures === 0 ? '\n✅ ALL THEME TOKEN TESTS PASS' : `\n❌ ${failures} FAILURE(S)`)

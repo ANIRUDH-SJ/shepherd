@@ -1,24 +1,18 @@
-import { useEffect, useRef, useState, type Dispatch } from 'react'
+import { useEffect, useMemo, useRef, useState, type Dispatch } from 'react'
 import type { AgentRecord } from '../../../shared/agent'
 import {
   agentRollupLabel,
-  sortAgentsForSidebar,
+  agentStatusLabel,
+  attentionAgentsForSidebar,
   workspaceAgentAriaLabel,
   workspaceAgentLabel
 } from '../agentView'
 import { RENDERER_EVENT } from '../events'
-import { workspaceIdentity, workspaceProjectContext, workspaceRuntimeContext } from '../sidebarView'
+import { workspaceIdentity, workspaceProjectContext } from '../sidebarView'
 import { type AppAction, createWorkspaceAction, type Workspace } from '../state/appReducer'
 import { workspaceNotificationCounts, type InboxNotification } from '../state/notificationInbox'
-import { usageDetails, usageSummary } from '../usageView'
 import Icon from './Icon'
 import NotificationCenter from './NotificationCenter'
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Sidebar — the vertical list of workspaces. Each row shows a
-// name + a status subtitle, with an active highlight and unread/attention markers.
-// The status/attention come from the socket server (Stage 2) via the app reducer.
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface Props {
   workspaces: Workspace[]
@@ -51,6 +45,37 @@ export default function Sidebar({
   const rowRefs = useRef(new Map<string, HTMLDivElement>())
   const ignoreNextBlur = useRef(false)
 
+  const agentsByWorkspace = useMemo(() => {
+    const grouped = new Map<string, AgentRecord[]>()
+    for (const agent of agents) {
+      const workspaceAgents = grouped.get(agent.workspaceId)
+      if (workspaceAgents) workspaceAgents.push(agent)
+      else grouped.set(agent.workspaceId, [agent])
+    }
+    return grouped
+  }, [agents])
+
+  const agentUnreadWorkspaceIds = useMemo(
+    () =>
+      new Set(
+        workspaces.filter((workspace) => workspace.agentUnread).map((workspace) => workspace.id)
+      ),
+    [workspaces]
+  )
+  const attentionAgents = useMemo(
+    () => attentionAgentsForSidebar(agents, notifications, agentUnreadWorkspaceIds),
+    [agents, notifications, agentUnreadWorkspaceIds]
+  )
+  const unseenCompletionWorkspaceIds = useMemo(
+    () =>
+      new Set(
+        attentionAgents
+          .filter((agent) => agent.state === 'done')
+          .map((agent) => agent.workspaceId)
+      ),
+    [attentionAgents]
+  )
+
   const startRename = (workspace: Workspace): void => {
     setContextMenu(null)
     ignoreNextBlur.current = false
@@ -82,11 +107,22 @@ export default function Sidebar({
     if (restoreFocus) requestAnimationFrame(() => rowRefs.current.get(workspace.id)?.focus())
   }
 
-  const agentsByWorkspace = new Map<string, AgentRecord[]>()
-  for (const agent of agents) {
-    const workspaceAgents = agentsByWorkspace.get(agent.workspaceId)
-    if (workspaceAgents) workspaceAgents.push(agent)
-    else agentsByWorkspace.set(agent.workspaceId, [agent])
+  const focusWorkspaceAt = (index: number): void => {
+    const wrapped = (index + workspaces.length) % workspaces.length
+    const workspace = workspaces[wrapped]
+    dispatch({ type: 'selectWorkspace', id: workspace.id })
+    requestAnimationFrame(() => rowRefs.current.get(workspace.id)?.focus())
+  }
+
+  const focusAgent = (agent: AgentRecord): void => {
+    dispatch({ type: 'focusAgent', id: agent.agentId })
+    window.requestAnimationFrame(() => {
+      window.dispatchEvent(
+        new CustomEvent(RENDERER_EVENT.focusSurface, {
+          detail: agent.surfaceId
+        })
+      )
+    })
   }
 
   return (
@@ -129,31 +165,35 @@ export default function Sidebar({
         </div>
       </div>
 
-      <div className="ws-list">
-        {workspaces.map((w, i) => {
-          const identity = workspaceIdentity(w, i)
+      <div className="ws-list" aria-label="Workspaces">
+        {workspaces.map((workspace, index) => {
+          const identity = workspaceIdentity(workspace, index)
           const displayName = identity.primary
-          const editing = editingId === w.id
-          const summary = usageSummary(w.usage)
-          const workspaceAgents = sortAgentsForSidebar(agentsByWorkspace.get(w.id) ?? [])
-          const agentSummary = agentRollupLabel(workspaceAgents)
-          const projectContext = workspaceProjectContext(w, identity)
-          const runtimeContext = workspaceRuntimeContext(w)
-          const hasMetadata = Boolean(projectContext || w.gitBranch || runtimeContext || summary)
-          const notificationCounts = workspaceNotificationCounts(notifications, w.id)
+          const editing = editingId === workspace.id
+          const workspaceAgents = agentsByWorkspace.get(workspace.id) ?? []
+          const agentSummary = agentRollupLabel(
+            workspaceAgents,
+            unseenCompletionWorkspaceIds.has(workspace.id)
+          )
+          const projectContext = workspaceProjectContext(workspace, identity)
+          const summary = agentSummary ?? workspace.status ?? projectContext ?? identity.context
+          const notificationCounts = workspaceNotificationCounts(notifications, workspace.id)
           const unreadCount =
-            notificationCounts.unread + Number(w.agentUnread && notificationCounts.unread === 0)
+            notificationCounts.unread +
+            Number(workspace.agentUnread && notificationCounts.unread === 0)
+          const active = workspace.id === activeWorkspaceId
+
           return (
             <div
-              key={w.id}
-              className={'ws-row' + (w.id === activeWorkspaceId ? ' active' : '')}
+              key={workspace.id}
+              className={'ws-row' + (active ? ' active' : '')}
               onContextMenu={(event) => {
                 if (event.target instanceof HTMLInputElement) return
                 event.preventDefault()
-                const width = 160
-                const height = 44
+                const width = 176
+                const height = workspaces.length > 1 ? 78 : 44
                 setContextMenu({
-                  workspaceId: w.id,
+                  workspaceId: workspace.id,
                   x: Math.max(8, Math.min(event.clientX, window.innerWidth - width - 8)),
                   y: Math.max(8, Math.min(event.clientY, window.innerHeight - height - 8))
                 })
@@ -161,28 +201,41 @@ export default function Sidebar({
             >
               <div
                 ref={(element) => {
-                  if (element) rowRefs.current.set(w.id, element)
-                  else rowRefs.current.delete(w.id)
+                  if (element) rowRefs.current.set(workspace.id, element)
+                  else rowRefs.current.delete(workspace.id)
                 }}
                 className="ws-row-select"
                 role={editing ? undefined : 'button'}
-                tabIndex={editing ? undefined : 0}
+                tabIndex={editing ? undefined : active ? 0 : -1}
+                aria-current={active ? 'true' : undefined}
                 aria-label={
                   editing
                     ? undefined
-                    : `${displayName}, ${identity.positional}, project ${w.projectName}, ${w.gitBranch ? `branch ${w.gitBranch}` : 'not a Git repository'}${runtimeContext ? `, ${runtimeContext.description}` : ''}${w.id === activeWorkspaceId ? ', active workspace' : ''}${unreadCount > 0 ? `, ${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}` : ''}${agentSummary ? `, ${agentSummary}` : ''}`
+                    : `${displayName}, ${identity.positional}${active ? ', active workspace' : ''}${unreadCount > 0 ? `, ${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}` : ''}${agentSummary ? `, ${agentSummary}` : ''}`
                 }
                 onClick={() => {
-                  if (!editing) dispatch({ type: 'selectWorkspace', id: w.id })
+                  if (!editing) dispatch({ type: 'selectWorkspace', id: workspace.id })
                 }}
                 onKeyDown={(event) => {
                   if (event.target !== event.currentTarget || editing) return
-                  if (event.key === 'F2') {
+                  if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
                     event.preventDefault()
-                    startRename(w)
+                    focusWorkspaceAt(index + 1)
+                  } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+                    event.preventDefault()
+                    focusWorkspaceAt(index - 1)
+                  } else if (event.key === 'Home') {
+                    event.preventDefault()
+                    focusWorkspaceAt(0)
+                  } else if (event.key === 'End') {
+                    event.preventDefault()
+                    focusWorkspaceAt(workspaces.length - 1)
+                  } else if (event.key === 'F2') {
+                    event.preventDefault()
+                    startRename(workspace)
                   } else if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
-                    dispatch({ type: 'selectWorkspace', id: w.id })
+                    dispatch({ type: 'selectWorkspace', id: workspace.id })
                   }
                 }}
               >
@@ -210,18 +263,18 @@ export default function Sidebar({
                           ignoreNextBlur.current = false
                           return
                         }
-                        finishRename(w, true, false)
+                        finishRename(workspace, true, false)
                       }}
                       onKeyDown={(event) => {
                         event.stopPropagation()
                         if (event.key === 'Enter') {
                           event.preventDefault()
                           ignoreNextBlur.current = true
-                          finishRename(w, true, true)
+                          finishRename(workspace, true, true)
                         } else if (event.key === 'Escape') {
                           event.preventDefault()
                           ignoreNextBlur.current = true
-                          finishRename(w, false, true)
+                          finishRename(workspace, false, true)
                         }
                       }}
                     />
@@ -231,80 +284,16 @@ export default function Sidebar({
                       title="Double-click to rename"
                       onDoubleClick={(event) => {
                         event.stopPropagation()
-                        startRename(w)
+                        startRename(workspace)
                       }}
                     >
                       {displayName}
                     </span>
                   )}
                 </div>
-                {workspaceAgents.length === 0 && w.status && (
-                  <div className="ws-status">{w.status}</div>
-                )}
-                {hasMetadata && (
-                  <div className="ws-meta">
-                    {projectContext && (
-                      <span
-                        className="ws-context"
-                        title={`Project: ${w.projectName}\nDirectory: ${w.cwd}`}
-                      >
-                        {projectContext}
-                      </span>
-                    )}
-                    {w.gitBranch && (
-                      <span className="ws-branch" title={`Git branch: ${w.gitBranch}`}>
-                        <Icon name="branch" />
-                        <span>{w.gitBranch}</span>
-                      </span>
-                    )}
-                    {runtimeContext && (
-                      <span
-                        className="ws-runtime-context"
-                        title={runtimeContext.description}
-                        aria-label={runtimeContext.description}
-                      >
-                        {runtimeContext.label}
-                      </span>
-                    )}
-                    {summary && (
-                      <span
-                        className="ws-usage"
-                        title={usageDetails(w.usage)}
-                        aria-label={usageDetails(w.usage)}
-                      >
-                        {summary}
-                      </span>
-                    )}
-                  </div>
-                )}
+                {!editing && summary && <div className="ws-summary">{summary}</div>}
               </div>
-              {workspaceAgents.length > 0 && (
-                <div className="ws-agents" aria-label={`${displayName} agents`}>
-                  {workspaceAgents.map((agent) => (
-                    <button
-                      key={agent.agentId}
-                      type="button"
-                      className={`ws-agent state-${agent.state}`}
-                      title={`${workspaceAgentLabel(agent)}${agent.message ? ` · ${agent.message}` : ''}`}
-                      aria-label={workspaceAgentAriaLabel(agent, displayName)}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        dispatch({ type: 'focusAgent', id: agent.agentId })
-                        window.requestAnimationFrame(() => {
-                          window.dispatchEvent(
-                            new CustomEvent(RENDERER_EVENT.focusSurface, {
-                              detail: agent.surfaceId
-                            })
-                          )
-                        })
-                      }}
-                    >
-                      <span className="ws-agent-dot" aria-hidden="true" />
-                      <span>{workspaceAgentLabel(agent)}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+
               <div className="ws-row-actions">
                 {!editing && (
                   <button
@@ -314,7 +303,7 @@ export default function Sidebar({
                     aria-label={`Rename ${displayName}`}
                     onClick={(event) => {
                       event.stopPropagation()
-                      startRename(w)
+                      startRename(workspace)
                     }}
                   >
                     <Icon name="rename" />
@@ -326,9 +315,9 @@ export default function Sidebar({
                     className="ws-close"
                     title={`Close ${displayName}`}
                     aria-label={`Close ${displayName}`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      dispatch({ type: 'closeWorkspace', id: w.id })
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      dispatch({ type: 'closeWorkspace', id: workspace.id })
                     }}
                   >
                     <Icon name="close" />
@@ -339,6 +328,46 @@ export default function Sidebar({
           )
         })}
       </div>
+
+      {attentionAgents.length > 0 && (
+        <section className="attention-section" aria-labelledby="attention-heading">
+          <header className="attention-section-head">
+            <h2 id="attention-heading">Attention</h2>
+            <span aria-label={`${attentionAgents.length} actionable agent items`}>
+              {attentionAgents.length}
+            </span>
+          </header>
+          <div className="attention-list" role="list">
+            {attentionAgents.map((agent) => {
+              const workspaceIndex = workspaces.findIndex(
+                (workspace) => workspace.id === agent.workspaceId
+              )
+              const workspace = workspaces[workspaceIndex]
+              if (!workspace) return null
+              const workspaceName = workspaceIdentity(workspace, workspaceIndex).primary
+              const status = agent.state === 'done' ? 'Completed' : agentStatusLabel(agent)
+              return (
+                <div key={agent.agentId} role="listitem">
+                  <button
+                    type="button"
+                    className={`attention-item state-${agent.state}`}
+                    title={`${workspaceAgentLabel(agent)}${agent.message ? ` · ${agent.message}` : ''}`}
+                    aria-label={workspaceAgentAriaLabel(agent, workspaceName)}
+                    onClick={() => focusAgent(agent)}
+                  >
+                    <span className="attention-marker" aria-hidden="true" />
+                    <span className="attention-item-copy">
+                      <strong>{agent.displayName}</strong>
+                      <small>{workspaceName}</small>
+                    </span>
+                    <span className="attention-state">{status}</span>
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {contextMenu && (
         <div
@@ -360,6 +389,19 @@ export default function Sidebar({
             <Icon name="rename" />
             Rename workspace
           </button>
+          {workspaces.length > 1 && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                dispatch({ type: 'closeWorkspace', id: contextMenu.workspaceId })
+                setContextMenu(null)
+              }}
+            >
+              <Icon name="close" />
+              Close workspace
+            </button>
+          )}
         </div>
       )}
     </div>
