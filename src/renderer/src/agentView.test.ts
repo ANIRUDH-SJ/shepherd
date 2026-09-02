@@ -1,10 +1,13 @@
 import type { AgentRecord } from '../../shared/agent'
+import type { InboxNotification } from './state/notificationInbox'
 import {
+  attentionAgentsForSidebar,
   agentAriaLabel,
   groupAgentsForSidebar,
   agentRollupLabel,
   agentStatusLabel,
   formatAgentElapsed,
+  isUnseenCompletedAgent,
   sortAgentsForSidebar,
   workspaceAgentAriaLabel,
   workspaceAgentLabel
@@ -37,6 +40,24 @@ function agent(
     revision: 1,
     updatedAt,
     ...extra
+  }
+}
+
+function completionNotification(agentId: string, workspaceId = 'ws-1'): InboxNotification {
+  return {
+    id: `agent:${agentId}:1`,
+    workspaceId,
+    surfaceId: `term-${agentId}`,
+    subjectId: agentId,
+    title: agentId,
+    body: 'Completed work',
+    sources: ['agent'],
+    severity: 'info',
+    createdAt: 10,
+    unread: true,
+    resolved: false,
+    occurrences: 1,
+    dedupeKey: `test:${agentId}`
   }
 }
 
@@ -119,8 +140,45 @@ const rollup = agentRollupLabel([
   agent('done-1', 'done', 1),
   agent('idle-1', 'idle', 1)
 ])
-assert(rollup === '2 blocked · 1 working · +2', 'summarizes urgent states and hidden agents')
+assert(rollup === '2 need you · Working', 'summarizes semantic urgent and active states')
+assert(
+  agentRollupLabel([agent('done-2', 'done', 1), agent('idle-2', 'idle', 1)], true) ===
+    'Completed · Idle',
+  'calls out unseen completion without relying on color'
+)
 assert(agentRollupLabel([]) === undefined, 'omits an empty workspace rollup')
+
+const completedAgent = agent('completed', 'done', 8)
+const unreadCompletion = completionNotification(completedAgent.agentId)
+assert(
+  isUnseenCompletedAgent(completedAgent, [unreadCompletion]),
+  'recognizes an unread completed-agent notification'
+)
+assert(
+  !isUnseenCompletedAgent(completedAgent, [{ ...unreadCompletion, unread: false }]),
+  'does not treat an acknowledged completion as unseen'
+)
+assert(
+  isUnseenCompletedAgent(completedAgent, [], new Set(['ws-1'])),
+  'uses the workspace unread marker when a deduplicated notification lost subject detail'
+)
+
+const attentionAgents = attentionAgentsForSidebar(
+  [
+    agent('active', 'working', 12),
+    agent('approval', 'blocked', 11, { blockReason: 'approval' }),
+    agent('external', 'blocked', 10, { blockReason: 'external' }),
+    completedAgent,
+    agent('seen', 'done', 7),
+    agent('idle', 'idle', 6),
+    agent('stale', 'unknown', 5)
+  ],
+  [unreadCompletion]
+)
+assert(
+  attentionAgents.map((candidate) => candidate.agentId).join(',') === 'approval,completed',
+  'attention list contains only actionable blocks and unseen completions'
+)
 
 if (failures > 0) throw new Error(`${failures} agent view test(s) failed`)
 console.log('\n✅ ALL AGENT VIEW TESTS PASS')

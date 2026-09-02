@@ -1,4 +1,5 @@
 import { agentNeedsAttention, type AgentRecord } from '../../shared/agent'
+import type { InboxNotification } from './state/notificationInbox'
 
 const STATE_PRIORITY: Record<AgentRecord['state'], number> = {
   blocked: 0,
@@ -7,6 +8,8 @@ const STATE_PRIORITY: Record<AgentRecord['state'], number> = {
   idle: 3,
   unknown: 4
 }
+
+const EMPTY_WORKSPACE_IDS: ReadonlySet<string> = new Set()
 
 export type AgentSidebarGroupKey = 'needs-you' | 'working' | 'waiting' | 'finished' | 'quiet'
 
@@ -81,6 +84,44 @@ export function sortAgentsForSidebar(agents: AgentRecord[]): AgentRecord[] {
   })
 }
 
+function hasUnreadCompletionNotification(
+  agent: AgentRecord,
+  notifications: readonly InboxNotification[]
+): boolean {
+  return notifications.some(
+    (notification) =>
+      notification.unread &&
+      !notification.resolved &&
+      notification.subjectId === agent.agentId &&
+      notification.sources.includes('agent')
+  )
+}
+
+export function isUnseenCompletedAgent(
+  agent: AgentRecord,
+  notifications: readonly InboxNotification[],
+  unreadWorkspaceIds: ReadonlySet<string> = EMPTY_WORKSPACE_IDS
+): boolean {
+  return (
+    agent.state === 'done' &&
+    (unreadWorkspaceIds.has(agent.workspaceId) ||
+      hasUnreadCompletionNotification(agent, notifications))
+  )
+}
+
+/** The permanent Attention section contains current actionable blocks and unseen completions only. */
+export function attentionAgentsForSidebar(
+  agents: AgentRecord[],
+  notifications: readonly InboxNotification[],
+  unreadWorkspaceIds: ReadonlySet<string> = EMPTY_WORKSPACE_IDS
+): AgentRecord[] {
+  return sortAgentsForSidebar(agents).filter(
+    (agent) =>
+      agentNeedsAttention(agent) ||
+      isUnseenCompletedAgent(agent, notifications, unreadWorkspaceIds)
+  )
+}
+
 export function groupAgentsForSidebar(agents: AgentRecord[]): AgentSidebarGroup[] {
   const ordered = sortAgentsForSidebar(agents)
   return AGENT_GROUPS.map((group) => ({
@@ -101,18 +142,30 @@ export function formatAgentElapsed(updatedAt: number, now: number): string {
   return `${Math.floor(ageHours / 24)}d`
 }
 
-export function agentRollupLabel(agents: AgentRecord[]): string | undefined {
+export function agentRollupLabel(
+  agents: AgentRecord[],
+  hasUnseenCompletion = false
+): string | undefined {
   if (agents.length === 0) return undefined
-  const states = (Object.keys(STATE_PRIORITY) as AgentRecord['state'][]).sort(
-    (a, b) => STATE_PRIORITY[a] - STATE_PRIORITY[b]
-  )
-  const groups = states
-    .map((state) => ({ state, count: agents.filter((agent) => agent.state === state).length }))
-    .filter((group) => group.count > 0)
-  const visible = groups.slice(0, 2)
-  const hiddenCount = groups.slice(2).reduce((total, group) => total + group.count, 0)
-  const summary = visible.map((group) => `${group.count} ${group.state}`).join(' · ')
-  return hiddenCount > 0 ? `${summary} · +${hiddenCount}` : summary
+  const actionable = agents.filter(agentNeedsAttention).length
+  const working = agents.filter((agent) => agent.state === 'working').length
+  const waiting = agents.filter(
+    (agent) => agent.state === 'blocked' && !agentNeedsAttention(agent)
+  ).length
+  const done = agents.filter((agent) => agent.state === 'done').length
+  const quiet = agents.filter(
+    (agent) => agent.state === 'idle' || agent.state === 'unknown'
+  ).length
+  const parts: string[] = []
+  if (actionable > 0) parts.push(actionable === 1 ? 'Needs you' : `${actionable} need you`)
+  if (hasUnseenCompletion && done > 0) {
+    parts.push(done === 1 ? 'Completed' : `${done} completed`)
+  }
+  if (working > 0) parts.push(working === 1 ? 'Working' : `${working} working`)
+  if (waiting > 0) parts.push(waiting === 1 ? 'Waiting' : `${waiting} waiting`)
+  if (!hasUnseenCompletion && done > 0) parts.push(done === 1 ? 'Finished' : `${done} finished`)
+  if (quiet > 0) parts.push(quiet === 1 ? 'Idle' : `${quiet} idle`)
+  return parts.slice(0, 2).join(' · ')
 }
 
 function updatedLabel(agent: AgentRecord, now: number): string {

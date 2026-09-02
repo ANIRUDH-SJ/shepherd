@@ -240,11 +240,7 @@ body.resizing * {
 .ws-row.active:hover {
   background: var(--color-selection-hover);
 }
-.ws-row.active .ws-status,
-.ws-row.active .ws-context,
-.ws-row.active .ws-branch,
-.ws-row.active .ws-runtime-context,
-.ws-row.active .ws-usage,
+.ws-row.active .ws-summary,
 .ws-row.active .ws-rename,
 .ws-row.active .ws-close {
   color: color-mix(in srgb, var(--color-selection-text) 82%, transparent);
@@ -362,134 +358,115 @@ body.resizing * {
   outline: none;
   background: var(--color-selection-hover);
 }
-.ws-status {
-  font-size: 10.5px;
-  color: var(--color-text-muted);
+.ws-summary {
   min-width: 0;
+  color: var(--color-text-muted);
+  padding-right: 40px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 10.5px;
+  line-height: 1.3;
 }
-.ws-meta {
+
+.attention-section {
+  min-height: 0;
+  max-height: 42%;
+  flex: 0 1 auto;
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+.attention-section-head {
   display: flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+}
+.attention-section-head h2 {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+.attention-section-head > span {
+  display: inline-grid;
+  min-width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.attention-list {
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+}
+.attention-item {
+  display: grid;
+  width: 100%;
+  min-height: 43px;
+  grid-template-columns: 5px minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
-  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: left;
 }
-.ws-context,
-.ws-branch,
-.ws-runtime-context {
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  line-height: 1.25;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.attention-item:hover {
+  background: var(--color-surface-hover);
 }
-.ws-context {
-  flex: 1 1 auto;
+.attention-item:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: -1px;
 }
-.ws-branch {
-  display: flex;
-  flex: 1 1 0;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-git);
+.attention-marker {
+  width: 5px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--color-info);
 }
-.ws-branch > span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.attention-item.state-blocked .attention-marker {
+  background: var(--color-danger);
 }
-.ws-runtime-context {
-  flex: 0 1 auto;
-  color: var(--color-text-secondary);
-}
-.ws-usage {
-  flex: 0 0 auto;
-  color: var(--color-text-muted);
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.ws-agents {
+.attention-item-copy {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 1px;
-  margin-top: 3px;
 }
-.ws-agent {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  min-width: 0;
-  padding: 2px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  text-align: left;
-}
-.ws-agent:hover {
-  background: var(--color-surface-hover);
-}
-.ws-agent:focus-visible {
-  outline: 1px solid var(--color-focus);
-  outline-offset: -1px;
-}
-.ws-agent > span:last-child {
-  min-width: 0;
-  flex: 1 1 auto;
+.attention-item-copy strong,
+.attention-item-copy small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.ws-agent-dot {
-  width: 6px;
-  height: 6px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: var(--color-text-muted);
+.attention-item-copy strong {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
 }
-.ws-agent.state-working .ws-agent-dot {
-  background: var(--color-working);
+.attention-item-copy small {
+  color: var(--color-text-muted);
+  font-size: 9.5px;
 }
-.ws-agent.state-working {
-  color: var(--color-working);
+.attention-state {
+  max-width: 88px;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.ws-agent.state-blocked .ws-agent-dot {
-  background: var(--color-danger);
-}
-.ws-agent.state-blocked {
+.attention-item.state-blocked .attention-state {
   color: var(--color-danger);
-}
-.ws-agent.state-done .ws-agent-dot {
-  background: var(--color-info);
-}
-.ws-agent.state-done {
-  color: var(--color-info);
-}
-.ws-agent.state-idle .ws-agent-dot {
-  background: var(--color-success);
-}
-.ws-agent.state-idle {
-  color: var(--color-success);
-}
-@container (max-width: 210px) {
-  .ws-context {
-    display: none;
-  }
-  .ws-branch:has(+ .ws-runtime-context) {
-    display: none;
-  }
 }
 
 /* Bounded notification popover */
