@@ -40,8 +40,8 @@ linux:
   # Categories from `category`, overriding anything set under desktop.entry —
   # so both are authored here rather than there.
   category: Utility;TerminalEmulator;Development
-  description: A terminal built for multitasking with AI agents
-  synopsis: A terminal built for multitasking with AI agents
+  description: A graphical terminal multiplexer with agent awareness for Linux
+  synopsis: A graphical terminal multiplexer with agent awareness
   maintainer: Anirudh S J <developer.aktsk.anirudhsj@gmail.com>
   # Lets the desktop environment associate the running window with this entry
   # (taskbar icon / app grid), instead of showing a generic placeholder.
