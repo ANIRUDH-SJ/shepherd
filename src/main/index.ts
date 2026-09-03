@@ -68,9 +68,9 @@ function syncWindowAppearance(snapshot = appearanceSnapshot()): void {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN PROCESS  (the "backend" — full Node.js + OS access)
-// For M0 its only job is to open one window and load the React renderer into it.
-// Later milestones add: node-pty shells, the unix-socket API, session restore.
-// See textbook/03-electron-architecture.md.
+// Opens the application window and coordinates the PTY, socket, session,
+// appearance, notification, preview, and workspace services described in
+// docs/ARCHITECTURE.md.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function createWindow(): void {

@@ -489,7 +489,7 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
 function createSocketServer(apply: ApplyFn): net.Server {
   return net.createServer((conn) => {
     // Message framing: a single 'data' event may contain partial or multiple JSON
-    // lines, so we buffer and split on '\n'. (textbook/11 §gotchas)
+    // lines, so we buffer and split on '\n'.
     let buffer = ''
     conn.on('data', (chunk) => {
       buffer += chunk.toString('utf8')

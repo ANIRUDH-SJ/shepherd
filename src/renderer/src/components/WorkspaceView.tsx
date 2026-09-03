@@ -8,9 +8,9 @@ import PaneView from './PaneView'
 import Divider from './Divider'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WorkspaceView — the pane layer for ONE workspace (the M2 tiling, now controlled).
+// WorkspaceView — the pane layer for one workspace.
 // All workspaces render at once; only the active one is shown (display:block), so
-// switching workspaces keeps every workspace's shells ALIVE (like tabs, textbook/10).
+// switching workspaces keeps every workspace's shells alive like browser tabs.
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface Props {

@@ -46,7 +46,7 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 // PTY MANAGER  (main process — the "real shell" half of the terminal)
 // Spawns shells attached to pseudo-terminals, pipes their output to the renderer,
-// and feeds keystrokes back in. One entry per terminal id. See textbook/06.
+// and feeds keystrokes back in. One entry exists per terminal id.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Per-terminal state: the shell process, the workspace it belongs to (so OSC

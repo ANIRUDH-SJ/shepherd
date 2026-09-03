@@ -12,7 +12,7 @@ import { runtimePerformanceDiagnosticsEnabled } from '../shared/runtimePerforman
 // ─────────────────────────────────────────────────────────────────────────────
 // PRELOAD  (the secure bridge between main and renderer)
 // Wraps ipcRenderer into a tidy, typed `window.api`. The renderer NEVER touches
-// ipcRenderer directly — only this surface. See textbook/05.
+// ipcRenderer directly — only this validated surface. See docs/ARCHITECTURE.md.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const performanceDiagnosticsEnabled = runtimePerformanceDiagnosticsEnabled(process.env)

@@ -42,7 +42,7 @@ const SEARCH_OPTIONS: ISearchOptions = {
 // The instance is created once on mount and killed on unmount — because panes are
 // keyed by a stable id in the flat layer (Workspace.tsx), restructuring the tree
 // (splitting/closing OTHER panes) never remounts this, so shells don't churn.
-// See textbook/07 (xterm.js) and /10 (why the flat keyed layer matters).
+// See docs/ARCHITECTURE.md for renderer and terminal ownership boundaries.
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface Props {

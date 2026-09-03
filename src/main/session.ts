@@ -7,7 +7,7 @@ import { PRODUCT_ENV, productEnvironmentValue } from '../shared/product'
 // SESSION PERSISTENCE  (main process)
 // Save/restore the app's workspace + pane layout to a JSON snapshot, so relaunching
 // reopens where you left off. The renderer owns the state; we just read/write the
-// file. See textbook/13.
+// file. See docs/ARCHITECTURE.md for state ownership and restoration boundaries.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function resolveSessionPath(

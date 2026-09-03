@@ -407,8 +407,7 @@ export default function App(): React.JSX.Element {
     return () => clearTimeout(t)
   }, [sessionJson])
 
-  // Drag the sidebar's right edge to resize it (pixel-based; same idea as the
-  // pane Divider, textbook/10).
+  // Drag the sidebar's right edge to resize it using the pane divider's model.
   const startResize = (e: React.MouseEvent): void => {
     e.preventDefault()
     const startX = e.clientX

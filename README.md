@@ -18,6 +18,9 @@ into an AI dashboard or losing track of what needs you.
 > notification, preview, and automation systems are implemented, but interfaces
 > and protocols may still change before a stable release.
 
+[Download Shepherd v0.1.0](https://github.com/ANIRUDH-SJ/shepherd/releases/tag/v0.1.0)
+· [Installation and verification](docs/INSTALLATION.md)
+
 ## Why Shepherd?
 
 AI coding changes the developer's job. Instead of watching one terminal, you may
@@ -130,8 +133,10 @@ restricted to localhost and uses a dedicated Electron session boundary.
 
 ## Install
 
-Download the latest Linux artifact from the
-[GitHub releases page](https://github.com/ANIRUDH-SJ/shepherd/releases).
+The current pre-1.0 build is
+[Shepherd v0.1.0](https://github.com/ANIRUDH-SJ/shepherd/releases/tag/v0.1.0)
+for x86-64 Linux. Download the AppImage or Debian package from that release and
+use its `SHA256SUMS.txt` file to verify the download.
 
 ### AppImage
 
@@ -149,6 +154,9 @@ shepherd
 
 You can also launch **Shepherd** from the desktop application menu after
 installing the Debian package.
+
+See [Installation and verification](docs/INSTALLATION.md) for direct downloads,
+checksum commands, AppImage fallback instructions, and uninstall steps.
 
 ### Build from source
 
@@ -365,6 +373,8 @@ Useful starting points:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — process boundaries and data flow
 - [docs/APPEARANCE.md](docs/APPEARANCE.md) — chrome and terminal theme behavior
 - [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) — keyboard and accessibility notes
+- [docs/INSTALLATION.md](docs/INSTALLATION.md) — packages, checksums, and uninstall steps
+- [CHANGELOG.md](CHANGELOG.md) — shipped changes by release
 - [AGENTS.md](AGENTS.md) — repository workflow and contribution conventions
 - [benchmarks/README.md](benchmarks/README.md) — performance methodology and usage
 - [bug-fixes/README.md](bug-fixes/README.md) — resolved bug write-ups

@@ -4,8 +4,7 @@ import type { PlacedDivider } from '../layout/types'
 // ─────────────────────────────────────────────────────────────────────────────
 // Divider — a draggable boundary between two children of a split.
 // On drag we convert pixel movement into a fraction of the split's extent and
-// dispatch incremental resize deltas. See textbook/10 §resizing.
-// (This same drag-handle logic is reused for the sidebar width in M3.)
+// dispatch incremental resize deltas. The sidebar reuses the same drag model.
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface Props {

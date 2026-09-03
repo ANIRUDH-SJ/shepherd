@@ -39,9 +39,9 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 // APP REDUCER  (the top of the object model: Window → Workspace → …)
 // State = a list of workspaces + which one is active. Each workspace owns its own
-// pane tree (the M2 state) plus sidebar metadata. Pane actions are delegated to
-// the pure workspaceReducer. Like M2, the reducer is PURE — new workspaces are
-// minted by action creators in event handlers (StrictMode-safe). See textbook/09.
+// pane tree plus sidebar metadata. Pane actions are delegated to the pure
+// workspaceReducer. The reducer is PURE — new workspaces are minted by action
+// creators in event handlers (StrictMode-safe).
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface Workspace {
@@ -108,7 +108,7 @@ export function initialApp(): AppState {
 /** Validate + normalise a restored session into an AppState (or null if unusable).
  *  Startup restores only the previously active workspace so every launch begins
  *  with one workspace. Its layout/cwd and owned bounded inbox survive; live state
- *  resets, and its terminals re-spawn fresh when their panes mount. See textbook/13. */
+ *  resets, and its terminals re-spawn fresh when their panes mount. */
 export function sanitizeRestored(raw: unknown): AppState | null {
   if (!raw || typeof raw !== 'object') return null
   const r = raw as { workspaces?: unknown; activeWorkspaceId?: unknown; notifications?: unknown }

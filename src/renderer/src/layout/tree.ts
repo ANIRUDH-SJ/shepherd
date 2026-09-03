@@ -5,7 +5,7 @@ import { normalizePreviewUrl } from '../../../shared/preview'
 // PURE TREE + GEOMETRY OPERATIONS
 // No React, no side effects — every function takes a tree and returns a NEW tree
 // (immutable updates). This is the testable core of the tiling system.
-// See textbook/10-tiling-and-layout.md.
+// See docs/ARCHITECTURE.md for the public layout model.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MIN_FRACTION = 0.1 // a pane can't be shrunk below 10% of its split
