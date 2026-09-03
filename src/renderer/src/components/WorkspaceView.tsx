@@ -6,7 +6,6 @@ import type { WorkspaceAction } from '../state/workspaceReducer'
 import { terminalWorkspaceAriaLabel } from '../terminalChrome'
 import PaneView from './PaneView'
 import Divider from './Divider'
-import Icon from './Icon'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WorkspaceView — the pane layer for ONE workspace (the M2 tiling, now controlled).
@@ -19,13 +18,15 @@ interface Props {
   position: number
   active: boolean
   dispatch: Dispatch<AppAction>
+  onInspect: (workspaceId: string) => void
 }
 
 export default function WorkspaceView({
   workspace,
   position,
   active,
-  dispatch
+  dispatch,
+  onInspect
 }: Props): React.JSX.Element {
   const layerRef = useRef<HTMLDivElement | null>(null)
   const { panes, dividers } = useMemo(() => computeLayout(workspace.root), [workspace.root])
@@ -50,22 +51,12 @@ export default function WorkspaceView({
   const paneDispatch: Dispatch<WorkspaceAction> = (a) => dispatch(paneAction(workspace.id, a))
 
   return (
-    <div className="workspace-view" style={{ display: active ? 'flex' : 'none' }}>
-      <header className="workspace-context-strip" aria-label={chromeLabel}>
-        <div
-          className="workspace-context-identity"
-          title={`${identity.primary}\n${identity.context}\n${workspace.cwd}`}
-        >
-          <Icon name="terminal" />
-          <strong>{identity.primary}</strong>
-        </div>
-        {workspace.gitBranch && (
-          <div className="workspace-context-branch" title={`Git branch: ${workspace.gitBranch}`}>
-            <Icon name="branch" />
-            <span>{workspace.gitBranch}</span>
-          </div>
-        )}
-      </header>
+    <div
+      className="workspace-view"
+      role="region"
+      aria-label={chromeLabel}
+      style={{ display: active ? 'flex' : 'none' }}
+    >
       <div className="pane-layer" ref={layerRef}>
         {panes.map(({ pane, rect }, paneIndex) => (
           <PaneView
@@ -83,6 +74,9 @@ export default function WorkspaceView({
             workspaceActive={active}
             workspaceId={workspace.id}
             workspaceCwd={workspace.cwd}
+            workspaceName={identity.primary}
+            showWorkspaceIdentity={paneIndex === 0}
+            onInspectWorkspace={() => onInspect(workspace.id)}
             terminalNumbers={terminalNumbers}
             dispatch={paneDispatch}
           />

@@ -26,6 +26,9 @@ interface Props {
   workspaceActive: boolean
   workspaceId: string
   workspaceCwd: string
+  workspaceName: string
+  showWorkspaceIdentity: boolean
+  onInspectWorkspace: () => void
   terminalNumbers: Map<string, number>
   dispatch: Dispatch<WorkspaceAction>
 }
@@ -40,6 +43,9 @@ export default function PaneView({
   workspaceActive,
   workspaceId,
   workspaceCwd,
+  workspaceName,
+  showWorkspaceIdentity,
+  onInspectWorkspace,
   terminalNumbers,
   dispatch
 }: Props): React.JSX.Element {
@@ -62,6 +68,9 @@ export default function PaneView({
         paneNumber={paneNumber}
         canClosePane={canClosePane}
         terminalNumbers={terminalNumbers}
+        workspaceName={showWorkspaceIdentity ? workspaceName : undefined}
+        workspaceCwd={workspaceCwd}
+        onInspectWorkspace={showWorkspaceIdentity ? onInspectWorkspace : undefined}
         onSelect={(surfaceId) => dispatch({ type: 'setActiveSurface', paneId: pane.id, surfaceId })}
         onCloseSurface={(surfaceId) =>
           dispatch({ type: 'closeSurface', paneId: pane.id, surfaceId })

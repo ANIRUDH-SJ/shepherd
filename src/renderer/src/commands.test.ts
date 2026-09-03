@@ -61,6 +61,10 @@ assert(
   'discovers localhost preview by workflow keywords'
 )
 assert(
+  rankCommands('repository agents', idle)[0]?.id === 'workspace.inspect',
+  'discovers the contextual workspace inspector by its details'
+)
+assert(
   rankCommands('no such operation', idle).length === 0,
   'hides commands with no matching token'
 )

@@ -195,10 +195,12 @@ export class WorkspaceMetadataDiscovery {
     const previous = this.cache.get(workspaceId)
     let git = previous?.git ?? null
     let probedAt = previous?.probedAt ?? 0
+    const changedSurface = previous?.surfaceId !== surfaceId
     const movedOutsideGit = git !== null && !inside(git.root, context.cwd)
     const shouldRetryNoGit = git === null && now - probedAt >= NO_GIT_RETRY_MS
     const shouldProbe =
       previous === undefined ||
+      changedSurface ||
       movedOutsideGit ||
       (previous.cwd !== context.cwd && git === null) ||
       shouldRetryNoGit

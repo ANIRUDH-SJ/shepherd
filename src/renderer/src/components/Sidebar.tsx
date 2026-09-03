@@ -22,6 +22,7 @@ interface Props {
   dispatch: Dispatch<AppAction>
   onCollapse: () => void
   onOpenPalette: () => void
+  onInspectWorkspace: (workspaceId: string) => void
 }
 
 interface WorkspaceContextMenu {
@@ -37,7 +38,8 @@ export default function Sidebar({
   activeWorkspaceId,
   dispatch,
   onCollapse,
-  onOpenPalette
+  onOpenPalette,
+  onInspectWorkspace
 }: Props): React.JSX.Element {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draftName, setDraftName] = useState('')
@@ -191,7 +193,7 @@ export default function Sidebar({
                 if (event.target instanceof HTMLInputElement) return
                 event.preventDefault()
                 const width = 176
-                const height = workspaces.length > 1 ? 78 : 44
+                const height = workspaces.length > 1 ? 112 : 78
                 setContextMenu({
                   workspaceId: workspace.id,
                   x: Math.max(8, Math.min(event.clientX, window.innerWidth - width - 8)),
@@ -381,6 +383,17 @@ export default function Sidebar({
             type="button"
             role="menuitem"
             autoFocus
+            onClick={() => {
+              onInspectWorkspace(contextMenu.workspaceId)
+              setContextMenu(null)
+            }}
+          >
+            <Icon name="inspect" />
+            Inspect workspace
+          </button>
+          <button
+            type="button"
+            role="menuitem"
             onClick={() => {
               const workspace = workspaces.find((item) => item.id === contextMenu.workspaceId)
               if (workspace) startRename(workspace)

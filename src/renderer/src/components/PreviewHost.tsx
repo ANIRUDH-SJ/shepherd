@@ -107,7 +107,7 @@ export default function PreviewHost({
     webview.setAttribute('src', initialUrlRef.current)
     webviewRef.current = webview
 
-    const onAttach = (): void => {
+    const onReady = (): void => {
       webview.setAudioMuted(!activeRef.current)
       updateHistoryState()
     }
@@ -151,7 +151,7 @@ export default function PreviewHost({
         error: 'The preview process stopped. Retry to start it again.'
       }))
 
-    webview.addEventListener('did-attach', onAttach)
+    webview.addEventListener('dom-ready', onReady)
     webview.addEventListener('did-start-loading', onStart)
     webview.addEventListener('did-stop-loading', onStop)
     webview.addEventListener('did-navigate', onNavigate)
@@ -162,7 +162,7 @@ export default function PreviewHost({
     host.append(webview)
 
     return () => {
-      webview.removeEventListener('did-attach', onAttach)
+      webview.removeEventListener('dom-ready', onReady)
       webview.removeEventListener('did-start-loading', onStart)
       webview.removeEventListener('did-stop-loading', onStop)
       webview.removeEventListener('did-navigate', onNavigate)
@@ -180,7 +180,7 @@ export default function PreviewHost({
     try {
       webviewRef.current?.setAudioMuted(!active)
     } catch {
-      // The guest may not be attached yet; did-attach applies the latest value.
+      // The guest may not be ready yet; dom-ready applies the latest value.
     }
   }, [active])
 

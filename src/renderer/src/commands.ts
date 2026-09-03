@@ -10,6 +10,7 @@ export type AppCommandId =
   | 'workspace.close'
   | 'workspace.previous'
   | 'workspace.next'
+  | 'workspace.inspect'
   | 'sidebar.toggle'
   | 'notification.jump-unread'
   | 'notification.mark-read'
@@ -139,6 +140,12 @@ export const APP_COMMANDS: readonly AppCommand[] = [
     title: 'Select next workspace',
     category: 'Workspace',
     keywords: 'navigate forward'
+  },
+  {
+    id: 'workspace.inspect',
+    title: 'Inspect current workspace',
+    category: 'Workspace',
+    keywords: 'details repository branch pull request ports previews agents usage session'
   },
   {
     id: 'sidebar.toggle',
