@@ -119,9 +119,19 @@ async function main(): Promise<void> {
   assert(portExit?.ports.length === 0, 'removes ports after their process exits')
   assert(portProbes === 2, 'refreshes ports on the bounded interval')
 
+  const probesBeforeSurfaceChange = probes
   discovery.updateWorkspaces([{ id: 'ws-1', name: '', activeSurfaceId: 'term-2' }])
   await discovery.scan([context('term-1', '/projects/shepherd')], 3_000)
   assert(emitted.length === 4, 'ignores metadata from a non-active terminal')
+
+  await discovery.scan([context('term-2', '/projects/shepherd')], 3_100)
+  const changedSurface = emitted[4]?.params.metadata as WorkspaceMetadata
+  assert(changedSurface?.surfaceId === 'term-2', 'reports metadata for a newly active terminal')
+  assert(changedSurface?.gitBranch === 'feat/live-sidebar', 're-probes Git after changing terminals')
+  assert(
+    probes === probesBeforeSurfaceChange + 1,
+    'does not reuse another terminal surface\'s Git probe'
+  )
 
   interface ScheduledTask {
     cancelled: boolean

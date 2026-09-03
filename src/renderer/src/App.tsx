@@ -18,7 +18,7 @@ import {
   listTerminalSurfaceIds
 } from './layout/tree'
 import { bumpFontSize, resetFontSize } from './settings'
-import type { AgentReport } from '../../shared/agent'
+import type { AgentRecord, AgentReport } from '../../shared/agent'
 import type { UsageReport } from '../../shared/usage'
 import { isWorkspaceMetadata } from '../../shared/workspaceMetadata'
 import { nextAgentLifecycleDeadline } from './agentTiming'
@@ -36,6 +36,7 @@ import CommandPalette from './components/CommandPalette'
 import ShortcutHelp from './components/ShortcutHelp'
 import SettingsDialog from './components/SettingsDialog'
 import PreviewPicker from './components/PreviewPicker'
+import WorkspaceInspector from './components/WorkspaceInspector'
 
 // Restore the saved session synchronously at startup, else start fresh. Computed
 // once at module load. Optional chaining keeps it safe if the bridge isn't ready.
@@ -93,6 +94,7 @@ export default function App(): React.JSX.Element {
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR)
   const [collapsed, setCollapsed] = useState(false)
   const [utilityOverlay, setUtilityOverlay] = useState<UtilityOverlay | null>(null)
+  const [inspectorWorkspaceId, setInspectorWorkspaceId] = useState<string | null>(null)
   const notificationSequence = useRef(0)
 
   // Keep the latest state in a ref so the (once-installed) key handler sees it.
@@ -112,6 +114,8 @@ export default function App(): React.JSX.Element {
     )
     if (!workspace) return false
     const pane = findPane(workspace.root, workspace.activePaneId)
+
+    if (id !== 'workspace.inspect') setInspectorWorkspaceId(null)
 
     if (
       id !== 'palette.open' &&
@@ -180,6 +184,9 @@ export default function App(): React.JSX.Element {
         dispatch({ type: 'selectWorkspace', id: target.id })
         break
       }
+      case 'workspace.inspect':
+        setInspectorWorkspaceId(workspace.id)
+        break
       case 'sidebar.toggle':
         setCollapsed((value) => !value)
         break
@@ -429,6 +436,56 @@ export default function App(): React.JSX.Element {
       : ''
   }${unreadNotifications > 0 ? ` · ${unreadNotifications} unread notification${unreadNotifications === 1 ? '' : 's'}` : ''}`
 
+  const openInspector = (workspaceId: string): void => {
+    setUtilityOverlay(null)
+    setInspectorWorkspaceId(workspaceId)
+  }
+
+  const openWorkspacePreview = (workspaceId: string, url: string): void => {
+    const workspace = stateRef.current.workspaces.find((candidate) => candidate.id === workspaceId)
+    if (!workspace) return
+    const terminalId = activeTerminalSurfaceId(workspace.root, workspace.activePaneId)
+    const terminalPane = terminalId ? findPaneBySurfaceId(workspace.root, terminalId) : null
+    if (!terminalPane) return
+    dispatch({ type: 'selectWorkspace', id: workspace.id })
+    dispatch(paneAction(workspace.id, previewSplitAction(terminalPane.id, url)))
+    setUtilityOverlay(null)
+    setInspectorWorkspaceId(null)
+  }
+
+  const focusWorkspaceAgent = (agent: AgentRecord): void => {
+    dispatch({ type: 'focusAgent', id: agent.agentId })
+    setInspectorWorkspaceId(null)
+    requestAnimationFrame(() => {
+      window.dispatchEvent(
+        new CustomEvent(RENDERER_EVENT.focusSurface, {
+          detail: agent.surfaceId
+        })
+      )
+    })
+  }
+
+  const openPullRequest = (workspaceId: string, url: string): void => {
+    const workspace = stateRef.current.workspaces.find((candidate) => candidate.id === workspaceId)
+    if (!workspace) return
+    const surfaceId = activeTerminalSurfaceId(workspace.root, workspace.activePaneId)
+    if (!surfaceId) return
+    void window.api.terminal
+      .openLink({ id: surfaceId, target: { kind: 'url', url } })
+      .then(
+        (result) => {
+          if (!result.ok) console.warn(`[shepherd:inspector] pull request open failed: ${result.error}`)
+        },
+        () => console.warn('[shepherd:inspector] pull request open request failed')
+      )
+  }
+
+  const inspectedWorkspaceIndex = state.workspaces.findIndex(
+    (workspace) => workspace.id === inspectorWorkspaceId
+  )
+  const inspectedWorkspace =
+    inspectedWorkspaceIndex >= 0 ? state.workspaces[inspectedWorkspaceIndex] : null
+
   return (
     <div className="app">
       {collapsed ? (
@@ -450,7 +507,11 @@ export default function App(): React.JSX.Element {
               activeWorkspaceId={state.activeWorkspaceId}
               dispatch={dispatch}
               onCollapse={() => setCollapsed(true)}
-              onOpenPalette={() => setUtilityOverlay('palette')}
+              onOpenPalette={() => {
+                setInspectorWorkspaceId(null)
+                setUtilityOverlay('palette')
+              }}
+              onInspectWorkspace={openInspector}
             />
           </aside>
           <div className="sidebar-resizer" onMouseDown={startResize} />
@@ -465,6 +526,7 @@ export default function App(): React.JSX.Element {
             position={position}
             active={w.id === state.activeWorkspaceId}
             dispatch={dispatch}
+            onInspect={openInspector}
           />
         ))}
       </main>
@@ -495,18 +557,20 @@ export default function App(): React.JSX.Element {
             []
           }
           onOpen={(url) => {
-            const current = stateRef.current
-            const workspace = current.workspaces.find(
-              (candidate) => candidate.id === current.activeWorkspaceId
-            )
-            if (!workspace) return
-            const terminalId = activeTerminalSurfaceId(workspace.root, workspace.activePaneId)
-            const terminalPane = terminalId ? findPaneBySurfaceId(workspace.root, terminalId) : null
-            if (!terminalPane) return
-            dispatch(paneAction(workspace.id, previewSplitAction(terminalPane.id, url)))
-            setUtilityOverlay(null)
+            openWorkspacePreview(stateRef.current.activeWorkspaceId, url)
           }}
           onClose={() => setUtilityOverlay(null)}
+        />
+      )}
+      {inspectedWorkspace && (
+        <WorkspaceInspector
+          workspace={inspectedWorkspace}
+          position={inspectedWorkspaceIndex}
+          agents={state.agents.filter((agent) => agent.workspaceId === inspectedWorkspace.id)}
+          onOpenPreview={(url) => openWorkspacePreview(inspectedWorkspace.id, url)}
+          onOpenPullRequest={(url) => openPullRequest(inspectedWorkspace.id, url)}
+          onFocusAgent={focusWorkspaceAgent}
+          onClose={() => setInspectorWorkspaceId(null)}
         />
       )}
     </div>

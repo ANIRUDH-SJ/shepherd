@@ -6,6 +6,7 @@ export type IconName =
   | 'rename'
   | 'close'
   | 'branch'
+  | 'inspect'
   | 'agents'
   | 'terminal'
   | 'split-right'
@@ -63,6 +64,14 @@ function iconPaths(name: IconName): ReactNode {
           <circle cx="6" cy="19" r="2" />
           <path d="M6 7v10" />
           <path d="M8 17c6 0 4-9 8-9" />
+        </>
+      )
+    case 'inspect':
+      return (
+        <>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 11v6" />
+          <path d="M12 7h.01" />
         </>
       )
     case 'agents':

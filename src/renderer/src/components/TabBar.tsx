@@ -11,6 +11,9 @@ interface Props {
   paneNumber: number
   canClosePane: boolean
   terminalNumbers: Map<string, number>
+  workspaceName?: string
+  workspaceCwd?: string
+  onInspectWorkspace?: () => void
   onSelect: (surfaceId: string) => void
   onCloseSurface: (surfaceId: string) => void
   onNewSurface: () => void
@@ -32,6 +35,9 @@ export default function TabBar(props: Props): React.JSX.Element {
     paneNumber,
     canClosePane,
     terminalNumbers,
+    workspaceName,
+    workspaceCwd,
+    onInspectWorkspace,
     onSelect,
     onCloseSurface,
     onNewSurface,
@@ -67,6 +73,19 @@ export default function TabBar(props: Props): React.JSX.Element {
 
   return (
     <div className="pane-tabs">
+      {workspaceName && onInspectWorkspace && (
+        <button
+          type="button"
+          className="pane-workspace"
+          title={`Inspect ${workspaceName}\n${workspaceCwd ?? ''}`}
+          aria-label={`Inspect ${workspaceName} workspace`}
+          onMouseDown={stop}
+          onClick={onInspectWorkspace}
+        >
+          <Icon name="terminal" />
+          <strong>{workspaceName}</strong>
+        </button>
+      )}
       <div className="tab-list" role="tablist" aria-label={`Pane ${paneNumber} tabs`}>
         {pane.surfaces.map((s) => {
           const label = surfaceLabel(s, terminalNumbers)
