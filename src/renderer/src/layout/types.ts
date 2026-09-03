@@ -1,8 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // LAYOUT MODEL  (one workspace's panes — the M2 subset of the object model)
-// Full model: Window → Workspace → Pane → Surface → Panel (FEATURES.md Part 1).
-// M2 covers Pane / Surface / the split tree. Multi-workspace arrives in M3.
-// See textbook/09 (data model) and textbook/10 (tiling).
+// Full model: Window → Workspace → Pane → Surface → Panel.
+// See docs/ARCHITECTURE.md for the public data-model overview.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface TerminalPanel {

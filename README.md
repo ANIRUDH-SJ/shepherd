@@ -366,8 +366,6 @@ Useful starting points:
 - [docs/APPEARANCE.md](docs/APPEARANCE.md) — chrome and terminal theme behavior
 - [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) — keyboard and accessibility notes
 - [AGENTS.md](AGENTS.md) — repository workflow and contribution conventions
-- [LEARNING.md](LEARNING.md) — the public Electron learning path
-- [REFRESHER.md](REFRESHER.md) — React, Node.js, and CSS refresher
 - [benchmarks/README.md](benchmarks/README.md) — performance methodology and usage
 - [bug-fixes/README.md](bug-fixes/README.md) — resolved bug write-ups
 

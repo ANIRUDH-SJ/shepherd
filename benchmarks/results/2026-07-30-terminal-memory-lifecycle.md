@@ -85,7 +85,5 @@ which rejects a candidate-only monotonic retention explanation.
 The feature prevents stale-renderer control and releases renderer-owned PTYs
 without increasing live-resource counts. It does not claim to make Electron's
 cold fixed cost smaller. A clean-swap host should rerun the default five-run
-harness before publishing absolute memory numbers. Future work may add
-renderer-heap instrumentation to separate live JavaScript objects from Chromium
-allocator reservations; this report deliberately does not infer that distinction
-from PSS alone.
+harness before publishing absolute memory numbers. This report deliberately does
+not infer live JavaScript object counts from Chromium process PSS.

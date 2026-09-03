@@ -11,9 +11,10 @@ components in `components/`, layout-tree logic in `layout/`, and reducers in
 The plain Node/CommonJS CLI is under `bin/`; `shepherd` is the primary command
 and `cmux` is compatibility-only. Packaging configuration and assets are in
 `electron-builder.yml` and `build/`. Generated bundles and installers go to
-`out/` and `release/`; do not edit or commit them. Architecture notes live in
-`textbook/`, milestone records in `learning/`, and plans in `ROADMAP.md` and
-`FEATURES.md`.
+`out/` and `release/`; do not edit or commit them. Public, shipped-behavior
+documentation lives in `docs/`. Local study notes, implementation plans, and
+future roadmaps are private, gitignored material and must not be committed or
+referenced from public documentation.
 
 ## Build, Test, and Development Commands
 
@@ -47,12 +48,11 @@ opening a PR. No numeric coverage threshold is currently enforced.
 ## Commit & Pull Request Guidelines
 
 Follow the existing concise, imperative pattern: `renderer: add font zoom`,
-`socket: validate input`, or `docs: update roadmap`. Keep commits scoped to one
+`socket: validate input`, or `docs: update architecture`. Keep commits scoped to one
 concern. PRs should explain the problem, implementation, and verification
 performed; call out packaging or native-module implications. Include screenshots
 for visible UI changes and artifact/runtime checks for packaging changes. Link
-related issues or roadmap milestones when applicable, and keep generated output
-out of the diff.
+related issues when applicable, and keep generated output out of the diff.
 
 ## Required Feature Delivery Workflow
 
@@ -78,18 +78,13 @@ Treat every feature as branch-and-PR work. Do not implement a feature directly o
 Documentation is part of each feature's definition of done and is written after
 the feature code and behavior have settled:
 
-- Update `learning/` with a code-focused walkthrough of what was written, where it
-  lives, and how the completed implementation works end to end. Explain the
-  important types, functions, reducers, handlers, components, tests, and their
-  relationships.
-- Update `textbook/` with the complete engineering explanation: technology
-  choices, architecture, boundaries, data flow, protocol and state design,
-  implementation approach, alternatives considered, tradeoffs, security and
-  validation, failure handling, testing strategy, operational behavior, and
-  future extension points.
+- Keep private code walkthroughs and engineering study material under the
+  gitignored `learning/` and `textbook/` directories. Never add or reference
+  those local notes in a public commit or pull request.
 - Keep documentation synchronized with the final code. Do not present planned or
   hypothetical behavior as implemented behavior.
-- Update relevant roadmap, feature matrix, glossary, index, and cross-references
-  when the feature changes them.
+- Update relevant public shipped-feature documentation and cross-references when
+  the feature changes them. Keep future plans and feature roadmaps local and
+  ignored.
 - Put substantial documentation in a dedicated final commit or documentation PR
   so reviewers can evaluate it separately from the settled implementation.
