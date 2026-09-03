@@ -18,9 +18,12 @@ npm-debug.log*
 .eslintcache
 *.tsbuildinfo
 
-# local planning and study material
+# private local planning and study material
 /learning/
 /textbook/
-/*_PLAN.md
-/ROADMAP.md
-/FEATURES.md
+/**/*[Pp][Ll][Aa][Nn]*.md
+/**/*[Rr][Oo][Aa][Dd][Mm][Aa][Pp]*.md
+/**/*[Ff][Uu][Tt][Uu][Rr][Ee]*.md
+/**/*[Ff][Ee][Aa][Tt][Uu][Rr][Ee][Ss]*.md
+/LEARNING.md
+/REFRESHER.md

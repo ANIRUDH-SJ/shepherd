@@ -23,7 +23,7 @@ import { createGitWorktree, normalizeWorktreeRequest } from './worktree'
 // A unix-domain socket speaking newline-terminated JSON `{id, method, params}`.
 // Agents (via the `shepherd` CLI) push status/notifications here; we route them
 // to the renderer. The legacy socket remains available during the name migration.
-// See textbook/11 (the socket API) and FEATURES.md Part 2.
+// See docs/ARCHITECTURE.md for the public process and protocol overview.
 // ─────────────────────────────────────────────────────────────────────────────
 
 type ApplyFn = (cmd: SocketApply) => void
