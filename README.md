@@ -1,16 +1,17 @@
 # Shepherd
 
-> **Your coding agents. One command center.**
+> **A graphical terminal multiplexer with agent awareness.**
 
-Shepherd is an open-source, AI-native graphical terminal multiplexer for Linux.
-It combines real shells, tabs, and split panes with live project context,
-automatic coding-agent discovery, semantic agent status, notifications, Git
-worktree workflows, and a Unix-socket automation API.
+Shepherd is an open-source, terminal-first desktop workspace for Linux. It
+combines real shells, tabs, and split panes with a compact workspace rail,
+automatic coding-agent discovery, semantic attention, Git and runtime context,
+secure localhost previews, and a Unix-socket automation API.
 
-In short: Shepherd helps you run several coding agents without losing track of
-what is happening where.
+It is a terminal multiplexer at its foundation. Agent awareness is what makes it
+different: Shepherd helps you run several coding agents without turning the app
+into an AI dashboard or losing track of what needs you.
 
-![Shepherd workspace with split terminals and the command palette](docs/images/terminal-utilities.png)
+![Shepherd split-terminal workbench with its contextual workspace inspector](docs/images/workbench-inspector.png)
 
 > [!IMPORTANT]
 > Shepherd is in early development. The core terminal, workspace, agent,
@@ -26,14 +27,14 @@ tell you which agent is testing, finished, blocked, or waiting for approval.
 
 Shepherd turns that collection of terminals into an understandable workspace:
 
-- **Workspaces keep projects separate.** Each sidebar row follows its live
-  project directory and Git branch.
+- **Workspaces keep projects separate.** The rail stays compact while each row
+  summarizes meaningful agent state in words.
 - **Tabs and splits organize real shells.** Every terminal is backed by a real
   PTY, so interactive programs behave as expected.
 - **Agents become visible.** Shepherd discovers supported terminal agents and
-  groups them as _Needs you_, _Working_, _Waiting_, _Finished_, or _Quiet_.
-- **Attention is routed, not demanded.** Notifications and unread state show
-  where intervention is required; selecting an agent jumps to its exact
+  derives calm, semantic states without filling the rail with permanent cards.
+- **Attention is routed, not demanded.** A dedicated section contains only
+  actionable blocks and unseen completions. Selecting an item jumps to its exact
   terminal.
 - **Automation is built in.** The `shepherd` CLI and socket API can create
   workspaces, split panes, send input, publish status, inspect agents, and stream
@@ -43,17 +44,21 @@ Shepherd turns that collection of terminals into an understandable workspace:
 - **Local apps stay beside the terminal.** Shepherd discovers ports opened by
   workspace processes and can show an explicitly selected localhost app in a
   constrained preview surface.
+- **Context is available on demand.** The workspace inspector collects the
+  repository, branch, pull request, owned ports, agents, usage, and session
+  structure without taking rows away from the terminal.
 
 ## More Than a Terminal Multiplexer
 
-| A traditional terminal multiplexer | Shepherd adds                                                             |
-| ---------------------------------- | ------------------------------------------------------------------------- |
-| Sessions, tabs, and split panes    | Named project workspaces with live Git context                            |
-| A grid of terminal output          | A sidebar that explains what each coding agent is doing                   |
-| Manual checking                    | Semantic status, unread state, attention rings, and desktop notifications |
-| Terminal navigation                | Jump-to-agent navigation targeting the exact pane and tab                 |
-| Shell scripting                    | A validated Unix-socket API and the `shepherd` CLI                        |
-| Parallel shells in one checkout    | Git worktree creation for branch-isolated tasks                           |
+| A traditional terminal multiplexer | Shepherd adds                                                     |
+| ---------------------------------- | ----------------------------------------------------------------- |
+| Sessions, tabs, and split panes    | Named project workspaces and a compact workspace rail             |
+| A grid of terminal output          | Semantic agent state and a focused Attention queue                |
+| Manual checking                    | Unseen-completion state, blocked-work routing, and notifications  |
+| Terminal navigation                | Exact agent-to-pane-and-tab navigation                            |
+| Shell scripting                    | A validated Unix-socket API and the `shepherd` CLI                |
+| Parallel shells in one checkout    | Git worktree creation for branch-isolated tasks                   |
+| Always-visible metadata            | An on-demand repository, runtime, agent, usage, and session panel |
 
 Shepherd is not an AI model, chatbot, or full IDE. It is the terminal-first
 workspace around tools such as Codex, Claude Code, OpenCode, and other
@@ -69,7 +74,8 @@ command-line agents.
   context
 - Automatic Linux process discovery for recognized terminal agents
 - Optional structured lifecycle integrations for richer agent state
-- Agent grouping, elapsed state, attention indicators, and exact-terminal focus
+- Compact workspace rollups, an actionable Attention section, and exact-terminal
+  focus
 - Bounded agent inspection, filtered snapshots, waits, and live subscriptions
 - A bounded notification center with unread navigation, resolution, and
   workspace targeting
@@ -78,28 +84,40 @@ command-line agents.
 - Active-workspace session restoration, including cwd, tabs, panes, and layout
 - Safe Ctrl/Meta-click opening for HTTP(S), OSC 8, and existing local-file links
 - Terminal search, a typed command palette, contextual shortcut help, and
-  terminal settings
+  categorized settings
 - A constrained localhost preview that blocks remote navigation, popups,
   downloads, and permission requests
-- Chrome colors derived from the active terminal palette, with neutral default
-  interaction states
+- System, Light, and Dark application appearance, independent from the Graphite
+  xterm ANSI palette
+- An on-demand workspace inspector for repository, pull-request, port, agent,
+  usage, and session context
 - AppImage and Debian package targets
 - Compatibility aliases for earlier `cmux` scripts during the migration window
 
 ## Product Tour
 
-### Terminal utilities
+### Terminal-first workbench
 
-Search terminal scrollback, discover available actions through the keyboard-first
-command palette, and keep shortcuts and settings close without turning the shell
-into an IDE.
+Workspace identity now shares the pane tab bar instead of consuming a separate
+header. The active pane has one restrained boundary, close behavior stays local
+to the active tab, and infrequent operations live in the command palette or
+context menus.
 
-![Command palette over a split Shepherd workspace](docs/images/terminal-utilities.png)
+![Shepherd workbench and workspace inspector](docs/images/workbench-inspector.png)
+
+### Context when you ask for it
+
+Select the workspace name in the first pane, choose **Inspect workspace** from a
+workspace context menu, or run **Inspect current workspace** from the command
+palette. The inspector shows the current repository and branch, pull request,
+owned ports, agent activity, reported usage, and pane/surface counts. Port and
+agent rows are actions: they open the secure preview or focus the real terminal.
 
 ### Attention without terminal checking
 
-Socket and OSC notifications feed a bounded inbox. Shepherd can jump from an
-unread item back to the workspace and exact terminal that produced it.
+Blocked agents and unseen completions enter the compact Attention section.
+Socket and OSC notifications also feed a bounded inbox. Both routes can return
+you to the workspace and exact terminal that produced the event.
 
 ![Shepherd notification center](docs/images/notification-center.svg)
 
@@ -153,9 +171,10 @@ build toolchain.
 3. Use `Ctrl+Shift+N` for another workspace, `Ctrl+Shift+T` for a tab, or the
    split shortcuts to run work side by side.
 4. Press `Ctrl+Shift+P` to discover workspace, pane, attention, and view actions.
-5. Watch the sidebar for live project, Git, port, and agent state.
-6. Select an agent or notification when it needs attention to return to its exact
-   terminal.
+5. Watch the rail for semantic workspace rollups and the Attention section for
+   actionable work.
+6. Open the workspace inspector when you need Git, pull-request, port, agent,
+   usage, or session detail.
 
 Basic agent presence is automatic for recognized processes. For richer semantic
 events—such as _testing_, _waiting for approval_, or _done_—install the optional
@@ -186,14 +205,14 @@ new lifecycle hooks in Codex before they become active.
 | `Ctrl+Shift+U`             | Jump to the latest unread notification      |
 | `Ctrl+Shift+M`             | Mark the current workspace read             |
 | `Ctrl+Shift+=` / `-` / `0` | Zoom terminal in / out / reset              |
-| `Ctrl+Shift+,`             | Open terminal settings                      |
+| `Ctrl+Shift+,`             | Open settings                               |
 | `Ctrl+Shift+?`             | Show contextual shortcut help               |
 | `F2` on a workspace        | Rename the workspace                        |
 | `Ctrl`/`Meta` + click      | Open a validated terminal URL or local file |
 
 When a terminal tab has keyboard focus, Left/Right wraps across tabs, Home/End
 selects the first or last tab, and Delete closes the focused tab when another
-surface remains.
+surface remains. Workspace rows use Arrow keys plus Home/End for navigation.
 
 Workspaces can also be renamed from their context menu, by double-clicking the
 name, or with the pencil action. Saving an empty name returns to the live project
@@ -284,6 +303,12 @@ and OS notifications. The renderer owns presentation and pure workspace/layout
 state. A restricted preload bridge exposes only the typed IPC surface required
 by the UI.
 
+Read [Architecture](docs/ARCHITECTURE.md) for the process boundaries and data
+flows, [Workbench](docs/WORKBENCH.md) for the shipped interaction model,
+[Appearance](docs/APPEARANCE.md) for theme behavior, and
+[Accessibility](docs/ACCESSIBILITY.md) for keyboard and assistive-technology
+behavior.
+
 ## Technology
 
 - **Electron** — Linux desktop application and privileged main process
@@ -329,12 +354,17 @@ bin/               `shepherd` CLI and temporary compatibility launcher
 benchmarks/        terminal performance and lifecycle harnesses
 bug-fixes/         public write-ups for resolved foundational defects
 build/             packaging assets
-docs/images/       repository screenshots
+docs/              shipped feature, architecture, appearance, and accessibility notes
+docs/images/       native application screenshots
 ```
 
 Useful starting points:
 
 - [PRODUCT.md](PRODUCT.md) — product definition, positioning, and pitch
+- [docs/WORKBENCH.md](docs/WORKBENCH.md) — terminal workbench and attention model
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — process boundaries and data flow
+- [docs/APPEARANCE.md](docs/APPEARANCE.md) — chrome and terminal theme behavior
+- [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) — keyboard and accessibility notes
 - [AGENTS.md](AGENTS.md) — repository workflow and contribution conventions
 - [LEARNING.md](LEARNING.md) — the public Electron learning path
 - [REFRESHER.md](REFRESHER.md) — React, Node.js, and CSS refresher
@@ -349,8 +379,10 @@ creation, live Git context, session restore, bounded terminal flow, terminal
 lifecycle ownership, safe clickable links, a notification center, terminal
 utilities, pull-request and port context, and localhost preview.
 
-Current work is focused on product polish, packaging/distribution, and expanded
-rendering, interaction, scalability, and agent-overhead benchmarks.
+The current interface uses the compact workspace rail, actionable Attention
+section, categorized appearance settings, terminal-first pane chrome, and
+contextual workspace inspector described above. Shepherd remains early software;
+the release page and this README are the source of truth for shipped behavior.
 
 ## Origin and License
 
