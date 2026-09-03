@@ -5,9 +5,8 @@ for each: the symptom, how we tracked it down, the root cause, the fix, and how 
 stop it coming back. Includes bugs from **setup**, bugs **you found while using it**,
 and bugs **I found while testing**.
 
-This is learning material — distinct from `../learning/` (which explains _what each
-milestone built_). Here we explain _what went wrong and how we reasoned about it_,
-because debugging is the skill that actually matters.
+These public notes explain what went wrong, how each issue was diagnosed, and
+which regression guard prevents it from returning.
 
 ## Index
 

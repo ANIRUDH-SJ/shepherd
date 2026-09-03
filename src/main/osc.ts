@@ -3,7 +3,7 @@
 // Scans terminal output for OSC 9 / 777 / 99 "desktop notification" escape codes.
 // Any program (or agent) that emits one raises a sidebar notification with zero
 // setup. This does NOT alter the stream sent to xterm — it only sniffs a copy.
-// See textbook/12 (Notifications & OSC).
+// See docs/ARCHITECTURE.md for the notification data flow.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface OscNotification {

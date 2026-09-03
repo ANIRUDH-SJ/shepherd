@@ -4,7 +4,7 @@ import { surfaceLabel, surfacePanelId, surfaceTabId, tabNavigationTarget } from 
 import Icon from './Icon'
 
 // The tab bar at the top of a pane: one tab per surface, a "+" to add a tab, and
-// the pane's split/close controls on the right. See textbook/10.
+// the pane's split/close controls on the right.
 
 interface Props {
   pane: Pane

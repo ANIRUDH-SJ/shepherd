@@ -11,7 +11,7 @@ import type {
 // SHARED IPC CONTRACT
 // Imported by ALL THREE sides (main, preload, renderer) so they agree on channel
 // names and message shapes. Types here are compile-time only — they vanish at
-// runtime, so payloads crossing IPC are still plain JSON (see textbook/09).
+// runtime, so payloads crossing IPC are still plain JSON.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Channel names. Grouped by direction so it's obvious who sends what. */
