@@ -6,6 +6,7 @@ import type { WorkspaceAction } from '../state/workspaceReducer'
 import { terminalWorkspaceAriaLabel } from '../terminalChrome'
 import PaneView from './PaneView'
 import Divider from './Divider'
+import Icon from './Icon'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WorkspaceView — the pane layer for one workspace.
@@ -17,6 +18,7 @@ interface Props {
   workspace: Workspace
   position: number
   active: boolean
+  welcomeSurfaceId: string | null
   dispatch: Dispatch<AppAction>
   onInspect: (workspaceId: string) => void
 }
@@ -25,6 +27,7 @@ export default function WorkspaceView({
   workspace,
   position,
   active,
+  welcomeSurfaceId,
   dispatch,
   onInspect
 }: Props): React.JSX.Element {
@@ -57,6 +60,17 @@ export default function WorkspaceView({
       aria-label={chromeLabel}
       style={{ display: active ? 'flex' : 'none' }}
     >
+      <header className="workspace-titlebar">
+        <button
+          type="button"
+          title={`Inspect ${identity.primary}\n${workspace.cwd}`}
+          aria-label={`Inspect ${identity.primary} workspace`}
+          onClick={() => onInspect(workspace.id)}
+        >
+          <Icon name="folder" />
+          <strong>{identity.primary}</strong>
+        </button>
+      </header>
       <div className="pane-layer" ref={layerRef}>
         {panes.map(({ pane, rect }, paneIndex) => (
           <PaneView
@@ -73,10 +87,8 @@ export default function WorkspaceView({
             attentionPulse={pane.id === workspace.activePaneId ? workspace.attentionPulse : 0}
             workspaceActive={active}
             workspaceId={workspace.id}
-            workspaceCwd={workspace.cwd}
-            workspaceName={identity.primary}
-            showWorkspaceIdentity={paneIndex === 0}
-            onInspectWorkspace={() => onInspect(workspace.id)}
+            cwd={workspace.cwd}
+            showWelcome={pane.surfaces.some((surface) => surface.id === welcomeSurfaceId)}
             terminalNumbers={terminalNumbers}
             dispatch={paneDispatch}
           />

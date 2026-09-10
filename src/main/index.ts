@@ -12,6 +12,7 @@ import { configurePreviewHost, configurePreviewSecurity } from './previewSecurit
 import { loadSession, saveSession } from './session'
 import { IPC, type SocketApply, type WorkspacesSync } from '../shared/ipc'
 import {
+  APP_BACKGROUND_COLOR,
   isAppearanceMode,
   resolvedAppearance,
   type AppearanceSnapshot
@@ -58,7 +59,7 @@ function appearanceSnapshot(): AppearanceSnapshot {
 }
 
 function syncWindowAppearance(snapshot = appearanceSnapshot()): void {
-  const background = snapshot.resolved === 'dark' ? '#272823' : '#f7f7f8'
+  const background = APP_BACKGROUND_COLOR[snapshot.resolved]
   for (const window of BrowserWindow.getAllWindows()) {
     if (window.isDestroyed()) continue
     window.setBackgroundColor(background)
@@ -81,7 +82,7 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     title: PRODUCT_NAME,
-    backgroundColor: appearance.resolved === 'dark' ? '#272823' : '#f7f7f8',
+    backgroundColor: APP_BACKGROUND_COLOR[appearance.resolved],
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       // sandbox:false is required so the preload can later load native modules

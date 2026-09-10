@@ -56,8 +56,7 @@ assert(
   'unset preferences migrate to versioned defaults'
 )
 assert(
-  JSON.parse(store.get(RENDERER_PREFERENCES_KEY) ?? '{}').version ===
-    RENDERER_PREFERENCES_VERSION,
+  JSON.parse(store.get(RENDERER_PREFERENCES_KEY) ?? '{}').version === RENDERER_PREFERENCES_VERSION,
   'persists the current schema version'
 )
 
@@ -84,7 +83,7 @@ store.set(
     version: RENDERER_PREFERENCES_VERSION,
     terminalFontSize: 14,
     appearanceMode: 'sepia',
-    terminalPaletteId: 'graphite'
+    terminalPaletteId: 'system'
   })
 )
 assert(
@@ -101,20 +100,41 @@ assert(setFontSize(13.6) === 14, 'rounds fractional font input')
 assert(bumpFontSize(2) === 16, 'font bump is relative to current value')
 assert(resetFontSize() === DEFAULT_FONT_SIZE, 'font reset restores the default')
 assert(
-  updateRendererPreferences({ terminalFontSize: Number.NaN }).terminalFontSize === DEFAULT_FONT_SIZE,
+  updateRendererPreferences({ terminalFontSize: Number.NaN }).terminalFontSize ===
+    DEFAULT_FONT_SIZE,
   'non-finite font updates preserve the current valid size'
 )
 
 const appearance = setAppearanceMode('light')
 assert(appearance.appearanceMode === 'light', 'appearance setter persists a valid mode')
 assert(
-  appearance.terminalFontSize === DEFAULT_FONT_SIZE && appearance.terminalPaletteId === 'graphite',
+  appearance.terminalFontSize === DEFAULT_FONT_SIZE && appearance.terminalPaletteId === 'system',
   'appearance update preserves unrelated preferences'
 )
 assert(lastType === RENDERER_EVENT.preferences, 'preference update broadcasts the full schema')
 
 const invalid = updateRendererPreferences({ appearanceMode: 'invalid' as 'system' })
 assert(invalid.appearanceMode === 'light', 'invalid patch does not replace a valid mode')
+
+store.clear()
+store.set(
+  RENDERER_PREFERENCES_KEY,
+  JSON.stringify({
+    version: 1,
+    terminalFontSize: 15,
+    appearanceMode: 'dark',
+    terminalPaletteId: 'graphite'
+  })
+)
+const migratedGraphite = getRendererPreferences()
+assert(migratedGraphite.version === 2, 'migrates version-one renderer preferences')
+assert(migratedGraphite.terminalFontSize === 15, 'preserves font size during palette migration')
+assert(migratedGraphite.appearanceMode === 'dark', 'preserves appearance during palette migration')
+assert(migratedGraphite.terminalPaletteId === 'system', 'migrates Graphite to the system palette')
+assert(
+  JSON.parse(store.get(RENDERER_PREFERENCES_KEY) ?? '{}').terminalPaletteId === 'system',
+  'persists the migrated system palette'
+)
 
 console.log(failures === 0 ? '\n✅ ALL SETTINGS TESTS PASS' : `\n❌ ${failures} FAILURE(S)`)
 if (failures > 0) throw new Error(`${failures} settings test(s) failed`)

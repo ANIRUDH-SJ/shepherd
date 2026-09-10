@@ -1,4 +1,5 @@
 export const RENDERER_EVENT = {
+  appearance: 'shepherd:appearance',
   fontSize: 'shepherd:font-size',
   preferences: 'shepherd:preferences',
   terminalExit: 'shepherd:terminal-exit',

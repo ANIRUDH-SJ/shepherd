@@ -71,9 +71,7 @@ export default function Sidebar({
   const unseenCompletionWorkspaceIds = useMemo(
     () =>
       new Set(
-        attentionAgents
-          .filter((agent) => agent.state === 'done')
-          .map((agent) => agent.workspaceId)
+        attentionAgents.filter((agent) => agent.state === 'done').map((agent) => agent.workspaceId)
       ),
     [attentionAgents]
   )
@@ -131,21 +129,21 @@ export default function Sidebar({
     <div className="sidebar-inner">
       <div className="sidebar-head">
         <div className="sidebar-head-actions">
+          <button
+            type="button"
+            className="icon-btn"
+            title="Hide sidebar (Ctrl+Shift+B)"
+            aria-label="Hide sidebar"
+            onClick={onCollapse}
+          >
+            <Icon name="collapse" />
+          </button>
           <NotificationCenter
             notifications={notifications}
             workspaces={workspaces}
             activeWorkspaceId={activeWorkspaceId}
             dispatch={dispatch}
           />
-          <button
-            type="button"
-            className="icon-btn"
-            title="Commands (Ctrl+Shift+P)"
-            aria-label="Open command palette"
-            onClick={onOpenPalette}
-          >
-            <Icon name="command" />
-          </button>
           <button
             type="button"
             className="icon-btn"
@@ -157,12 +155,12 @@ export default function Sidebar({
           </button>
           <button
             type="button"
-            className="icon-btn"
-            title="Hide sidebar (Ctrl+Shift+B)"
-            aria-label="Hide sidebar"
-            onClick={onCollapse}
+            className="icon-btn sidebar-command"
+            title="Commands (Ctrl+Shift+P)"
+            aria-label="Open command palette"
+            onClick={onOpenPalette}
           >
-            <Icon name="collapse" />
+            <Icon name="command" />
           </button>
         </div>
       </div>
@@ -178,7 +176,7 @@ export default function Sidebar({
             unseenCompletionWorkspaceIds.has(workspace.id)
           )
           const projectContext = workspaceProjectContext(workspace, identity)
-          const summary = agentSummary ?? workspace.status ?? projectContext ?? identity.context
+          const summary = agentSummary ?? workspace.status ?? projectContext
           const notificationCounts = workspaceNotificationCounts(notifications, workspace.id)
           const unreadCount =
             notificationCounts.unread +

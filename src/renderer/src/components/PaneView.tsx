@@ -25,10 +25,8 @@ interface Props {
   attentionPulse: number
   workspaceActive: boolean
   workspaceId: string
-  workspaceCwd: string
-  workspaceName: string
-  showWorkspaceIdentity: boolean
-  onInspectWorkspace: () => void
+  cwd: string
+  showWelcome: boolean
   terminalNumbers: Map<string, number>
   dispatch: Dispatch<WorkspaceAction>
 }
@@ -42,10 +40,8 @@ export default function PaneView({
   attentionPulse,
   workspaceActive,
   workspaceId,
-  workspaceCwd,
-  workspaceName,
-  showWorkspaceIdentity,
-  onInspectWorkspace,
+  cwd,
+  showWelcome,
   terminalNumbers,
   dispatch
 }: Props): React.JSX.Element {
@@ -68,9 +64,6 @@ export default function PaneView({
         paneNumber={paneNumber}
         canClosePane={canClosePane}
         terminalNumbers={terminalNumbers}
-        workspaceName={showWorkspaceIdentity ? workspaceName : undefined}
-        workspaceCwd={workspaceCwd}
-        onInspectWorkspace={showWorkspaceIdentity ? onInspectWorkspace : undefined}
         onSelect={(surfaceId) => dispatch({ type: 'setActiveSurface', paneId: pane.id, surfaceId })}
         onCloseSurface={(surfaceId) =>
           dispatch({ type: 'closeSurface', paneId: pane.id, surfaceId })
@@ -88,9 +81,10 @@ export default function PaneView({
               key={surface.id}
               surfaceId={surface.id}
               workspaceId={workspaceId}
-              cwd={workspaceCwd}
+              cwd={cwd}
               active={surface.id === pane.activeSurfaceId}
               focused={workspaceActive && active && surface.id === pane.activeSurfaceId}
+              showWelcome={showWelcome && surface.id === pane.activeSurfaceId}
             />
           ) : (
             <PreviewHost

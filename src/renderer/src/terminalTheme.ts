@@ -1,26 +1,48 @@
 import type { ITheme } from '@xterm/xterm'
+import type { ResolvedAppearance } from '../../shared/appearance'
 
-/** Terminal colors are an xterm contract, independent from Shepherd's chrome tokens. */
-export const TERMINAL_THEME: Readonly<ITheme> = Object.freeze({
-  background: '#272823',
-  foreground: '#bdbfb4',
-  cursor: '#dededd',
-  cursorAccent: '#272823',
-  selectionBackground: '#52534f99',
-  black: '#1d1f21',
-  red: '#cc6566',
-  green: '#b6bd68',
-  yellow: '#f0c674',
-  blue: '#82a2be',
-  magenta: '#b294bb',
-  cyan: '#8abeb7',
-  white: '#c4c8c6',
-  brightBlack: '#666666',
-  brightRed: '#d54e53',
-  brightGreen: '#b9ca4b',
-  brightYellow: '#e7c547',
-  brightBlue: '#7aa6da',
-  brightMagenta: '#c397d8',
-  brightCyan: '#70c0b1',
-  brightWhite: '#eaeaea'
+const SHARED_ANSI_COLORS = {
+  black: '#1a1a1a',
+  red: '#cc372e',
+  green: '#26a439',
+  yellow: '#cdac08',
+  blue: '#0869cb',
+  magenta: '#9647bf',
+  cyan: '#479ec2',
+  white: '#98989d',
+  brightBlack: '#464646',
+  brightRed: '#ff453a',
+  brightGreen: '#32d74b',
+  brightBlue: '#0a84ff',
+  brightMagenta: '#bf5af2',
+  brightWhite: '#ffffff'
+} as const
+
+/** cmux-aligned terminal colors remain an xterm contract, separate from CSS tokens. */
+export const DARK_TERMINAL_THEME: Readonly<ITheme> = Object.freeze({
+  ...SHARED_ANSI_COLORS,
+  background: '#1e1e1e',
+  foreground: '#ffffff',
+  cursor: '#98989d',
+  cursorAccent: '#ffffff',
+  selectionBackground: '#3f638b',
+  selectionForeground: '#ffffff',
+  brightYellow: '#ffd60a',
+  brightCyan: '#76d6ff'
 })
+
+export const LIGHT_TERMINAL_THEME: Readonly<ITheme> = Object.freeze({
+  ...SHARED_ANSI_COLORS,
+  background: '#feffff',
+  foreground: '#000000',
+  cursor: '#98989d',
+  cursorAccent: '#ffffff',
+  selectionBackground: '#abd8ff',
+  selectionForeground: '#000000',
+  brightYellow: '#e5bc00',
+  brightCyan: '#69c9f2'
+})
+
+export function terminalThemeForAppearance(appearance: ResolvedAppearance): Readonly<ITheme> {
+  return appearance === 'light' ? LIGHT_TERMINAL_THEME : DARK_TERMINAL_THEME
+}

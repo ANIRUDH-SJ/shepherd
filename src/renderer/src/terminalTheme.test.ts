@@ -1,4 +1,8 @@
-import { TERMINAL_THEME } from './terminalTheme'
+import {
+  DARK_TERMINAL_THEME,
+  LIGHT_TERMINAL_THEME,
+  terminalThemeForAppearance
+} from './terminalTheme'
 
 let failures = 0
 function assert(condition: boolean, message: string): void {
@@ -9,16 +13,23 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-assert(TERMINAL_THEME.background === '#272823', 'anchors the UI to the measured cmux backdrop')
-assert(TERMINAL_THEME.foreground === '#bdbfb4', 'uses the measured cmux terminal foreground')
-assert(TERMINAL_THEME.cursor === '#dededd', 'keeps a distinct neutral terminal cursor')
-assert(TERMINAL_THEME.cursorAccent === '#272823', 'keeps cursor text readable')
-assert(TERMINAL_THEME.selectionBackground === '#52534f99', 'uses a neutral terminal selection')
-assert(TERMINAL_THEME.red === '#cc6566', 'uses the bundled cmux Ghostty red')
-assert(TERMINAL_THEME.blue === '#82a2be', 'preserves requested ANSI blue terminal content')
-assert(Object.isFrozen(TERMINAL_THEME), 'prevents one terminal from mutating the shared theme')
+assert(DARK_TERMINAL_THEME.background === '#1e1e1e', 'uses the cmux dark terminal backdrop')
+assert(DARK_TERMINAL_THEME.foreground === '#ffffff', 'uses the cmux dark foreground')
+assert(DARK_TERMINAL_THEME.cursor === '#98989d', 'uses the cmux system cursor')
+assert(DARK_TERMINAL_THEME.selectionBackground === '#3f638b', 'uses cmux dark selection')
+assert(LIGHT_TERMINAL_THEME.background === '#feffff', 'uses the cmux light terminal backdrop')
+assert(LIGHT_TERMINAL_THEME.foreground === '#000000', 'uses the cmux light foreground')
+assert(LIGHT_TERMINAL_THEME.selectionBackground === '#abd8ff', 'uses cmux light selection')
+assert(DARK_TERMINAL_THEME.red === '#cc372e', 'uses the cmux system ANSI red')
+assert(DARK_TERMINAL_THEME.blue === '#0869cb', 'uses the cmux system ANSI blue')
+assert(DARK_TERMINAL_THEME.brightYellow === '#ffd60a', 'uses the dark system bright yellow')
+assert(LIGHT_TERMINAL_THEME.brightYellow === '#e5bc00', 'uses the light system bright yellow')
+assert(Object.isFrozen(DARK_TERMINAL_THEME), 'freezes the shared dark theme')
+assert(Object.isFrozen(LIGHT_TERMINAL_THEME), 'freezes the shared light theme')
+assert(terminalThemeForAppearance('dark') === DARK_TERMINAL_THEME, 'selects the dark palette')
+assert(terminalThemeForAppearance('light') === LIGHT_TERMINAL_THEME, 'selects the light palette')
 assert(
-  Object.values(TERMINAL_THEME).every(
+  [...Object.values(DARK_TERMINAL_THEME), ...Object.values(LIGHT_TERMINAL_THEME)].every(
     (value) => typeof value !== 'string' || !value.includes('var(--color-')
   ),
   'does not couple xterm colors to application chrome variables'

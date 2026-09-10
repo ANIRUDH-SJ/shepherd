@@ -7,6 +7,7 @@ import { WebglAddon } from '@xterm/addon-webgl'
 import '@xterm/xterm/css/xterm.css'
 import { TERMINAL_SCROLLBACK_LINES } from '../../../shared/terminalMemory'
 import type { TerminalLinkTarget } from '../../../shared/terminalLinks'
+import type { AppearanceSnapshot } from '../../../shared/appearance'
 import { getFontSize } from '../settings'
 import { RENDERER_EVENT } from '../events'
 import { terminalPanelId, terminalTabId } from '../terminalChrome'
@@ -17,13 +18,14 @@ import {
   TERMINAL_FIND_HIGHLIGHT_LIMIT,
   TERMINAL_FIND_TERMINAL_OPTIONS
 } from '../terminalFind'
-import { TERMINAL_THEME } from '../terminalTheme'
+import { terminalThemeForAppearance } from '../terminalTheme'
 import {
   registerTerminalFileLinks,
   terminalLinkModifierPressed,
   terminalOscLinkTarget
 } from '../terminalLinks'
 import Icon from './Icon'
+import { markWelcomeShown, WELCOME_COMMAND } from '../welcome'
 
 const SEARCH_OPTIONS: ISearchOptions = {
   decorations: {
@@ -51,6 +53,7 @@ interface Props {
   cwd: string
   active: boolean
   focused: boolean
+  showWelcome: boolean
 }
 
 export default function TerminalHost({
@@ -58,7 +61,8 @@ export default function TerminalHost({
   workspaceId,
   cwd,
   active,
-  focused
+  focused,
+  showWelcome
 }: Props): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const findInputRef = useRef<HTMLInputElement | null>(null)
@@ -114,13 +118,14 @@ export default function TerminalHost({
       )
     }
 
+    const initialAppearance = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
     const term = new Terminal({
       ...TERMINAL_FIND_TERMINAL_OPTIONS,
       fontFamily: '"JetBrains Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace',
       fontSize: getFontSize(),
       scrollback: TERMINAL_SCROLLBACK_LINES,
       cursorBlink: true,
-      theme: TERMINAL_THEME,
+      theme: terminalThemeForAppearance(initialAppearance),
       linkHandler: {
         allowNonHttpProtocols: true,
         activate: (event, value) => {
@@ -175,6 +180,20 @@ export default function TerminalHost({
       /* no WebGL — xterm uses its DOM/canvas renderer */
     }
 
+    let disposed = false
+    let welcomeTimer: number | null = null
+    let welcomePending = showWelcome
+    const scheduleWelcome = (): void => {
+      if (!welcomePending) return
+      welcomePending = false
+      welcomeTimer = window.setTimeout(() => {
+        welcomeTimer = null
+        if (disposed) return
+        window.api.terminal.input({ id: surfaceId, data: WELCOME_COMMAND })
+        markWelcomeShown()
+      }, 80)
+    }
+
     let writeData: (data: string, acknowledge: () => void) => void
     if (measuresStartup) {
       let waitingForFirstOutput = true
@@ -186,13 +205,18 @@ export default function TerminalHost({
         waitingForFirstOutput = false
         term.write(data, () => {
           acknowledge()
+          scheduleWelcome()
           window.requestAnimationFrame(() => {
             window.api.performance.mark('terminal-first-output-written')
           })
         })
       }
     } else {
-      writeData = (data, acknowledge) => term.write(data, acknowledge)
+      writeData = (data, acknowledge) =>
+        term.write(data, () => {
+          acknowledge()
+          scheduleWelcome()
+        })
     }
     const offData = window.api.terminal.onData(surfaceId, writeData)
     const offExit = window.api.terminal.onExit(surfaceId, (code) => {
@@ -209,7 +233,6 @@ export default function TerminalHost({
       rows: term.rows,
       ...(measuresStartup ? { startupPerformanceCandidate: true } : {})
     })
-    let disposed = false
     let startupReadyFrame: number | null = null
     if (focused) {
       void terminalCreation.then(
@@ -248,14 +271,23 @@ export default function TerminalHost({
       if ((e as CustomEvent<{ surfaceId?: unknown }>).detail?.surfaceId !== surfaceId) return
       setFindOpen(true)
     }
+    const onAppearance = (e: Event): void => {
+      const snapshot = (e as CustomEvent<AppearanceSnapshot>).detail
+      if (snapshot?.resolved === 'light' || snapshot?.resolved === 'dark') {
+        term.options.theme = terminalThemeForAppearance(snapshot.resolved)
+      }
+    }
+    window.addEventListener(RENDERER_EVENT.appearance, onAppearance)
     window.addEventListener(RENDERER_EVENT.fontSize, onFontSize)
     window.addEventListener(RENDERER_EVENT.focusSurface, onFocusSurface)
     window.addEventListener(RENDERER_EVENT.terminalFind, onTerminalFind)
 
     return () => {
       disposed = true
+      if (welcomeTimer !== null) window.clearTimeout(welcomeTimer)
       if (startupReadyFrame !== null) window.cancelAnimationFrame(startupReadyFrame)
       observer.disconnect()
+      window.removeEventListener(RENDERER_EVENT.appearance, onAppearance)
       window.removeEventListener(RENDERER_EVENT.fontSize, onFontSize)
       window.removeEventListener(RENDERER_EVENT.focusSurface, onFocusSurface)
       window.removeEventListener(RENDERER_EVENT.terminalFind, onTerminalFind)
@@ -268,7 +300,7 @@ export default function TerminalHost({
       term.dispose()
       refs.current = null
     }
-  }, [surfaceId])
+  }, [surfaceId, showWelcome])
 
   // Refit when this tab becomes visible, and focus when it is also the selected
   // pane in the active workspace (including focus-agent sidebar navigation).

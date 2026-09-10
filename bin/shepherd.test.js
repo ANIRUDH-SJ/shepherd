@@ -62,6 +62,38 @@ async function main() {
     assert(exitCode === 0, `CLI exits successfully${stderr ? `: ${stderr}` : ''}`)
   }
 
+  async function runCliCapture(args) {
+    const child = spawn(cliPath, args, {
+      env: {
+        ...process.env,
+        SHEPHERD_ELECTRON: '',
+        CMUX_ELECTRON: '',
+        SHEPHERD_SOCKET_PATH: socketPath
+      }
+    })
+    let stdout = ''
+    let stderr = ''
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString()
+    })
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString()
+    })
+    const exitCode = await new Promise((resolve) => child.once('exit', resolve))
+    assert(exitCode === 0, `local CLI command exits successfully${stderr ? `: ${stderr}` : ''}`)
+    return stdout
+  }
+
+  const requestsBeforeWelcome = requests.length
+  const welcome = await runCliCapture(['welcome'])
+  assert(welcome.includes('shepherd'), 'welcome prints the Shepherd identity')
+  assert(
+    welcome.includes('the terminal workspace for coding agents'),
+    'welcome explains the product'
+  )
+  assert(welcome.includes('Ctrl+Shift+N'), 'welcome lists useful shortcuts')
+  assert(requests.length === requestsBeforeWelcome, 'welcome does not require the app socket')
+
   await runCli([
     'report-usage',
     '--input-tokens',
