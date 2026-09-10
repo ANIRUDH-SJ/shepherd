@@ -8,6 +8,7 @@ import {
   resetFontSize,
   type RendererPreferences
 } from '../settings'
+import { terminalThemeForAppearance } from '../terminalTheme'
 import DialogFrame from './DialogFrame'
 
 const SETTINGS_CATEGORIES = [
@@ -22,17 +23,6 @@ const SETTINGS_CATEGORIES = [
 
 type SettingsCategory = (typeof SETTINGS_CATEGORIES)[number]
 
-const GRAPHITE_SWATCHES = [
-  '#1d1f21',
-  '#cc6566',
-  '#b6bd68',
-  '#f0c674',
-  '#82a2be',
-  '#b294bb',
-  '#8abeb7',
-  '#eaeaea'
-] as const
-
 interface Props {
   onOpenHelp: () => void
   onClose: () => void
@@ -46,6 +36,19 @@ export default function SettingsDialog({ onOpenHelp, onClose }: Props): React.JS
   const [category, setCategory] = useState<SettingsCategory>('Appearance')
   const [preferences, setPreferences] = useState<RendererPreferences>(getRendererPreferences)
   const categoryRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const terminalTheme = terminalThemeForAppearance(
+    document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
+  )
+  const systemSwatches = [
+    terminalTheme.black,
+    terminalTheme.red,
+    terminalTheme.green,
+    terminalTheme.yellow,
+    terminalTheme.blue,
+    terminalTheme.magenta,
+    terminalTheme.cyan,
+    terminalTheme.foreground
+  ].filter((color): color is string => typeof color === 'string')
 
   const updateAppearance = (mode: AppearanceMode): void => {
     setPreferences((current) => ({ ...current, appearanceMode: mode }))
@@ -154,12 +157,12 @@ export default function SettingsDialog({ onOpenHelp, onClose }: Props): React.JS
                 <div className="settings-setting-head">
                   <span>
                     <strong>Terminal palette</strong>
-                    <small>ANSI colors stay independent from application chrome.</small>
+                    <small>Matches Shepherd chrome in light and dark appearance.</small>
                   </span>
-                  <span className="settings-value">Graphite</span>
+                  <span className="settings-value">System</span>
                 </div>
-                <div className="terminal-palette-preview" aria-label="Graphite terminal palette">
-                  {GRAPHITE_SWATCHES.map((color) => (
+                <div className="terminal-palette-preview" aria-label="System terminal palette">
+                  {systemSwatches.map((color) => (
                     <span key={color} style={{ backgroundColor: color }} />
                   ))}
                 </div>
@@ -201,9 +204,11 @@ export default function SettingsDialog({ onOpenHelp, onClose }: Props): React.JS
                 <div className="settings-setting-head">
                   <span>
                     <strong>Color contract</strong>
-                    <small>Shell output keeps stable ANSI colors when chrome appearance changes.</small>
+                    <small>
+                      ANSI roles stay stable while foreground and backdrop follow appearance.
+                    </small>
                   </span>
-                  <span className="settings-value">Independent</span>
+                  <span className="settings-value">Synchronized</span>
                 </div>
               </section>
             </div>
@@ -240,7 +245,9 @@ export default function SettingsDialog({ onOpenHelp, onClose }: Props): React.JS
                 <div className="settings-setting-head">
                   <span>
                     <strong>Focused-workspace suppression</strong>
-                    <small>Background attention remains visible without interrupting active work.</small>
+                    <small>
+                      Background attention remains visible without interrupting active work.
+                    </small>
                   </span>
                   <span className="settings-value">Automatic</span>
                 </div>
@@ -263,7 +270,9 @@ export default function SettingsDialog({ onOpenHelp, onClose }: Props): React.JS
                 <div className="settings-setting-head">
                   <span>
                     <strong>Git worktrees</strong>
-                    <small>New isolated workspaces remain available through Shepherd commands.</small>
+                    <small>
+                      New isolated workspaces remain available through Shepherd commands.
+                    </small>
                   </span>
                   <span className="settings-value">Available</span>
                 </div>
@@ -286,7 +295,9 @@ export default function SettingsDialog({ onOpenHelp, onClose }: Props): React.JS
                 <div className="settings-setting-head">
                   <span>
                     <strong>Attention states</strong>
-                    <small>Working, blocked, done, idle, and stale states use text and shape.</small>
+                    <small>
+                      Working, blocked, done, idle, and stale states use text and shape.
+                    </small>
                   </span>
                   <span className="settings-value">Semantic</span>
                 </div>

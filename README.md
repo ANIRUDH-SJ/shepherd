@@ -11,8 +11,6 @@ It is a terminal multiplexer at its foundation. Agent awareness is what makes it
 different: Shepherd helps you run several coding agents without turning the app
 into an AI dashboard or losing track of what needs you.
 
-![Shepherd split-terminal workbench with its contextual workspace inspector](docs/images/workbench-inspector.png)
-
 > [!IMPORTANT]
 > Shepherd is in early development. The core terminal, workspace, agent,
 > notification, preview, and automation systems are implemented, but interfaces
@@ -90,8 +88,8 @@ command-line agents.
   categorized settings
 - A constrained localhost preview that blocks remote navigation, popups,
   downloads, and permission requests
-- System, Light, and Dark application appearance, independent from the Graphite
-  xterm ANSI palette
+- System, Light, and Dark appearance with matching application and terminal
+  surfaces, plus stable semantic ANSI colors
 - An on-demand workspace inspector for repository, pull-request, port, agent,
   usage, and session context
 - AppImage and Debian package targets
@@ -101,16 +99,19 @@ command-line agents.
 
 ### Terminal-first workbench
 
-Workspace identity now shares the pane tab bar instead of consuming a separate
-header. The active pane has one restrained boundary, close behavior stays local
-to the active tab, and infrequent operations live in the command palette or
-context menus.
+Workspace identity uses a compact titlebar above the pane layer, while every pane
+keeps a dedicated tab row. Flat neutral surfaces keep the terminal dominant,
+close behavior stays local to the active tab, and infrequent operations live in
+the command palette or context menus. A fresh profile introduces the essential
+shortcuts inside the first real terminal and can replay them with `shepherd
+welcome`.
 
-![Shepherd workbench and workspace inspector](docs/images/workbench-inspector.png)
+The welcome is printed into the first real shell, so the launch screen remains a
+usable terminal rather than a separate onboarding page.
 
 ### Context when you ask for it
 
-Select the workspace name in the first pane, choose **Inspect workspace** from a
+Select the workspace name in the titlebar, choose **Inspect workspace** from a
 workspace context menu, or run **Inspect current workspace** from the command
 palette. The inspector shows the current repository and branch, pull request,
 owned ports, agent activity, reported usage, and pane/surface counts. Port and
@@ -122,14 +123,11 @@ Blocked agents and unseen completions enter the compact Attention section.
 Socket and OSC notifications also feed a bounded inbox. Both routes can return
 you to the workspace and exact terminal that produced the event.
 
-![Shepherd notification center](docs/images/notification-center.svg)
+### Localhost browser preview
 
-### Localhost preview
-
-Open a detected loopback server beside its terminal. Preview navigation remains
-restricted to localhost and uses a dedicated Electron session boundary.
-
-![A localhost app previewed beside its Shepherd terminal](docs/images/localhost-preview.png)
+Open a detected loopback server beside its owning terminal. This is browser
+support for local development previews, not unrestricted web browsing: navigation
+remains restricted to localhost and uses a dedicated Electron session boundary.
 
 ## Install
 

@@ -3,6 +3,11 @@ export type AppearanceMode = (typeof APPEARANCE_MODES)[number]
 
 export type ResolvedAppearance = 'light' | 'dark'
 
+export const APP_BACKGROUND_COLOR: Readonly<Record<ResolvedAppearance, string>> = Object.freeze({
+  light: '#feffff',
+  dark: '#1e1e1e'
+})
+
 export interface AppearanceSnapshot {
   mode: AppearanceMode
   resolved: ResolvedAppearance

@@ -94,33 +94,26 @@ for (const name of [
   '--color-border-strong'
 ]) {
   const channels = rgb(token(name))
-  assert(Math.max(...channels) - Math.min(...channels) <= 8, `${name} stays low-chroma graphite`)
+  assert(Math.max(...channels) - Math.min(...channels) <= 8, `${name} stays low-chroma neutral`)
 }
 
-assert(token('--color-canvas') === '#272823', 'uses the measured cmux terminal backdrop')
+assert(token('--color-canvas') === '#1e1e1e', 'uses the cmux default dark terminal backdrop')
 assert(
   token('--color-sidebar') === token('--color-canvas'),
   'sidebar derives from the terminal backdrop'
 )
 assert(token('--color-surface') === token('--color-canvas'), 'permanent chrome shares one backdrop')
 
-for (const name of [
-  '--color-accent',
-  '--color-accent-strong',
-  '--color-selection',
-  '--color-selection-hover',
-  '--color-selection-text',
-  '--color-focus',
-  '--color-attention',
-  '--color-info',
-  '--color-git'
-]) {
-  const [red, green, blue] = rgb(token(name))
-  assert(blue - Math.max(red, green) <= 8, `${name} has no blue cast`)
-}
-
-assert(token('--color-selection') === '#393a34', 'selection uses measured graphite contrast')
-assert(token('--color-selection-text') === '#dededd', 'selection uses neutral readable text')
+assert(token('--color-accent') === '#0091ff', 'uses the cmux dark interaction accent')
+assert(token('--color-selection') === token('--color-accent'), 'selection uses the shared accent')
+assert(token('--color-focus') === token('--color-accent'), 'keyboard focus uses the shared accent')
+assert(token('--color-selection-text') === '#ffffff', 'selection uses readable white text')
+assert(lightToken('--color-canvas') === '#feffff', 'uses the cmux default light backdrop')
+assert(lightToken('--color-accent') === '#0088ff', 'uses the cmux light interaction accent')
+assert(
+  lightToken('--color-selection') === lightToken('--color-accent'),
+  'light selection uses the shared accent'
+)
 
 assert(
   contrast(token('--color-text'), token('--color-canvas')) >= 10,
@@ -138,8 +131,11 @@ assert(
   contrast(token('--color-focus'), token('--color-canvas')) >= 4.5,
   'keyboard focus remains distinct on the canvas'
 )
-assert(token('--radius-md') === '4px', 'uses restrained default corner geometry')
-assert(lightBlock.includes('color-scheme: light'), 'light appearance advertises native light chrome')
+assert(token('--radius-md') === '6px', 'uses the restrained cmux row geometry')
+assert(
+  lightBlock.includes('color-scheme: light'),
+  'light appearance advertises native light chrome'
+)
 assert(
   contrast(lightToken('--color-text'), lightToken('--color-canvas')) >= 10,
   'light primary text has strong canvas contrast'
@@ -171,11 +167,24 @@ assert(
   !rule('.ws-row.active').includes('box-shadow'),
   'workspace selection avoids a redundant rail'
 )
-assert(!rule('.tab.active').includes('background'), 'active tabs remain on the shared backdrop')
+assert(
+  rule('.workspace-titlebar').includes('34px'),
+  'workspace identity owns one cmux-height titlebar'
+)
+assert(
+  rule('.workspace-titlebar .ui-icon').includes('var(--color-accent)'),
+  'workspace identity uses the accent sparingly'
+)
+assert(
+  rule('.tab.active').includes('var(--color-surface-raised)'),
+  'active tabs use a restrained raised surface'
+)
 assert(
   rule('.tab.active').includes('var(--color-border-strong)'),
   'active tabs use one restrained neutral edge'
 )
+assert(!rule('.pane.active').includes('box-shadow'), 'active panes avoid a permanent frame')
+assert(rule('.pane-actions').includes('opacity: 0.62'), 'pane controls remain quietly discoverable')
 assert(
   rule('.pane-attention-ring').includes('pane-attention-pulse'),
   'attention owns one bounded pane pulse'

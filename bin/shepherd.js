@@ -15,10 +15,50 @@ const argv = process.argv.slice(2)
 let method = argv[0]
 let hookRequest = null
 
+function printWelcome() {
+  const reset = '\x1b[0m'
+  const bold = '\x1b[1m'
+  const subdued = '\x1b[2m'
+  const cyan = '\x1b[38;2;100;210;255m'
+  const sky = '\x1b[38;2;0;145;255m'
+  const indigo = '\x1b[38;2;94;92;230m'
+  const violet = '\x1b[38;2;124;58;237m'
+  const shortcuts = [
+    ['Ctrl+Shift+N', 'New workspace'],
+    ['Ctrl+Shift+T', 'New terminal tab'],
+    ['Ctrl+Shift+P', 'Command palette'],
+    ['Ctrl+Shift+B', 'Toggle sidebar'],
+    ['Ctrl+Shift+D', 'Split right'],
+    ['Ctrl+Shift+E', 'Split down'],
+    ['Ctrl+Shift+F', 'Find in terminal'],
+    ['Ctrl+Shift+U', 'Jump to latest unread']
+  ]
+
+  console.log('')
+  console.log(`${cyan}      ›${sky}_${reset}      ${sky}s${indigo}he${violet}pherd${reset}`)
+  console.log(`              ${subdued}the terminal workspace for coding agents${reset}`)
+  console.log('')
+  console.log(`  ${bold}Shortcuts${reset}`)
+  console.log('')
+  for (const [shortcut, label] of shortcuts) {
+    console.log(`  ${bold}${shortcut.padEnd(18)}${reset}${subdued}${label}${reset}`)
+  }
+  console.log('')
+  console.log(
+    `  ${bold}Docs${reset}${subdued}              https://github.com/ANIRUDH-SJ/shepherd${reset}`
+  )
+  console.log('')
+  console.log(
+    `  ${subdued}Run ${reset}${bold}shepherd --help${reset}${subdued} for CLI commands.${reset}`
+  )
+  console.log('')
+}
+
 if (!method || method === '-h' || method === '--help') {
   console.log(`shepherd — drive Shepherd from a terminal
 
 Usage:
+  shepherd welcome                        show the first-launch guide again
   shepherd set-status <text>              set this workspace's sidebar subtitle
   shepherd notify --title T --body B      flash this workspace + a desktop toast
   shepherd log <text>                     append a status line
@@ -102,6 +142,13 @@ Global: --workspace <id|name>   target a specific workspace (default: this pane'
 Inside a Shepherd pane, SHEPHERD_WORKSPACE_ID and SHEPHERD_SOCKET_PATH are set
 for you. The previous CMUX_* names remain accepted for compatibility.`)
   process.exit(method ? 0 : 1)
+}
+
+// Welcome is intentionally local: it works before the app socket is available
+// and can be replayed from any ordinary shell.
+if (method === 'welcome') {
+  printWelcome()
+  process.exit(0)
 }
 
 // Hook commands receive one provider event as JSON on stdin. Global hooks should

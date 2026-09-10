@@ -100,10 +100,17 @@ older standalone font-size keys and produces one validated `RendererPreferences`
 object containing terminal font size, application appearance mode, and terminal
 palette identifier.
 
-Application appearance and terminal colors are intentionally independent. The
-main process applies `system`, `light`, or `dark` to Electron `nativeTheme` and
-reports the resolved mode. Semantic CSS tokens style application chrome. xterm
-receives a separate immutable ANSI palette, currently Graphite.
+The main process applies `system`, `light`, or `dark` to Electron `nativeTheme`
+and reports the resolved mode. Semantic CSS tokens style application chrome, and
+xterm receives the matching immutable System palette for that resolved mode.
+Appearance events update existing terminals without recreating their PTYs. ANSI
+role hues remain stable while the terminal backdrop, foreground, cursor, and
+selection follow the application.
+
+On a fresh profile without a restored session, the renderer waits for the first
+shell output and writes `shepherd welcome` to that PTY. The CLI renders the guide
+locally without opening the socket API, and local storage prevents it from
+running again automatically.
 
 ## Security boundaries
 

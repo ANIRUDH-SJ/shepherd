@@ -18,9 +18,9 @@ window
 ```
 
 A workspace owns a resizable pane tree. Each pane has a tab list of surfaces, and
-each surface contains either a real terminal or a constrained preview. The first
-pane places the workspace identity at the start of its tab bar, so Shepherd does
-not need a second permanent workspace header.
+each surface contains either a real terminal or a constrained preview. One compact
+workspace titlebar spans the pane layer, keeping project identity stable while
+each pane's tab row remains dedicated to its surfaces.
 
 ## Workspace rail
 
@@ -55,10 +55,11 @@ item from resolving the underlying event.
 
 ## Pane and tab chrome
 
-Pane chrome is one 28-pixel tab row. The active pane has a restrained neutral
-inset edge. The active tab exposes its close action; every tab retains an
-accessible close name. Split, add-tab, and close-pane actions use consistent
-control sizes and focus rings.
+The workspace uses a 34-pixel identity titlebar above each pane's 30-pixel tab
+row. Pane boundaries stay flat instead of adding a permanent active-pane glow.
+The active tab uses a restrained raised surface and neutral edge; every tab keeps
+an accessible close name. Split, add-tab, and close-pane actions remain quietly
+visible with consistent control sizes and focus rings.
 
 Left and Right move between focused tabs, Home and End jump to the first or last
 tab, and Delete closes the focused surface when another surface remains. The
@@ -67,7 +68,7 @@ permanent space.
 
 ## Workspace inspector
 
-The workspace identity button, workspace context menu, and `Inspect current
+The workspace titlebar button, workspace context menu, and `Inspect current
 workspace` command all open the same non-modal inspector. It reports only current
 runtime data:
 
@@ -104,3 +105,11 @@ Unavailable data is stated plainly: no live agent reports, no listening ports,
 no usage reports, no Git repository, or no pull request. A preview reports load
 and renderer failures inside its surface. A workspace always retains at least
 one terminal, and closing operations refuse to destroy the final required shell.
+
+## First launch
+
+A new local profile starts with one workspace, one terminal, and the ordinary
+interactive shell prompt. After that shell is ready, Shepherd runs `shepherd
+welcome` inside the terminal to show the essential workspace, tab, pane, command,
+search, and attention shortcuts. The guide is shown once per profile, does not run
+for a restored session, and can be replayed at any time with `shepherd welcome`.

@@ -9,6 +9,7 @@ export type IconName =
   | 'inspect'
   | 'agents'
   | 'terminal'
+  | 'folder'
   | 'split-right'
   | 'split-down'
   | 'bell'
@@ -88,6 +89,13 @@ function iconPaths(name: IconName): ReactNode {
           <rect x="3" y="4" width="18" height="16" rx="2" />
           <path d="m7 9 3 3-3 3" />
           <path d="M13 15h4" />
+        </>
+      )
+    case 'folder':
+      return (
+        <>
+          <path d="M3 7.5h7l2-2h9v13H3z" />
+          <path d="M3 9.5h18" />
         </>
       )
     case 'split-right':

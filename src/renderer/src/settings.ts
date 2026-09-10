@@ -1,12 +1,12 @@
 import { APPEARANCE_MODES, isAppearanceMode, type AppearanceMode } from '../../shared/appearance'
 import { RENDERER_EVENT } from './events'
 
-export const RENDERER_PREFERENCES_VERSION = 1 as const
+export const RENDERER_PREFERENCES_VERSION = 2 as const
 export const RENDERER_PREFERENCES_KEY = 'shepherd.preferences'
 const LEGACY_FONT_KEY = 'shepherd.fontSize'
 const LEGACY_CMUX_FONT_KEY = 'cmux.fontSize'
 
-export const TERMINAL_PALETTE_IDS = ['graphite'] as const
+export const TERMINAL_PALETTE_IDS = ['system'] as const
 export type TerminalPaletteId = (typeof TERMINAL_PALETTE_IDS)[number]
 
 export interface RendererPreferences {
@@ -24,7 +24,7 @@ export const DEFAULT_RENDERER_PREFERENCES: Readonly<RendererPreferences> = Objec
   version: RENDERER_PREFERENCES_VERSION,
   terminalFontSize: DEFAULT_FONT_SIZE,
   appearanceMode: 'system',
-  terminalPaletteId: 'graphite'
+  terminalPaletteId: 'system'
 })
 
 function normalizedFontSize(value: unknown): number {
@@ -42,22 +42,24 @@ function clampedFontSize(value: number, fallback: number): number {
 }
 
 function isTerminalPaletteId(value: unknown): value is TerminalPaletteId {
-  return (
-    typeof value === 'string' && TERMINAL_PALETTE_IDS.includes(value as TerminalPaletteId)
-  )
+  return typeof value === 'string' && TERMINAL_PALETTE_IDS.includes(value as TerminalPaletteId)
 }
 
 function normalizePreferences(value: unknown): RendererPreferences | null {
   if (!value || typeof value !== 'object') return null
-  const candidate = value as Partial<RendererPreferences>
-  if (candidate.version !== RENDERER_PREFERENCES_VERSION) return null
+  const candidate = value as Record<string, unknown>
+  if (candidate.version !== 1 && candidate.version !== RENDERER_PREFERENCES_VERSION) return null
   if (!isAppearanceMode(candidate.appearanceMode)) return null
-  if (!isTerminalPaletteId(candidate.terminalPaletteId)) return null
+  const terminalPaletteId =
+    candidate.version === 1 && candidate.terminalPaletteId === 'graphite'
+      ? 'system'
+      : candidate.terminalPaletteId
+  if (!isTerminalPaletteId(terminalPaletteId)) return null
   return {
     version: RENDERER_PREFERENCES_VERSION,
     terminalFontSize: normalizedFontSize(candidate.terminalFontSize),
     appearanceMode: candidate.appearanceMode,
-    terminalPaletteId: candidate.terminalPaletteId
+    terminalPaletteId
   }
 }
 
@@ -79,8 +81,14 @@ export function getRendererPreferences(): RendererPreferences {
   const stored = localStorage.getItem(RENDERER_PREFERENCES_KEY)
   if (stored !== null) {
     try {
-      const normalized = normalizePreferences(JSON.parse(stored))
-      if (normalized) return normalized
+      const parsed = JSON.parse(stored) as unknown
+      const normalized = normalizePreferences(parsed)
+      if (normalized) {
+        if ((parsed as { version?: unknown }).version !== RENDERER_PREFERENCES_VERSION) {
+          persistPreferences(normalized)
+        }
+        return normalized
+      }
     } catch {
       // A corrupt preference blob is replaced with safe defaults below.
     }

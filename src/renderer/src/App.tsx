@@ -37,10 +37,19 @@ import ShortcutHelp from './components/ShortcutHelp'
 import SettingsDialog from './components/SettingsDialog'
 import PreviewPicker from './components/PreviewPicker'
 import WorkspaceInspector from './components/WorkspaceInspector'
+import { shouldShowWelcome } from './welcome'
 
 // Restore the saved session synchronously at startup, else start fresh. Computed
 // once at module load. Optional chaining keeps it safe if the bridge isn't ready.
-const INITIAL_APP = sanitizeRestored(window.api?.session?.loadSync?.() ?? null) ?? initialApp()
+const RESTORED_APP = sanitizeRestored(window.api?.session?.loadSync?.() ?? null)
+const INITIAL_APP = RESTORED_APP ?? initialApp()
+const INITIAL_WORKSPACE = INITIAL_APP.workspaces.find(
+  (workspace) => workspace.id === INITIAL_APP.activeWorkspaceId
+)
+const INITIAL_WELCOME_SURFACE_ID =
+  shouldShowWelcome(RESTORED_APP !== null) && INITIAL_WORKSPACE
+    ? activeTerminalSurfaceId(INITIAL_WORKSPACE.root, INITIAL_WORKSPACE.activePaneId)
+    : null
 
 const MIN_SIDEBAR = 170
 const MAX_SIDEBAR = 420
@@ -469,14 +478,13 @@ export default function App(): React.JSX.Element {
     if (!workspace) return
     const surfaceId = activeTerminalSurfaceId(workspace.root, workspace.activePaneId)
     if (!surfaceId) return
-    void window.api.terminal
-      .openLink({ id: surfaceId, target: { kind: 'url', url } })
-      .then(
-        (result) => {
-          if (!result.ok) console.warn(`[shepherd:inspector] pull request open failed: ${result.error}`)
-        },
-        () => console.warn('[shepherd:inspector] pull request open request failed')
-      )
+    void window.api.terminal.openLink({ id: surfaceId, target: { kind: 'url', url } }).then(
+      (result) => {
+        if (!result.ok)
+          console.warn(`[shepherd:inspector] pull request open failed: ${result.error}`)
+      },
+      () => console.warn('[shepherd:inspector] pull request open request failed')
+    )
   }
 
   const inspectedWorkspaceIndex = state.workspaces.findIndex(
@@ -524,6 +532,7 @@ export default function App(): React.JSX.Element {
             workspace={w}
             position={position}
             active={w.id === state.activeWorkspaceId}
+            welcomeSurfaceId={INITIAL_WELCOME_SURFACE_ID}
             dispatch={dispatch}
             onInspect={openInspector}
           />

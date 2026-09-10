@@ -1,8 +1,9 @@
 # Appearance and Terminal Themes
 
-Shepherd separates application chrome from terminal ANSI colors. Changing the
-window from dark to light does not rewrite terminal output colors, and changing
-a terminal palette does not redefine buttons, dialogs, or workspace state.
+Shepherd gives application chrome and terminal content one coordinated light or
+dark foundation. Changing appearance updates both the window surfaces and the
+xterm foreground, background, cursor, and selection colors. ANSI color roles
+remain stable so shell output keeps its meaning across appearances.
 
 ## Application appearance
 
@@ -20,13 +21,15 @@ token contract.
 
 ## Terminal palette
 
-Graphite is the shipped terminal palette. It defines xterm foreground,
-background, cursor, selection, and ANSI colors independently from the application
-mode. A light Shepherd window can therefore contain the same predictable
-Graphite terminal used in dark mode.
+System is the shipped terminal palette. Its dark variant uses a `#1e1e1e`
+backdrop and its light variant uses `#feffff`, matching the application canvas.
+Foreground, cursor, and selection colors follow the resolved appearance while
+the ANSI red, green, blue, and other semantic roles remain stable.
 
 Settings displays the palette and an ANSI preview. Unsupported or corrupt
-palette identifiers fall back to Graphite during preference validation.
+palette identifiers fall back to System during preference validation. Existing
+version-one Graphite preferences migrate to System without changing the saved
+font size or appearance mode.
 
 ## Semantic token contract
 
@@ -42,7 +45,8 @@ roles cover:
 
 Raw color values are kept at the root dark and light token boundaries. Controls,
 workspace rows, pane chrome, dialogs, and the inspector consume those roles. The
-default geometry is restrained and the interface uses one neutral accent family.
+default geometry is restrained, surfaces remain neutral, and a single blue
+accent is reserved for selection, focus, and small identity details.
 
 ## Typography and motion
 
@@ -61,10 +65,10 @@ Renderer preferences are versioned. The current record contains:
 
 ```ts
 interface RendererPreferences {
-  version: 1
+  version: 2
   terminalFontSize: number
   appearanceMode: 'system' | 'light' | 'dark'
-  terminalPaletteId: 'graphite'
+  terminalPaletteId: 'system'
 }
 ```
 
