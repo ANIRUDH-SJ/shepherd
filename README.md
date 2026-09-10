@@ -11,7 +11,7 @@ It is a terminal multiplexer at its foundation. Agent awareness is what makes it
 different: Shepherd helps you run several coding agents without turning the app
 into an AI dashboard or losing track of what needs you.
 
-![Shepherd split-terminal workbench with its contextual workspace inspector](docs/images/workbench-inspector.png)
+![Shepherd coordinating working, blocked, approval-waiting, and completed coding agents across split terminals](docs/images/shepherd-agent-workbench.png)
 
 > [!IMPORTANT]
 > Shepherd is in early development. The core terminal, workspace, agent,
@@ -108,7 +108,7 @@ the command palette or context menus. A fresh profile introduces the essential
 shortcuts inside the first real terminal and can replay them with `shepherd
 welcome`.
 
-![Shepherd workbench and workspace inspector](docs/images/workbench-inspector.png)
+![Shepherd first launch showing its terminal-native welcome, shortcuts, and CLI help](docs/images/shepherd-first-launch.png)
 
 ### Context when you ask for it
 
@@ -118,13 +118,15 @@ palette. The inspector shows the current repository and branch, pull request,
 owned ports, agent activity, reported usage, and pane/surface counts. Port and
 agent rows are actions: they open the secure preview or focus the real terminal.
 
+![Shepherd workspace inspector showing testing, approval-waiting, and blocked agents with usage context](docs/images/shepherd-agent-inspector.png)
+
 ### Attention without terminal checking
 
 Blocked agents and unseen completions enter the compact Attention section.
 Socket and OSC notifications also feed a bounded inbox. Both routes can return
 you to the workspace and exact terminal that produced the event.
 
-![Shepherd notification center](docs/images/notification-center.svg)
+![Shepherd notification center showing waiting deployment, completed package, blocked generation, and approval scenarios](docs/images/shepherd-agent-attention.png)
 
 ### Localhost preview
 
