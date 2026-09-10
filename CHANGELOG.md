@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Workbench
+
+- Aligned the shell with cmux's compact hierarchy: a stable workspace titlebar,
+  dedicated pane tab rows, flat pane boundaries, and restrained always-available
+  pane actions.
+- Added a one-time terminal-first welcome for fresh profiles, replayable with
+  `shepherd welcome`.
+
+### Appearance
+
+- Replaced the Graphite preference with a System terminal palette that follows
+  the application's resolved light or dark surfaces.
+- Adopted neutral `#1e1e1e` and `#feffff` foundations with a focused blue accent
+  for selection and keyboard focus.
+
 ## 0.1.0 — 2026-09-03
 
 Shepherd 0.1.0 establishes the terminal-first workbench and appearance system.
