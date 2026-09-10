@@ -11,7 +11,11 @@ It is a terminal multiplexer at its foundation. Agent awareness is what makes it
 different: Shepherd helps you run several coding agents without turning the app
 into an AI dashboard or losing track of what needs you.
 
-![Shepherd coordinating working, blocked, approval-waiting, and completed coding agents across split terminals](docs/images/shepherd-agent-workbench.png)
+![Shepherd running the real Codex CLI beside a passing test suite, with multiple workspaces and agent attention states](docs/images/shepherd-agent-workbench.png)
+
+_A real Shepherd session: the interactive Codex CLI runs in one PTY, the project
+test suite runs in another, and the workspace rail summarizes working, idle,
+blocked, approval-waiting, completed, and external-wait states._
 
 > [!IMPORTANT]
 > Shepherd is in early development. The core terminal, workspace, agent,
@@ -110,6 +114,9 @@ welcome`.
 
 ![Shepherd first launch showing its terminal-native welcome, shortcuts, and CLI help](docs/images/shepherd-first-launch.png)
 
+The welcome is printed into the first real shell, so the launch screen remains a
+usable terminal rather than a separate onboarding page.
+
 ### Context when you ask for it
 
 Select the workspace name in the titlebar, choose **Inspect workspace** from a
@@ -118,7 +125,7 @@ palette. The inspector shows the current repository and branch, pull request,
 owned ports, agent activity, reported usage, and pane/surface counts. Port and
 agent rows are actions: they open the secure preview or focus the real terminal.
 
-![Shepherd workspace inspector showing testing, approval-waiting, and blocked agents with usage context](docs/images/shepherd-agent-inspector.png)
+![Shepherd Agents inspector showing Codex testing, Claude Code waiting for approval, and OpenCode blocked](docs/images/shepherd-agent-inspector.png)
 
 ### Attention without terminal checking
 
@@ -126,14 +133,15 @@ Blocked agents and unseen completions enter the compact Attention section.
 Socket and OSC notifications also feed a bounded inbox. Both routes can return
 you to the workspace and exact terminal that produced the event.
 
-![Shepherd notification center showing waiting deployment, completed package, blocked generation, and approval scenarios](docs/images/shepherd-agent-attention.png)
+![Shepherd notification center showing an external wait, completed package, blocked generation, and approval request](docs/images/shepherd-agent-attention.png)
 
-### Localhost preview
+### Localhost browser preview
 
-Open a detected loopback server beside its terminal. Preview navigation remains
-restricted to localhost and uses a dedicated Electron session boundary.
+Open a detected loopback server beside its owning terminal. This is browser
+support for local development previews, not unrestricted web browsing: navigation
+remains restricted to localhost and uses a dedicated Electron session boundary.
 
-![A localhost app previewed beside its Shepherd terminal](docs/images/localhost-preview.png)
+![Shepherd's localhost browser preview beside the terminal process that owns the server](docs/images/localhost-preview.png)
 
 ## Install
 
