@@ -1,4 +1,5 @@
 import {
+  isWelcomeSurface,
   markWelcomeShown,
   shouldShowWelcome,
   WELCOME_COMMAND,
@@ -38,6 +39,13 @@ const unavailableStorage = {
 assert(shouldShowWelcome(false, unavailableStorage), 'fails open for a first-launch welcome')
 markWelcomeShown(unavailableStorage)
 assert(true, 'storage failure does not break startup')
+
+assert(isWelcomeSurface('term-a', 'term-a'), 'welcome surface matches its own id')
+assert(
+  !isWelcomeSurface('term-b', 'term-a'),
+  'active non-welcome tab does not inherit welcome'
+)
+assert(!isWelcomeSurface('term-a', null), 'null welcome id disables welcome for every surface')
 
 if (failures > 0) throw new Error(`${failures} welcome test(s) failed`)
 console.log('\n✅ ALL WELCOME TESTS PASS')

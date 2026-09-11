@@ -88,7 +88,7 @@ export default function WorkspaceView({
             workspaceActive={active}
             workspaceId={workspace.id}
             cwd={workspace.cwd}
-            showWelcome={pane.surfaces.some((surface) => surface.id === welcomeSurfaceId)}
+            welcomeSurfaceId={welcomeSurfaceId}
             terminalNumbers={terminalNumbers}
             dispatch={paneDispatch}
           />

@@ -9,6 +9,7 @@ import {
 import TabBar from './TabBar'
 import TerminalHost from './TerminalHost'
 import PreviewHost from './PreviewHost'
+import { isWelcomeSurface } from '../welcome'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PaneView — one leaf pane, absolutely positioned at its computed % rectangle.
@@ -26,7 +27,7 @@ interface Props {
   workspaceActive: boolean
   workspaceId: string
   cwd: string
-  showWelcome: boolean
+  welcomeSurfaceId: string | null
   terminalNumbers: Map<string, number>
   dispatch: Dispatch<WorkspaceAction>
 }
@@ -41,7 +42,7 @@ export default function PaneView({
   workspaceActive,
   workspaceId,
   cwd,
-  showWelcome,
+  welcomeSurfaceId,
   terminalNumbers,
   dispatch
 }: Props): React.JSX.Element {
@@ -84,7 +85,7 @@ export default function PaneView({
               cwd={cwd}
               active={surface.id === pane.activeSurfaceId}
               focused={workspaceActive && active && surface.id === pane.activeSurfaceId}
-              showWelcome={showWelcome && surface.id === pane.activeSurfaceId}
+              showWelcome={isWelcomeSurface(surface.id, welcomeSurfaceId)}
             />
           ) : (
             <PreviewHost
