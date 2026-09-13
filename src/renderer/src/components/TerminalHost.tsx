@@ -66,6 +66,7 @@ export default function TerminalHost({
 }: Props): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const findInputRef = useRef<HTMLInputElement | null>(null)
+  const welcomeAtMountRef = useRef(showWelcome)
   const refs = useRef<{ term: Terminal; fit: FitAddon; search: SearchAddon } | null>(null)
   const [findOpen, setFindOpen] = useState(false)
   const [findQuery, setFindQuery] = useState('')
@@ -182,7 +183,7 @@ export default function TerminalHost({
 
     let disposed = false
     let welcomeTimer: number | null = null
-    let welcomePending = showWelcome
+    let welcomePending = welcomeAtMountRef.current
     const scheduleWelcome = (): void => {
       if (!welcomePending) return
       welcomePending = false
@@ -300,7 +301,7 @@ export default function TerminalHost({
       term.dispose()
       refs.current = null
     }
-  }, [surfaceId, showWelcome])
+  }, [surfaceId])
 
   // Refit when this tab becomes visible, and focus when it is also the selected
   // pane in the active workspace (including focus-agent sidebar navigation).

@@ -25,3 +25,11 @@ export function markWelcomeShown(storage: WelcomeStorage = window.localStorage):
     // Session persistence still prevents repeat display when storage is unavailable.
   }
 }
+
+/** Welcome belongs to one surface id for the process — never the currently active tab. */
+export function isWelcomeSurface(
+  surfaceId: string,
+  welcomeSurfaceId: string | null | undefined
+): boolean {
+  return welcomeSurfaceId != null && surfaceId === welcomeSurfaceId
+}
