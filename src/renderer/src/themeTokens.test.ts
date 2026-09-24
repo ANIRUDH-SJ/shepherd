@@ -97,7 +97,7 @@ for (const name of [
   assert(Math.max(...channels) - Math.min(...channels) <= 8, `${name} stays low-chroma neutral`)
 }
 
-assert(token('--color-canvas') === '#1e1e1e', 'uses the cmux default dark terminal backdrop')
+assert(token('--color-canvas') === '#000000', 'uses a pitch-black dark backdrop')
 assert(
   token('--color-sidebar') === token('--color-canvas'),
   'sidebar derives from the terminal backdrop'

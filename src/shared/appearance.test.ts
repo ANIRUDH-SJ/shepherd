@@ -21,7 +21,7 @@ assert(!isAppearanceMode('sepia'), 'rejects an unsupported appearance')
 assert(!isAppearanceMode(null), 'rejects a non-string appearance')
 assert(resolvedAppearance(true) === 'dark', 'resolves dark native appearance')
 assert(resolvedAppearance(false) === 'light', 'resolves light native appearance')
-assert(APP_BACKGROUND_COLOR.dark === '#1e1e1e', 'uses the dark terminal backdrop at startup')
+assert(APP_BACKGROUND_COLOR.dark === '#000000', 'uses a pitch-black backdrop at startup')
 assert(APP_BACKGROUND_COLOR.light === '#feffff', 'uses the light terminal backdrop at startup')
 
 if (failures > 0) throw new Error(`${failures} appearance contract test(s) failed`)

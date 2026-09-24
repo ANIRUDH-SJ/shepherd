@@ -5,7 +5,7 @@ export type ResolvedAppearance = 'light' | 'dark'
 
 export const APP_BACKGROUND_COLOR: Readonly<Record<ResolvedAppearance, string>> = Object.freeze({
   light: '#feffff',
-  dark: '#1e1e1e'
+  dark: '#000000'
 })
 
 export interface AppearanceSnapshot {

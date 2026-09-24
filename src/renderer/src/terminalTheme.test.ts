@@ -13,7 +13,7 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-assert(DARK_TERMINAL_THEME.background === '#1e1e1e', 'uses the cmux dark terminal backdrop')
+assert(DARK_TERMINAL_THEME.background === '#000000', 'uses a pitch-black dark terminal backdrop')
 assert(DARK_TERMINAL_THEME.foreground === '#ffffff', 'uses the cmux dark foreground')
 assert(DARK_TERMINAL_THEME.cursor === '#98989d', 'uses the cmux system cursor')
 assert(DARK_TERMINAL_THEME.selectionBackground === '#3f638b', 'uses cmux dark selection')

@@ -6,9 +6,9 @@
   --font-mono: 'JetBrains Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
 
   /* Surfaces */
-  --color-canvas: #1e1e1e;
-  --color-sidebar: #1e1e1e;
-  --color-surface: #1e1e1e;
+  --color-canvas: #000000;
+  --color-sidebar: #000000;
+  --color-surface: #000000;
   --color-surface-hover: #292929;
   --color-surface-raised: #303030;
   --color-border: #333333;
