@@ -21,8 +21,9 @@ token contract.
 
 ## Terminal palette
 
-System is the shipped terminal palette. Its dark variant uses a `#1e1e1e`
-backdrop and its light variant uses `#feffff`, matching the application canvas.
+System is the shipped terminal palette. Its dark variant uses a pitch-black
+`#000000` backdrop and its light variant uses `#feffff`, matching the
+application canvas.
 Foreground, cursor, and selection colors follow the resolved appearance while
 the ANSI red, green, blue, and other semantic roles remain stable.
 
