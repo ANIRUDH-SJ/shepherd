@@ -21,7 +21,7 @@ const SHARED_ANSI_COLORS = {
 /** cmux-aligned terminal colors remain an xterm contract, separate from CSS tokens. */
 export const DARK_TERMINAL_THEME: Readonly<ITheme> = Object.freeze({
   ...SHARED_ANSI_COLORS,
-  background: '#1e1e1e',
+  background: '#000000',
   foreground: '#ffffff',
   cursor: '#98989d',
   cursorAccent: '#ffffff',
