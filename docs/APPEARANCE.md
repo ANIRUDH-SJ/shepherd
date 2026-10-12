@@ -1,9 +1,8 @@
 # Appearance and Terminal Themes
 
-Shepherd gives application chrome and terminal content one coordinated light or
-dark foundation. Changing appearance updates both the window surfaces and the
-xterm foreground, background, cursor, and selection colors. ANSI color roles
-remain stable so shell output keeps its meaning across appearances.
+Shepherd coordinates application chrome and terminal content through a selected
+color theme and a light or dark appearance. Changing either updates window
+surfaces and every open terminal without restarting shells.
 
 ## Application appearance
 
@@ -19,18 +18,22 @@ reports resolved changes back to the renderer. The document stores the resolved
 appearance as a data attribute, allowing every surface to consume one semantic
 token contract.
 
-## Terminal palette
+## Color themes
 
-System is the shipped terminal palette. Its dark variant uses a pitch-black
-`#000000` backdrop and its light variant uses `#feffff`, matching the
-application canvas.
-Foreground, cursor, and selection colors follow the resolved appearance while
-the ANSI red, green, blue, and other semantic roles remain stable.
+Choose a color theme in Settings → Appearance:
 
-Settings displays the palette and an ANSI preview. Unsupported or corrupt
-palette identifiers fall back to System during preference validation. Existing
-version-one Graphite preferences migrate to System without changing the saved
-font size or appearance mode.
+- **Shepherd** preserves the original palette: pitch-black `#000000` in dark
+  appearance and `#feffff` in light.
+- **Tokyo Night** uses cool blue and violet colors, with a lighter daytime variant.
+- **Catppuccin** uses soft pastel colors, with a light variant.
+
+Each option previews its terminal background, text, and ANSI accents. A preset
+changes both CSS chrome tokens and the xterm palette, including foreground,
+background, cursor, selection, and ANSI colors. The appearance mode still
+controls which dark or light variant is used. Existing terminals update in place;
+new terminals start with the saved theme.
+
+![Theme picker with Catppuccin selected in light appearance](images/theme-presets-light.png)
 
 ## Semantic token contract
 
@@ -44,7 +47,7 @@ roles cover:
   state;
 - backdrop, popover shadow, spacing, radii, and transition timing.
 
-Raw color values are kept at the root dark and light token boundaries. Controls,
+Raw color values are kept at the root dark, light, and preset token boundaries. Controls,
 workspace rows, pane chrome, dialogs, and the inspector consume those roles. The
 default geometry is restrained, surfaces remain neutral, and a single blue
 accent is reserved for selection, focus, and small identity details.
@@ -66,13 +69,15 @@ Renderer preferences are versioned. The current record contains:
 
 ```ts
 interface RendererPreferences {
-  version: 2
+  version: 3
   terminalFontSize: number
   appearanceMode: 'system' | 'light' | 'dark'
-  terminalPaletteId: 'system'
+  themePresetId: 'system' | 'tokyo-night' | 'catppuccin'
 }
 ```
 
-Older Shepherd and compatibility font-size keys migrate automatically. Invalid
-JSON, unsupported modes, non-finite font sizes, and unknown palette identifiers
-fall back to validated defaults rather than reaching xterm or native theme APIs.
+Version-one Graphite and version-two System palette settings migrate to the
+Shepherd theme while preserving font size and appearance. Older standalone font
+keys also migrate. Invalid JSON, unsupported modes, non-finite font sizes, and
+unknown theme identifiers fall back to validated defaults rather than reaching
+xterm or native theme APIs.
