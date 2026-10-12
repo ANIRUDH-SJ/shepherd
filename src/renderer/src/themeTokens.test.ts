@@ -1,6 +1,7 @@
 /// <reference types="node" />
 
 import { readFileSync } from 'node:fs'
+import { terminalThemeForAppearance } from './terminalTheme'
 
 const css = readFileSync(new URL('./App.css', import.meta.url), 'utf8')
 
@@ -52,8 +53,8 @@ const componentCss = presetBlocks.reduce(
 )
 assert(rootBlock.length > 0, 'defines a root token boundary')
 assert(lightBlock.length > 0, 'defines a light token boundary')
-for (const preset of ['tokyo-night', 'catppuccin']) {
-  for (const appearance of ['dark', 'light']) {
+for (const preset of ['tokyo-night', 'catppuccin'] as const) {
+  for (const appearance of ['dark', 'light'] as const) {
     const block = presetBlocks.find((match) => match[1] === preset && match[2] === appearance)?.[0]
     assert(Boolean(block), `${preset} ${appearance} overrides app tokens`)
     assert(Boolean(block?.includes('--color-canvas:')), `${preset} ${appearance} has a canvas`)
@@ -62,6 +63,10 @@ for (const preset of ['tokyo-night', 'catppuccin']) {
     const text = block?.match(/--color-text:\s*(#[\da-f]{6})/i)?.[1]
     if (canvas && text) {
       assert(contrast(canvas, text) >= 7, `${preset} ${appearance} text meets AAA contrast`)
+      assert(
+        canvas === terminalThemeForAppearance(appearance, preset).background,
+        `${preset} ${appearance} chrome matches terminal backdrop`
+      )
     }
   }
 }
