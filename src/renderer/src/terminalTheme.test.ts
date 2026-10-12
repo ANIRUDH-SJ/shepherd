@@ -53,6 +53,18 @@ assert(
   'maps Catppuccin light to its terminal backdrop'
 )
 assert(
+  terminalThemeForAppearance('dark', 'gruvbox').background === '#282828',
+  'maps Gruvbox dark to its terminal backdrop'
+)
+assert(
+  terminalThemeForAppearance('light', 'solarized').background === '#fdf6e3',
+  'maps Solarized light to its terminal backdrop'
+)
+assert(
+  terminalThemeForAppearance('dark', 'rose-pine').background === '#191724',
+  'maps Rosé Pine dark to its terminal backdrop'
+)
+assert(
   [...Object.values(DARK_TERMINAL_THEME), ...Object.values(LIGHT_TERMINAL_THEME)].every(
     (value) => typeof value !== 'string' || !value.includes('var(--color-')
   ),

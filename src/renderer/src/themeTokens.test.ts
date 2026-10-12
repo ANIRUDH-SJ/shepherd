@@ -2,6 +2,7 @@
 
 import { readFileSync } from 'node:fs'
 import { terminalThemeForAppearance } from './terminalTheme'
+import { THEME_PRESETS } from './themePresets'
 
 const css = readFileSync(new URL('./App.css', import.meta.url), 'utf8')
 
@@ -53,7 +54,7 @@ const componentCss = presetBlocks.reduce(
 )
 assert(rootBlock.length > 0, 'defines a root token boundary')
 assert(lightBlock.length > 0, 'defines a light token boundary')
-for (const preset of ['tokyo-night', 'catppuccin'] as const) {
+for (const { id: preset } of THEME_PRESETS.filter((item) => item.id !== 'system')) {
   for (const appearance of ['dark', 'light'] as const) {
     const block = presetBlocks.find((match) => match[1] === preset && match[2] === appearance)?.[0]
     assert(Boolean(block), `${preset} ${appearance} overrides app tokens`)

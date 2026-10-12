@@ -144,11 +144,164 @@ const CATPPUCCIN_LIGHT: Readonly<ITheme> = Object.freeze({
   brightWhite: '#4c4f69'
 })
 
+const GRUVBOX_DARK: Readonly<ITheme> = Object.freeze({
+  background: '#282828',
+  foreground: '#ebdbb2',
+  cursor: '#ebdbb2',
+  cursorAccent: '#282828',
+  selectionBackground: '#504945',
+  selectionForeground: '#fbf1c7',
+  black: '#282828',
+  red: '#cc241d',
+  green: '#98971a',
+  yellow: '#d79921',
+  blue: '#458588',
+  magenta: '#b16286',
+  cyan: '#689d6a',
+  white: '#a89984',
+  brightBlack: '#928374',
+  brightRed: '#fb4934',
+  brightGreen: '#b8bb26',
+  brightYellow: '#fabd2f',
+  brightBlue: '#83a598',
+  brightMagenta: '#d3869b',
+  brightCyan: '#8ec07c',
+  brightWhite: '#ebdbb2'
+})
+
+const GRUVBOX_LIGHT: Readonly<ITheme> = Object.freeze({
+  background: '#fbf1c7',
+  foreground: '#3c3836',
+  cursor: '#3c3836',
+  cursorAccent: '#fbf1c7',
+  selectionBackground: '#d5c4a1',
+  selectionForeground: '#282828',
+  black: '#282828',
+  red: '#9d0006',
+  green: '#79740e',
+  yellow: '#b57614',
+  blue: '#076678',
+  magenta: '#8f3f71',
+  cyan: '#427b58',
+  white: '#7c6f64',
+  brightBlack: '#928374',
+  brightRed: '#cc241d',
+  brightGreen: '#98971a',
+  brightYellow: '#d79921',
+  brightBlue: '#458588',
+  brightMagenta: '#b16286',
+  brightCyan: '#689d6a',
+  brightWhite: '#3c3836'
+})
+
+const SOLARIZED_DARK: Readonly<ITheme> = Object.freeze({
+  background: '#002b36',
+  foreground: '#93a1a1',
+  cursor: '#93a1a1',
+  cursorAccent: '#002b36',
+  selectionBackground: '#073642',
+  selectionForeground: '#eee8d5',
+  black: '#073642',
+  red: '#dc322f',
+  green: '#859900',
+  yellow: '#b58900',
+  blue: '#268bd2',
+  magenta: '#d33682',
+  cyan: '#2aa198',
+  white: '#eee8d5',
+  brightBlack: '#586e75',
+  brightRed: '#cb4b16',
+  brightGreen: '#859900',
+  brightYellow: '#b58900',
+  brightBlue: '#268bd2',
+  brightMagenta: '#6c71c4',
+  brightCyan: '#2aa198',
+  brightWhite: '#fdf6e3'
+})
+
+const SOLARIZED_LIGHT: Readonly<ITheme> = Object.freeze({
+  background: '#fdf6e3',
+  foreground: '#586e75',
+  cursor: '#586e75',
+  cursorAccent: '#fdf6e3',
+  selectionBackground: '#eee8d5',
+  selectionForeground: '#002b36',
+  black: '#073642',
+  red: '#dc322f',
+  green: '#859900',
+  yellow: '#b58900',
+  blue: '#268bd2',
+  magenta: '#d33682',
+  cyan: '#2aa198',
+  white: '#eee8d5',
+  brightBlack: '#657b83',
+  brightRed: '#cb4b16',
+  brightGreen: '#859900',
+  brightYellow: '#b58900',
+  brightBlue: '#268bd2',
+  brightMagenta: '#6c71c4',
+  brightCyan: '#2aa198',
+  brightWhite: '#fdf6e3'
+})
+
+const ROSE_PINE_DARK: Readonly<ITheme> = Object.freeze({
+  background: '#191724',
+  foreground: '#e0def4',
+  cursor: '#e0def4',
+  cursorAccent: '#191724',
+  selectionBackground: '#403d52',
+  selectionForeground: '#e0def4',
+  black: '#26233a',
+  red: '#eb6f92',
+  green: '#95b1ac',
+  yellow: '#f6c177',
+  blue: '#31748f',
+  magenta: '#c4a7e7',
+  cyan: '#9ccfd8',
+  white: '#e0def4',
+  brightBlack: '#6e6a86',
+  brightRed: '#eb6f92',
+  brightGreen: '#95b1ac',
+  brightYellow: '#f6c177',
+  brightBlue: '#31748f',
+  brightMagenta: '#c4a7e7',
+  brightCyan: '#9ccfd8',
+  brightWhite: '#e0def4'
+})
+
+const ROSE_PINE_LIGHT: Readonly<ITheme> = Object.freeze({
+  background: '#faf4ed',
+  foreground: '#464261',
+  cursor: '#464261',
+  cursorAccent: '#faf4ed',
+  selectionBackground: '#dfdad9',
+  selectionForeground: '#464261',
+  black: '#464261',
+  red: '#b4637a',
+  green: '#6d8f89',
+  yellow: '#ea9d34',
+  blue: '#286983',
+  magenta: '#907aa9',
+  cyan: '#56949f',
+  white: '#fffaf3',
+  brightBlack: '#797593',
+  brightRed: '#b4637a',
+  brightGreen: '#6d8f89',
+  brightYellow: '#ea9d34',
+  brightBlue: '#286983',
+  brightMagenta: '#907aa9',
+  brightCyan: '#56949f',
+  brightWhite: '#fffaf3'
+})
+
 export function terminalThemeForAppearance(
   appearance: ResolvedAppearance,
   preset: ThemePresetId = 'system'
 ): Readonly<ITheme> {
   if (preset === 'tokyo-night') return appearance === 'light' ? TOKYO_NIGHT_LIGHT : TOKYO_NIGHT_DARK
   if (preset === 'catppuccin') return appearance === 'light' ? CATPPUCCIN_LIGHT : CATPPUCCIN_DARK
+  if (preset === 'gruvbox') return appearance === 'light' ? GRUVBOX_LIGHT : GRUVBOX_DARK
+  if (preset === 'solarized') return appearance === 'light' ? SOLARIZED_LIGHT : SOLARIZED_DARK
+  if (preset === 'rose-pine') return appearance === 'light' ? ROSE_PINE_LIGHT : ROSE_PINE_DARK
   return appearance === 'light' ? LIGHT_TERMINAL_THEME : DARK_TERMINAL_THEME
 }
