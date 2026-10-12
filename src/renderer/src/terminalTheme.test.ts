@@ -3,6 +3,7 @@ import {
   LIGHT_TERMINAL_THEME,
   terminalThemeForAppearance
 } from './terminalTheme'
+import { THEME_PRESETS } from './themePresets'
 
 let failures = 0
 function assert(condition: boolean, message: string): void {
@@ -28,6 +29,29 @@ assert(Object.isFrozen(DARK_TERMINAL_THEME), 'freezes the shared dark theme')
 assert(Object.isFrozen(LIGHT_TERMINAL_THEME), 'freezes the shared light theme')
 assert(terminalThemeForAppearance('dark') === DARK_TERMINAL_THEME, 'selects the dark palette')
 assert(terminalThemeForAppearance('light') === LIGHT_TERMINAL_THEME, 'selects the light palette')
+for (const preset of THEME_PRESETS) {
+  for (const appearance of ['dark', 'light'] as const) {
+    const theme = terminalThemeForAppearance(appearance, preset.id)
+    assert(Object.isFrozen(theme), `${preset.label} ${appearance} palette is immutable`)
+    assert(
+      /^#[\da-f]{6}$/i.test(theme.background ?? ''),
+      `${preset.label} ${appearance} has a backdrop`
+    )
+    assert(/^#[\da-f]{6}$/i.test(theme.foreground ?? ''), `${preset.label} ${appearance} has text`)
+    assert(
+      theme.red !== undefined && theme.blue !== undefined,
+      `${preset.label} ${appearance} has ANSI colors`
+    )
+  }
+}
+assert(
+  terminalThemeForAppearance('dark', 'tokyo-night').background === '#1a1b26',
+  'maps Tokyo Night dark to its terminal backdrop'
+)
+assert(
+  terminalThemeForAppearance('light', 'catppuccin').background === '#eff1f5',
+  'maps Catppuccin light to its terminal backdrop'
+)
 assert(
   [...Object.values(DARK_TERMINAL_THEME), ...Object.values(LIGHT_TERMINAL_THEME)].every(
     (value) => typeof value !== 'string' || !value.includes('var(--color-')
