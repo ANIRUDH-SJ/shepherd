@@ -31,6 +31,7 @@ import {
   type CommandContext
 } from './commands'
 import Sidebar from './components/Sidebar'
+import Icon from './components/Icon'
 import WorkspaceView from './components/WorkspaceView'
 import CommandPalette from './components/CommandPalette'
 import ShortcutHelp from './components/ShortcutHelp'
@@ -449,6 +450,11 @@ export default function App(): React.JSX.Element {
     setInspectorWorkspaceId(workspaceId)
   }
 
+  const openSettings = (): void => {
+    setInspectorWorkspaceId(null)
+    setUtilityOverlay('settings')
+  }
+
   const openWorkspacePreview = (workspaceId: string, url: string): void => {
     const workspace = stateRef.current.workspaces.find((candidate) => candidate.id === workspaceId)
     if (!workspace) return
@@ -496,14 +502,26 @@ export default function App(): React.JSX.Element {
   return (
     <div className="app">
       {collapsed ? (
-        <button
-          className="sidebar-expand"
-          title={collapsedSidebarLabel}
-          aria-label={collapsedSidebarLabel}
-          onClick={() => setCollapsed(false)}
-        >
-          ›
-        </button>
+        <div className="sidebar-collapsed-rail">
+          <button
+            type="button"
+            className="sidebar-expand"
+            title={collapsedSidebarLabel}
+            aria-label={collapsedSidebarLabel}
+            onClick={() => setCollapsed(false)}
+          >
+            ›
+          </button>
+          <button
+            type="button"
+            className="sidebar-collapsed-settings"
+            title="Settings (Ctrl+Shift+,)"
+            aria-label="Open settings"
+            onClick={openSettings}
+          >
+            <Icon name="settings" />
+          </button>
+        </div>
       ) : (
         <>
           <aside className="sidebar" style={{ width: sidebarWidth, flexBasis: sidebarWidth }}>
@@ -518,6 +536,7 @@ export default function App(): React.JSX.Element {
                 setInspectorWorkspaceId(null)
                 setUtilityOverlay('palette')
               }}
+              onOpenSettings={openSettings}
               onInspectWorkspace={openInspector}
             />
           </aside>

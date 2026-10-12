@@ -473,6 +473,27 @@ body.resizing * {
   background: var(--color-surface-raised);
   color: var(--color-text);
 }
+.sidebar-settings-entry {
+  display: flex;
+  width: 100%;
+  min-height: 34px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: 12px var(--font-ui);
+  text-align: left;
+}
+.sidebar-settings-entry:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
 
 /* Workspace list */
 .ws-list {
@@ -1422,17 +1443,34 @@ body.resizing * {
 .sidebar-resizer:hover::before {
   background: var(--color-accent-strong);
 }
-.sidebar-expand {
-  flex: 0 0 auto;
-  border: 0;
+.sidebar-collapsed-rail {
+  display: flex;
+  width: 28px;
+  flex: 0 0 28px;
+  flex-direction: column;
   border-right: 1px solid var(--color-border);
   background: var(--color-sidebar);
+}
+.sidebar-expand,
+.sidebar-collapsed-settings {
+  display: grid;
+  width: 100%;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  background: transparent;
   color: var(--color-text-muted);
   cursor: pointer;
-  width: 20px;
   font-size: 15px;
 }
-.sidebar-expand:hover {
+.sidebar-collapsed-settings {
+  margin-top: auto;
+  border-top: 1px solid var(--color-border);
+  font-size: 13px;
+}
+.sidebar-expand:hover,
+.sidebar-collapsed-settings:hover {
   color: var(--color-text);
   background: var(--color-surface-hover);
 }

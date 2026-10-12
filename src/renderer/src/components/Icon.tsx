@@ -15,6 +15,7 @@ export type IconName =
   | 'bell'
   | 'check'
   | 'command'
+  | 'settings'
   | 'preview'
   | 'back'
   | 'forward'
@@ -129,6 +130,13 @@ function iconPaths(name: IconName): ReactNode {
           <path d="M5 7h14" />
           <path d="M5 12h10" />
           <path d="M5 17h14" />
+        </>
+      )
+    case 'settings':
+      return (
+        <>
+          <circle cx="12" cy="12" r="3.5" />
+          <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M18.7 5.3l-1.5 1.5M6.8 17.2l-1.5 1.5" />
         </>
       )
     case 'preview':
