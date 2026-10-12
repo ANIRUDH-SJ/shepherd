@@ -62,11 +62,27 @@ for (const { id: preset } of THEME_PRESETS.filter((item) => item.id !== 'system'
     assert(Boolean(block?.includes('--color-text:')), `${preset} ${appearance} has readable text`)
     const canvas = block?.match(/--color-canvas:\s*(#[\da-f]{6})/i)?.[1]
     const text = block?.match(/--color-text:\s*(#[\da-f]{6})/i)?.[1]
+    const sidebar = block?.match(/--color-sidebar:\s*(#[\da-f]{6})/i)?.[1]
+    const muted = block?.match(/--color-text-muted:\s*(#[\da-f]{6})/i)?.[1]
+    const selection = block?.match(/--color-selection:\s*(#[\da-f]{6})/i)?.[1]
+    const selectionText = block?.match(/--color-selection-text:\s*(#[\da-f]{6})/i)?.[1]
     if (canvas && text) {
       assert(contrast(canvas, text) >= 7, `${preset} ${appearance} text meets AAA contrast`)
       assert(
         canvas === terminalThemeForAppearance(appearance, preset).background,
         `${preset} ${appearance} chrome matches terminal backdrop`
+      )
+    }
+    if (sidebar && muted) {
+      assert(
+        contrast(sidebar, muted) >= 4.5,
+        `${preset} ${appearance} muted text meets AA contrast`
+      )
+    }
+    if (selection && selectionText) {
+      assert(
+        contrast(selection, selectionText) >= 4.5,
+        `${preset} ${appearance} selected text meets AA contrast`
       )
     }
   }
