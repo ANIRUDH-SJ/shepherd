@@ -6,8 +6,9 @@ surfaces and every open terminal without restarting shells.
 
 ## Application appearance
 
-Open Settings with `Ctrl+Shift+,` and choose **Appearance**. Three modes are
-available:
+Open Settings from the labeled button at the bottom of the sidebar, the gear
+button on the collapsed sidebar, or `Ctrl+Shift+,`. Choose **Appearance**. Three
+modes are available:
 
 - **System** follows the desktop's resolved light or dark appearance.
 - **Light** keeps Shepherd chrome light.
@@ -26,6 +27,9 @@ Choose a color theme in Settings → Appearance:
   appearance and `#feffff` in light.
 - **Tokyo Night** uses cool blue and violet colors, with a lighter daytime variant.
 - **Catppuccin** uses soft pastel colors, with a light variant.
+- **Gruvbox** uses warm retro colors, with a cream-colored light variant.
+- **Solarized** pairs teal and gold accents with dark and light backgrounds.
+- **Rosé Pine** pairs muted rose and iris accents with a Dawn-like light variant.
 
 Each option previews its terminal background, text, and ANSI accents. A preset
 changes both CSS chrome tokens and the xterm palette, including foreground,
@@ -33,7 +37,7 @@ background, cursor, selection, and ANSI colors. The appearance mode still
 controls which dark or light variant is used. Existing terminals update in place;
 new terminals start with the saved theme.
 
-![Theme picker with Catppuccin selected in light appearance](images/theme-presets-light.png)
+![Theme picker showing six presets with Rosé Pine selected in light appearance](images/theme-presets-light.png)
 
 ## Semantic token contract
 
@@ -72,7 +76,7 @@ interface RendererPreferences {
   version: 3
   terminalFontSize: number
   appearanceMode: 'system' | 'light' | 'dark'
-  themePresetId: 'system' | 'tokyo-night' | 'catppuccin'
+  themePresetId: 'system' | 'tokyo-night' | 'catppuccin' | 'gruvbox' | 'solarized' | 'rose-pine'
 }
 ```
 
