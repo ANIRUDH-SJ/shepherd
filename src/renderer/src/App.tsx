@@ -407,13 +407,20 @@ export default function App(): React.JSX.Element {
     })
   }, [])
 
-  // Persist the active layout plus its bounded inbox. JSON equality keeps status,
+  // Persist every workspace layout plus its bounded inbox. JSON equality keeps status,
   // usage, live-agent, and pulse churn from restarting the save debounce because
   // those fields are intentionally absent from the snapshot.
   const sessionJson = useMemo(() => JSON.stringify(toLayoutSnapshot(state)), [state])
   useEffect(() => {
     const t = setTimeout(() => window.api.session.save(JSON.parse(sessionJson)), 500)
     return () => clearTimeout(t)
+  }, [sessionJson])
+  useEffect(() => {
+    // A quit can beat the debounce timer; flush the latest layout before the
+    // renderer goes away. Hiding the window does not unload it or kill PTYs.
+    const flush = (): void => window.api.session.saveSync(JSON.parse(sessionJson))
+    window.addEventListener('beforeunload', flush)
+    return () => window.removeEventListener('beforeunload', flush)
   }, [sessionJson])
 
   // Drag the sidebar's right edge to resize it using the pane divider's model.
