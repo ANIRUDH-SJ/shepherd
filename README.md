@@ -48,6 +48,9 @@ Shepherd turns that collection of terminals into an understandable workspace:
 - **Context is available on demand.** The workspace inspector collects the
   repository, branch, pull request, owned ports, agents, usage, and session
   structure without taking rows away from the terminal.
+- **Review stays focused.** An on-demand change review shows Git status and
+  staged/working diffs, with explicit file staging, tests, commits, and the
+  current branch's pull-request diff.
 
 ## More Than a Terminal Multiplexer
 
@@ -82,6 +85,8 @@ command-line agents.
   workspace targeting
 - Status, log, usage, and notification reporting over the socket API
 - Git worktree workspace creation
+- An on-demand Git review panel for changed files, bounded diffs, file staging,
+  `npm test`, staged-file commits, and pull-request diffs
 - Active-workspace session restoration, including cwd, tabs, panes, and layout
 - Safe Ctrl/Meta-click opening for HTTP(S), OSC 8, and existing local-file links
 - Terminal search, a typed command palette, contextual shortcut help, and
@@ -116,6 +121,17 @@ workspace context menu, or run **Inspect current workspace** from the command
 palette. The inspector shows the current repository and branch, pull request,
 owned ports, agent activity, reported usage, and pane/surface counts. Port and
 agent rows are actions: they open the secure preview or focus the real terminal.
+
+### Changed files and review
+
+Choose **Review changed files** in the workspace inspector or **Review
+repository changes** in the command palette. Shepherd finds the repository from
+that workspace's terminal, then shows changed files and separate staged and
+working diffs. Stage or unstage whole files explicitly, run `npm test` when the
+repository has that script, and commit the staged set with a message. If a pull
+request is detected for the current branch, you can inspect its diff or open it
+on GitHub. Untracked files become diffable after staging. Large file lists and
+diffs are bounded; use the terminal for changes beyond those limits.
 
 ### Attention without terminal checking
 
