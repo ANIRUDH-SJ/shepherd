@@ -93,6 +93,21 @@ the surface-specific Git probe and requests an immediate reconciliation. Ports
 are normalized, bounded, and associated only with the process tree that owns
 them.
 
+## Change review
+
+The review panel is opened from the command palette or workspace inspector. Its
+IPC requests identify a terminal surface; the main process accepts them only
+when that renderer owns the live PTY. It reads the shell's current directory,
+resolves the Git root itself, and rejects subsequent actions if the repository
+has changed since the panel loaded. File actions also require an exact path in
+the current porcelain status list, and Git receives it after `--` as a pathspec.
+
+The main process bounds status and diff output. The UI keeps staged and working
+diffs distinct, stages or unstages whole files, and commits only on an explicit
+user action. A configured `npm test` script runs as a bounded child process when
+requested. The optional PR diff uses `gh` for the current branch and does not
+block local change review if GitHub access is unavailable.
+
 ## Appearance
 
 Renderer preferences use a versioned local-storage record. Migration accepts the
