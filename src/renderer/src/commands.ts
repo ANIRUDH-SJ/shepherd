@@ -11,6 +11,7 @@ export type AppCommandId =
   | 'workspace.previous'
   | 'workspace.next'
   | 'workspace.inspect'
+  | 'workspace.review'
   | 'sidebar.toggle'
   | 'notification.jump-unread'
   | 'notification.mark-read'
@@ -146,6 +147,13 @@ export const APP_COMMANDS: readonly AppCommand[] = [
     title: 'Inspect current workspace',
     category: 'Workspace',
     keywords: 'details repository branch pull request ports previews agents usage session'
+  },
+  {
+    id: 'workspace.review',
+    title: 'Review repository changes',
+    category: 'Workspace',
+    keywords: 'git changed files diff stage unstage test commit pull request',
+    availability: 'active-terminal'
   },
   {
     id: 'sidebar.toggle',

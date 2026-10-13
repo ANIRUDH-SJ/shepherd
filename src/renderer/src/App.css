@@ -1348,6 +1348,134 @@ body.resizing * {
   line-height: 1.45;
 }
 
+.review-panel {
+  width: min(620px, calc(100vw - 32px));
+}
+.review-panel .inspector-section h2,
+.review-panel .inspector-empty,
+.review-panel .inspector-action {
+  font-size: 12px;
+}
+.review-section-heading,
+.review-file-title,
+.review-file-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.review-section-heading,
+.review-file-title {
+  justify-content: space-between;
+}
+.review-section-heading h2 {
+  margin-bottom: 0;
+}
+.review-section-heading button,
+.review-file-actions button {
+  min-height: 28px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: 12px var(--font-ui);
+}
+.review-section-heading button:hover,
+.review-file-actions button:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+.review-section-heading button:disabled,
+.review-file-actions button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.review-panel .inspector-path {
+  margin: var(--space-4) 0 var(--space-2);
+}
+.review-branch,
+.review-message,
+.review-error {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.review-message,
+.review-error {
+  padding: var(--space-6);
+}
+.review-error {
+  color: var(--color-danger);
+}
+.review-files {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.review-files li {
+  min-width: 0;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 80px;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.review-file-title code {
+  overflow: hidden;
+  font: 12px var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.review-file-title span {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.review-file-actions {
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+}
+.review-output {
+  max-height: 360px;
+  overflow: auto;
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-canvas);
+  color: var(--color-text-secondary);
+  font: 11.5px/1.5 var(--font-mono);
+  white-space: pre;
+}
+.review-test-result {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  font-size: 12px;
+}
+.review-commit-label {
+  display: block;
+  margin-top: var(--space-5);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+.review-panel input {
+  width: 100%;
+  min-height: 32px;
+  box-sizing: border-box;
+  margin-top: var(--space-3);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-canvas);
+  color: var(--color-text);
+  font: 12px var(--font-ui);
+}
+
 @media (max-width: 420px) {
   .workspace-inspector {
     left: var(--space-4);
