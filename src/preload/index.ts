@@ -89,6 +89,16 @@ const api: ShepherdApi = {
     save: (state) => ipcRenderer.send(IPC.SESSION_SAVE, state)
   },
 
+  review: {
+    status: (request) => ipcRenderer.invoke(IPC.REVIEW_STATUS, request),
+    diff: (request) => ipcRenderer.invoke(IPC.REVIEW_DIFF, request),
+    stage: (request) => ipcRenderer.invoke(IPC.REVIEW_STAGE, request),
+    unstage: (request) => ipcRenderer.invoke(IPC.REVIEW_UNSTAGE, request),
+    commit: (request) => ipcRenderer.invoke(IPC.REVIEW_COMMIT, request),
+    test: (request) => ipcRenderer.invoke(IPC.REVIEW_TEST, request),
+    pullRequestDiff: (request) => ipcRenderer.invoke(IPC.REVIEW_PR_DIFF, request)
+  },
+
   startup: {
     firstTerminalReady: () => {
       if (firstTerminalReadyReported) return

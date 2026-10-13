@@ -10,6 +10,7 @@ import { RuntimePerformanceRecorder } from './runtimePerformance'
 import { configureProductIdentity } from './productIdentity'
 import { configurePreviewHost, configurePreviewSecurity } from './previewSecurity'
 import { loadSession, saveSession } from './session'
+import { registerReviewIpc } from './review'
 import { IPC, type SocketApply, type WorkspacesSync } from '../shared/ipc'
 import {
   APP_BACKGROUND_COLOR,
@@ -125,6 +126,7 @@ app.whenReady().then(() => {
   // Wire up the terminal IPC handlers before any window loads.
   configurePreviewSecurity()
   registerPtyIpc(runtimePerformance.enabled ? (name) => runtimePerformance.mark(name) : undefined)
+  registerReviewIpc()
   ipcMain.on(IPC.PERFORMANCE_MARK, (_event, name: unknown) => {
     if (isRendererRuntimePerformanceMarkName(name)) runtimePerformance.mark(name)
   })

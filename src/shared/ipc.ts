@@ -4,6 +4,17 @@ import type { AgentRecord } from './agent'
 import type { AppearanceMode, AppearanceSnapshot } from './appearance'
 import type { RendererRuntimePerformanceMarkName } from './runtimePerformance'
 import type {
+  ReviewCommitRequest,
+  ReviewDiff,
+  ReviewDiffRequest,
+  ReviewFileRequest,
+  ReviewRequest,
+  ReviewStatus,
+  ReviewRootRequest,
+  ReviewTestResult,
+  ReviewPullRequestDiff
+} from './review'
+import type {
   OpenTerminalLinkRequest,
   OpenTerminalLinkResult,
   ResolveTerminalFileLinksRequest
@@ -28,6 +39,13 @@ export const IPC = {
   PREVIEW_OPEN_EXTERNAL: 'preview:open-external',
   APPEARANCE_GET_SYNC: 'appearance:get-sync',
   APPEARANCE_SET: 'appearance:set',
+  REVIEW_STATUS: 'review:status',
+  REVIEW_DIFF: 'review:diff',
+  REVIEW_STAGE: 'review:stage',
+  REVIEW_UNSTAGE: 'review:unstage',
+  REVIEW_COMMIT: 'review:commit',
+  REVIEW_TEST: 'review:test',
+  REVIEW_PR_DIFF: 'review:pr-diff',
   // main → renderer  (push via webContents.send / ipcRenderer.on)
   TERM_DATA: 'terminal:data',
   TERM_EXIT: 'terminal:exit',
@@ -161,6 +179,15 @@ export interface ShepherdApi {
     loadSync(): unknown
     /** Persist the current app state (called debounced on change). */
     save(state: unknown): void
+  }
+  review: {
+    status(request: ReviewRequest): Promise<ReviewStatus>
+    diff(request: ReviewDiffRequest): Promise<ReviewDiff>
+    stage(request: ReviewFileRequest): Promise<ReviewStatus>
+    unstage(request: ReviewFileRequest): Promise<ReviewStatus>
+    commit(request: ReviewCommitRequest): Promise<ReviewStatus>
+    test(request: ReviewRootRequest): Promise<ReviewTestResult>
+    pullRequestDiff(request: ReviewRootRequest): Promise<ReviewPullRequestDiff>
   }
   startup: {
     /** Report that the first focused xterm and PTY are ready for interaction. */
