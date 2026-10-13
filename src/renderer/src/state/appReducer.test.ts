@@ -514,13 +514,43 @@ assert(
   'restored inbox rebuilds unread marker'
 )
 
-// Startup is a deliberate one-workspace boundary. Older snapshots may contain
-// several workspaces, but only the previously active workspace is resumed.
+// Startup restores every workspace, including older snapshots that already
+// contained multiple workspaces. Only live agent/process state is reset.
 let multiWorkspaceSession = initialApp()
 multiWorkspaceSession = appReducer(
   multiWorkspaceSession,
   createWorkspaceAction('resume-me', '/tmp/resume-me')
 )
+const inactiveWorkspace = multiWorkspaceSession.workspaces[0]
+const activeWorkspace = multiWorkspaceSession.workspaces[1]
+multiWorkspaceSession = appReducer(multiWorkspaceSession, {
+  type: 'receiveNotification',
+  notification: {
+    id: 'inactive-notice',
+    workspaceId: inactiveWorkspace.id,
+    surfaceId: listSurfaceIds(inactiveWorkspace.root)[0],
+    subjectId: null,
+    title: 'Background task',
+    body: 'Needs attention',
+    source: 'osc',
+    severity: 'info',
+    createdAt: 101
+  }
+})
+multiWorkspaceSession = appReducer(multiWorkspaceSession, {
+  type: 'receiveNotification',
+  notification: {
+    id: 'active-notice',
+    workspaceId: activeWorkspace.id,
+    surfaceId: listSurfaceIds(activeWorkspace.root)[0],
+    subjectId: null,
+    title: 'Active task',
+    body: 'Finished',
+    source: 'osc',
+    severity: 'info',
+    createdAt: 102
+  }
+})
 const legacyMultiWorkspaceSnapshot = {
   workspaces: multiWorkspaceSession.workspaces.map((workspace) => ({
     id: workspace.id,
@@ -531,22 +561,55 @@ const legacyMultiWorkspaceSnapshot = {
   })),
   activeWorkspaceId: multiWorkspaceSession.activeWorkspaceId
 }
-const singleWorkspaceRestore = sanitizeRestored(
+const legacyMultiWorkspaceRestore = sanitizeRestored(
   JSON.parse(JSON.stringify(legacyMultiWorkspaceSnapshot))
 )
-assert(singleWorkspaceRestore !== null, 'accepts a legacy multi-workspace snapshot')
-assert(singleWorkspaceRestore!.workspaces.length === 1, 'restores one workspace at startup')
+assert(legacyMultiWorkspaceRestore !== null, 'accepts a legacy multi-workspace snapshot')
+assert(legacyMultiWorkspaceRestore!.workspaces.length === 2, 'restores every workspace at startup')
 assert(
-  singleWorkspaceRestore!.workspaces[0].id === multiWorkspaceSession.activeWorkspaceId,
+  legacyMultiWorkspaceRestore!.activeWorkspaceId === multiWorkspaceSession.activeWorkspaceId,
   'restores the previously active workspace'
 )
-assert(singleWorkspaceRestore!.workspaces[0].cwd === '/tmp/resume-me', 'preserves its cwd')
+assert(legacyMultiWorkspaceRestore!.workspaces[1].cwd === '/tmp/resume-me', 'preserves its cwd')
 
-const singleWorkspaceSnapshot = toLayoutSnapshot(multiWorkspaceSession)
-assert(singleWorkspaceSnapshot.workspaces.length === 1, 'persists one startup workspace')
+const multiWorkspaceSnapshot = toLayoutSnapshot(multiWorkspaceSession)
+assert(multiWorkspaceSnapshot.workspaces.length === 2, 'persists every workspace')
 assert(
-  singleWorkspaceSnapshot.workspaces[0].id === multiWorkspaceSession.activeWorkspaceId,
+  multiWorkspaceSnapshot.activeWorkspaceId === multiWorkspaceSession.activeWorkspaceId,
   'persists the active workspace'
+)
+assert(multiWorkspaceSnapshot.notifications.length === 2, 'persists each workspace inbox')
+const restoredMultiWorkspace = sanitizeRestored(JSON.parse(JSON.stringify(multiWorkspaceSnapshot)))
+assert(restoredMultiWorkspace?.workspaces.length === 2, 'round-trips all workspaces')
+assert(restoredMultiWorkspace?.notifications.length === 2, 'round-trips all workspace inboxes')
+assert(Boolean(restoredMultiWorkspace?.workspaces[0].unread), 'restores inactive unread marker')
+assert(Boolean(restoredMultiWorkspace?.workspaces[1].unread), 'restores active unread marker')
+assert(restoredMultiWorkspace?.agents.length === 0, 'does not restore live agents')
+assert(
+  sanitizeRestored({ ...multiWorkspaceSnapshot, activeWorkspaceId: 'missing-workspace' })
+    ?.activeWorkspaceId === inactiveWorkspace.id,
+  'falls back to the first workspace when active selection is stale'
+)
+assert(
+  sanitizeRestored({
+    ...multiWorkspaceSnapshot,
+    workspaces: [inactiveWorkspace, inactiveWorkspace]
+  }) === null,
+  'rejects duplicate workspace IDs'
+)
+assert(
+  sanitizeRestored({
+    ...multiWorkspaceSnapshot,
+    workspaces: [inactiveWorkspace, { ...activeWorkspace, root: inactiveWorkspace.root }]
+  }) === null,
+  'rejects duplicate terminal IDs across workspaces'
+)
+assert(
+  sanitizeRestored({
+    ...multiWorkspaceSnapshot,
+    workspaces: [{ ...inactiveWorkspace, activePaneId: 'missing-pane' }, activeWorkspace]
+  })?.workspaces[0].activePaneId === inactiveWorkspace.activePaneId,
+  'repairs a stale active pane ID'
 )
 assert(sanitizeRestored(null) === null, 'sanitizeRestored(null) → null')
 assert(sanitizeRestored({}) === null, 'sanitizeRestored({}) → null (no workspaces)')

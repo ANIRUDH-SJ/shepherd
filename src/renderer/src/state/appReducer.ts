@@ -106,25 +106,42 @@ export function initialApp(): AppState {
 }
 
 /** Validate + normalise a restored session into an AppState (or null if unusable).
- *  Startup restores only the previously active workspace so every launch begins
- *  with one workspace. Its layout/cwd and owned bounded inbox survive; live state
- *  resets, and its terminals re-spawn fresh when their panes mount. */
+ *  Every workspace's layout/cwd and bounded inbox survive. Live state resets,
+ *  and terminals re-spawn fresh when their panes mount. */
 export function sanitizeRestored(raw: unknown): AppState | null {
   if (!raw || typeof raw !== 'object') return null
   const r = raw as { workspaces?: unknown; activeWorkspaceId?: unknown; notifications?: unknown }
   if (!Array.isArray(r.workspaces) || r.workspaces.length === 0) return null
 
   const workspaces: Workspace[] = []
+  const workspaceIds = new Set<string>()
+  const surfaceIds = new Set<string>()
   for (const item of r.workspaces) {
     if (!item || typeof item !== 'object') return null
     const entry = item as Record<string, unknown>
     // Deep-validate the tree so a corrupt snapshot fails CLOSED (fresh app) instead
     // of crashing later in firstPaneId / computeLayout.
-    if (typeof entry.id !== 'string' || !isValidLayoutNode(entry.root)) {
+    if (
+      typeof entry.id !== 'string' ||
+      !entry.id ||
+      workspaceIds.has(entry.id) ||
+      !isValidLayoutNode(entry.root)
+    ) {
       return null
     }
     const root = normalizeLayoutNode(entry.root)
     if (!root) return null
+    workspaceIds.add(entry.id)
+    for (const surfaceId of listSurfaceIds(root)) {
+      // Terminal IDs are process keys, so duplicate IDs across restored
+      // workspaces would make one pane replace another pane's shell.
+      if (surfaceIds.has(surfaceId)) return null
+      surfaceIds.add(surfaceId)
+    }
+    const activePaneId =
+      typeof entry.activePaneId === 'string' && findPane(root, entry.activePaneId)
+        ? entry.activePaneId
+        : firstPaneId(root)
     workspaces.push({
       id: entry.id,
       name: typeof entry.name === 'string' ? entry.name : '',
@@ -136,7 +153,7 @@ export function sanitizeRestored(raw: unknown): AppState | null {
       ports: [],
       metadataSurfaceId: null,
       root,
-      activePaneId: typeof entry.activePaneId === 'string' ? entry.activePaneId : firstPaneId(root),
+      activePaneId,
       status: null,
       unread: false,
       attention: false,
@@ -150,19 +167,17 @@ export function sanitizeRestored(raw: unknown): AppState | null {
     typeof r.activeWorkspaceId === 'string' && workspaces.some((w) => w.id === r.activeWorkspaceId)
       ? r.activeWorkspaceId
       : workspaces[0].id
-  const startupWorkspace = workspaces.find((workspace) => workspace.id === active) ?? workspaces[0]
-  const notifications = sanitizeNotificationInbox(r.notifications, new Set([startupWorkspace.id]))
+  const notifications = sanitizeNotificationInbox(r.notifications, workspaceIds)
   return refreshNotificationMarkers({
-    workspaces: [startupWorkspace],
-    activeWorkspaceId: startupWorkspace.id,
+    workspaces,
+    activeWorkspaceId: active,
     agents: [],
     notifications
   })
 }
 
-/** Persist the active workspace layout and its bounded notification inbox.
- *  Runtime workspaces remain independent, and relaunch is intentionally a
- *  one-workspace boundary. Status, pulse state, agents, and usage are excluded. */
+/** Persist all workspace layouts and their bounded notification inbox.
+ *  Status, pulse state, agents, and usage are excluded. */
 export function toLayoutSnapshot(state: AppState): {
   workspaces: Array<{
     id: string
@@ -174,22 +189,18 @@ export function toLayoutSnapshot(state: AppState): {
   activeWorkspaceId: string
   notifications: InboxNotification[]
 } {
-  const workspace =
-    state.workspaces.find((candidate) => candidate.id === state.activeWorkspaceId) ??
-    state.workspaces[0]
+  const workspaceIds = new Set(state.workspaces.map((workspace) => workspace.id))
   return {
-    workspaces: [
-      {
-        id: workspace.id,
-        name: workspace.name,
-        cwd: workspace.cwd,
-        root: workspace.root,
-        activePaneId: workspace.activePaneId
-      }
-    ],
-    activeWorkspaceId: workspace.id,
-    notifications: state.notifications.filter(
-      (notification) => notification.workspaceId === workspace.id
+    workspaces: state.workspaces.map((workspace) => ({
+      id: workspace.id,
+      name: workspace.name,
+      cwd: workspace.cwd,
+      root: workspace.root,
+      activePaneId: workspace.activePaneId
+    })),
+    activeWorkspaceId: state.activeWorkspaceId,
+    notifications: state.notifications.filter((notification) =>
+      workspaceIds.has(notification.workspaceId)
     )
   }
 }
