@@ -224,6 +224,9 @@ Workspaces can also be renamed from their context menu, by double-clicking the
 name, or with the pencil action. Saving an empty name returns to the live project
 name.
 
+Settings is also available from the labeled sidebar footer or the gear button
+when the sidebar is collapsed.
+
 ## Agent-Aware Automation
 
 Every Shepherd terminal receives these environment variables:

@@ -22,6 +22,7 @@ interface Props {
   dispatch: Dispatch<AppAction>
   onCollapse: () => void
   onOpenPalette: () => void
+  onOpenSettings: () => void
   onInspectWorkspace: (workspaceId: string) => void
 }
 
@@ -39,6 +40,7 @@ export default function Sidebar({
   dispatch,
   onCollapse,
   onOpenPalette,
+  onOpenSettings,
   onInspectWorkspace
 }: Props): React.JSX.Element {
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -368,6 +370,17 @@ export default function Sidebar({
           </div>
         </section>
       )}
+
+      <button
+        type="button"
+        className="sidebar-settings-entry"
+        title="Settings (Ctrl+Shift+,)"
+        aria-label="Open settings"
+        onClick={onOpenSettings}
+      >
+        <Icon name="settings" />
+        <span>Settings</span>
+      </button>
 
       {contextMenu && (
         <div

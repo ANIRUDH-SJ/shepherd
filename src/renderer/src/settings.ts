@@ -1,19 +1,17 @@
 import { APPEARANCE_MODES, isAppearanceMode, type AppearanceMode } from '../../shared/appearance'
 import { RENDERER_EVENT } from './events'
+import { isThemePresetId, type ThemePresetId } from './themePresets'
 
-export const RENDERER_PREFERENCES_VERSION = 2 as const
+export const RENDERER_PREFERENCES_VERSION = 3 as const
 export const RENDERER_PREFERENCES_KEY = 'shepherd.preferences'
 const LEGACY_FONT_KEY = 'shepherd.fontSize'
 const LEGACY_CMUX_FONT_KEY = 'cmux.fontSize'
-
-export const TERMINAL_PALETTE_IDS = ['system'] as const
-export type TerminalPaletteId = (typeof TERMINAL_PALETTE_IDS)[number]
 
 export interface RendererPreferences {
   version: typeof RENDERER_PREFERENCES_VERSION
   terminalFontSize: number
   appearanceMode: AppearanceMode
-  terminalPaletteId: TerminalPaletteId
+  themePresetId: ThemePresetId
 }
 
 export const DEFAULT_FONT_SIZE = 13
@@ -24,7 +22,7 @@ export const DEFAULT_RENDERER_PREFERENCES: Readonly<RendererPreferences> = Objec
   version: RENDERER_PREFERENCES_VERSION,
   terminalFontSize: DEFAULT_FONT_SIZE,
   appearanceMode: 'system',
-  terminalPaletteId: 'system'
+  themePresetId: 'system'
 })
 
 function normalizedFontSize(value: unknown): number {
@@ -41,25 +39,20 @@ function clampedFontSize(value: number, fallback: number): number {
     : fallback
 }
 
-function isTerminalPaletteId(value: unknown): value is TerminalPaletteId {
-  return typeof value === 'string' && TERMINAL_PALETTE_IDS.includes(value as TerminalPaletteId)
-}
-
 function normalizePreferences(value: unknown): RendererPreferences | null {
   if (!value || typeof value !== 'object') return null
   const candidate = value as Record<string, unknown>
-  if (candidate.version !== 1 && candidate.version !== RENDERER_PREFERENCES_VERSION) return null
+  if (candidate.version !== 1 && candidate.version !== 2 && candidate.version !== 3) return null
   if (!isAppearanceMode(candidate.appearanceMode)) return null
-  const terminalPaletteId =
-    candidate.version === 1 && candidate.terminalPaletteId === 'graphite'
-      ? 'system'
-      : candidate.terminalPaletteId
-  if (!isTerminalPaletteId(terminalPaletteId)) return null
+  if (candidate.version === 1 && candidate.terminalPaletteId !== 'graphite') return null
+  if (candidate.version === 2 && candidate.terminalPaletteId !== 'system') return null
+  const themePresetId = candidate.version === 3 ? candidate.themePresetId : 'system'
+  if (!isThemePresetId(themePresetId)) return null
   return {
     version: RENDERER_PREFERENCES_VERSION,
     terminalFontSize: normalizedFontSize(candidate.terminalFontSize),
     appearanceMode: candidate.appearanceMode,
-    terminalPaletteId
+    themePresetId
   }
 }
 
@@ -109,9 +102,9 @@ export function updateRendererPreferences(
     appearanceMode: isAppearanceMode(patch.appearanceMode)
       ? patch.appearanceMode
       : current.appearanceMode,
-    terminalPaletteId: isTerminalPaletteId(patch.terminalPaletteId)
-      ? patch.terminalPaletteId
-      : current.terminalPaletteId
+    themePresetId: isThemePresetId(patch.themePresetId)
+      ? patch.themePresetId
+      : current.themePresetId
   }
   persistPreferences(next)
   window.dispatchEvent(new CustomEvent(RENDERER_EVENT.preferences, { detail: next }))
