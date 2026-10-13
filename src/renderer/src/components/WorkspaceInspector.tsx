@@ -13,6 +13,7 @@ interface Props {
   agents: AgentRecord[]
   onOpenPreview: (url: string) => void
   onOpenPullRequest: (url: string) => void
+  onReview: () => void
   onFocusAgent: (agent: AgentRecord) => void
   onClose: () => void
 }
@@ -27,6 +28,7 @@ export default function WorkspaceInspector({
   agents,
   onOpenPreview,
   onOpenPullRequest,
+  onReview,
   onFocusAgent,
   onClose
 }: Props): React.JSX.Element {
@@ -41,7 +43,8 @@ export default function WorkspaceInspector({
   const usageLabel = usageSummary(workspace.usage)
 
   useEffect(() => {
-    const focusOrigin = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const focusOrigin =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
     panelRef.current?.querySelector<HTMLElement>('[data-inspector-autofocus]')?.focus()
     const closeOnEscape = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return
@@ -113,6 +116,16 @@ export default function WorkspaceInspector({
               <Icon name="external" />
             </button>
           )}
+          <button
+            type="button"
+            className="inspector-action"
+            onClick={() => {
+              restoreFocusRef.current = false
+              onReview()
+            }}
+          >
+            Review changed files
+          </button>
         </section>
 
         <section className="inspector-section" aria-labelledby="inspector-runtime">
@@ -136,8 +149,7 @@ export default function WorkspaceInspector({
                       }
                     }}
                   >
-                    <Icon name="preview" />
-                    :{port}
+                    <Icon name="preview" />:{port}
                   </button>
                 )
               })}
@@ -161,7 +173,10 @@ export default function WorkspaceInspector({
                   }}
                   title={agent.message}
                 >
-                  <span className={`inspector-agent-marker state-${agent.state}`} aria-hidden="true" />
+                  <span
+                    className={`inspector-agent-marker state-${agent.state}`}
+                    aria-hidden="true"
+                  />
                   <span>
                     <strong>{agent.displayName}</strong>
                     <small>{agent.message ?? agent.provider}</small>

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Change review
+
+- Added an on-demand repository review panel with changed files, separate staged
+  and working diffs, whole-file stage/unstage actions, and staged-file commits.
+- Added explicit `npm test` execution with bounded output and the current
+  branch's pull-request diff when GitHub CLI access is available.
+- Bound review actions to the requesting renderer's live terminal and revalidate
+  the Git root and selected path before each operation.
+
 ### Sessions
 
 - Restore all workspaces, their layouts, and their bounded notification inboxes

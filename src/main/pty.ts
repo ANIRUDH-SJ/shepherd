@@ -383,3 +383,9 @@ export function killAllTerminals(): void {
   }
   clearTerminalInspections()
 }
+
+/** Resolve a review request through a PTY owned by the calling renderer. */
+export function ownedTerminalCwd(sender: WebContents, surfaceId: string): string | null {
+  const terminal = terminals.getOwned(surfaceId, sender)
+  return terminal ? readTerminalShellCwd(terminal.proc.pid) : null
+}

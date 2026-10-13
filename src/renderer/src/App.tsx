@@ -38,6 +38,7 @@ import ShortcutHelp from './components/ShortcutHelp'
 import SettingsDialog from './components/SettingsDialog'
 import PreviewPicker from './components/PreviewPicker'
 import WorkspaceInspector from './components/WorkspaceInspector'
+import ReviewWorkbench from './components/ReviewWorkbench'
 import { shouldShowWelcome } from './welcome'
 
 // Restore the saved session synchronously at startup, else start fresh. Computed
@@ -105,6 +106,7 @@ export default function App(): React.JSX.Element {
   const [collapsed, setCollapsed] = useState(false)
   const [utilityOverlay, setUtilityOverlay] = useState<UtilityOverlay | null>(null)
   const [inspectorWorkspaceId, setInspectorWorkspaceId] = useState<string | null>(null)
+  const [reviewWorkspaceId, setReviewWorkspaceId] = useState<string | null>(null)
   const notificationSequence = useRef(0)
 
   // Keep the latest state in a ref so the (once-installed) key handler sees it.
@@ -126,6 +128,7 @@ export default function App(): React.JSX.Element {
     const pane = findPane(workspace.root, workspace.activePaneId)
 
     if (id !== 'workspace.inspect') setInspectorWorkspaceId(null)
+    if (id !== 'workspace.review') setReviewWorkspaceId(null)
 
     if (
       id !== 'palette.open' &&
@@ -196,6 +199,9 @@ export default function App(): React.JSX.Element {
       }
       case 'workspace.inspect':
         setInspectorWorkspaceId(workspace.id)
+        break
+      case 'workspace.review':
+        setReviewWorkspaceId(workspace.id)
         break
       case 'sidebar.toggle':
         setCollapsed((value) => !value)
@@ -454,11 +460,35 @@ export default function App(): React.JSX.Element {
 
   const openInspector = (workspaceId: string): void => {
     setUtilityOverlay(null)
+    setReviewWorkspaceId(null)
     setInspectorWorkspaceId(workspaceId)
+  }
+
+  const openReview = (workspaceId: string): void => {
+    dispatch({ type: 'selectWorkspace', id: workspaceId })
+    setUtilityOverlay(null)
+    setInspectorWorkspaceId(null)
+    setReviewWorkspaceId(workspaceId)
+  }
+
+  const closeReview = (): void => {
+    const workspace = stateRef.current.workspaces.find(
+      (candidate) => candidate.id === reviewWorkspaceId
+    )
+    const surfaceId = workspace
+      ? activeTerminalSurfaceId(workspace.root, workspace.activePaneId)
+      : null
+    setReviewWorkspaceId(null)
+    if (surfaceId) {
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new CustomEvent(RENDERER_EVENT.focusSurface, { detail: surfaceId }))
+      })
+    }
   }
 
   const openSettings = (): void => {
     setInspectorWorkspaceId(null)
+    setReviewWorkspaceId(null)
     setUtilityOverlay('settings')
   }
 
@@ -505,6 +535,14 @@ export default function App(): React.JSX.Element {
   )
   const inspectedWorkspace =
     inspectedWorkspaceIndex >= 0 ? state.workspaces[inspectedWorkspaceIndex] : null
+  const reviewedWorkspaceIndex = state.workspaces.findIndex(
+    (workspace) => workspace.id === reviewWorkspaceId
+  )
+  const reviewedWorkspace =
+    reviewedWorkspaceIndex >= 0 ? state.workspaces[reviewedWorkspaceIndex] : null
+  const reviewedSurfaceId = reviewedWorkspace
+    ? activeTerminalSurfaceId(reviewedWorkspace.root, reviewedWorkspace.activePaneId)
+    : null
 
   return (
     <div className="app">
@@ -603,8 +641,19 @@ export default function App(): React.JSX.Element {
           agents={state.agents.filter((agent) => agent.workspaceId === inspectedWorkspace.id)}
           onOpenPreview={(url) => openWorkspacePreview(inspectedWorkspace.id, url)}
           onOpenPullRequest={(url) => openPullRequest(inspectedWorkspace.id, url)}
+          onReview={() => openReview(inspectedWorkspace.id)}
           onFocusAgent={focusWorkspaceAgent}
           onClose={() => setInspectorWorkspaceId(null)}
+        />
+      )}
+      {reviewedWorkspace && reviewedSurfaceId && (
+        <ReviewWorkbench
+          key={`${reviewedWorkspace.id}:${reviewedSurfaceId}`}
+          workspaceName={reviewedWorkspace.name || `Workspace ${reviewedWorkspaceIndex + 1}`}
+          surfaceId={reviewedSurfaceId}
+          pullRequest={reviewedWorkspace.pullRequest}
+          onOpenPullRequest={(url) => openPullRequest(reviewedWorkspace.id, url)}
+          onClose={closeReview}
         />
       )}
     </div>
