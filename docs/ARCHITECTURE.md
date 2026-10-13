@@ -54,9 +54,19 @@ Terminal and preview panels use a discriminated union. This keeps terminal-only
 operations, such as input and search, from being applied to a preview while
 allowing both panel types to share tabs, panes, layout, and persistence.
 
-Session persistence stores the active workspace recipe, pane tree, safe preview
-URLs, and working directories. Restoring a session creates fresh PTYs; it does
-not serialize a running process or retain ephemeral agent and usage telemetry.
+Session persistence stores every workspace's pane tree, safe preview URLs,
+working directory, active selection, and bounded notification inbox. The
+renderer debounces writes and flushes its latest snapshot before unloading;
+the main process replaces the session file atomically. Restoring a session
+creates fresh PTYs. It does not serialize a running process or retain
+ephemeral agent and usage telemetry.
+
+Where a system tray is available, closing the window hides it instead of
+destroying its renderer. The same window and PTYs continue running in the
+background, and Show restores them. Explicit Quit destroys the window and
+stops all PTYs. On desktops without a tray, closing the window quits normally.
+This is window-detached execution within the Electron process, not a daemon
+that survives app exit or crash.
 
 ## Agent and attention flow
 

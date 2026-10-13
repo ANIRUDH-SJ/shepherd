@@ -82,7 +82,9 @@ command-line agents.
   workspace targeting
 - Status, log, usage, and notification reporting over the socket API
 - Git worktree workspace creation
-- Active-workspace session restoration, including cwd, tabs, panes, and layout
+- All-workspace session restoration, including cwd, tabs, panes, layout, safe
+  localhost previews, and notification inboxes
+- Background terminals after window close where a system tray is available
 - Safe Ctrl/Meta-click opening for HTTP(S), OSC 8, and existing local-file links
 - Terminal search, a typed command palette, contextual shortcut help, and
   categorized settings
@@ -181,6 +183,13 @@ build toolchain.
    actionable work.
 6. Open the workspace inspector when you need Git, pull-request, port, agent,
    usage, or session detail.
+
+Closing the window hides Shepherd when your desktop provides a system tray;
+terminals keep running, and the tray's **Show Shepherd** action reopens the
+workbench. **Quit Shepherd** in the tray stops the terminal processes. If no
+tray is available, closing the window quits normally. On the next launch,
+Shepherd restores every workspace's layout and starts fresh shells; it cannot
+resume a process after an explicit quit or app crash.
 
 Basic agent presence is automatic for recognized processes. For richer semantic
 events—such as _testing_, _waiting for approval_, or _done_—install the optional

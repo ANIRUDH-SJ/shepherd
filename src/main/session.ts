@@ -1,7 +1,8 @@
 import { app } from 'electron'
-import { mkdirSync, readFileSync, writeFileSync } from 'fs'
-import { dirname, join } from 'path'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 import { PRODUCT_ENV, productEnvironmentValue } from '../shared/product'
+import { writeSessionSnapshot } from './sessionFile'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SESSION PERSISTENCE  (main process)
@@ -37,8 +38,7 @@ export function loadSession(): unknown {
 export function saveSession(state: unknown): void {
   const p = sessionPath()
   try {
-    mkdirSync(dirname(p), { recursive: true })
-    writeFileSync(p, JSON.stringify(state, null, 2))
+    writeSessionSnapshot(p, state)
   } catch (e) {
     console.error('[session] save failed:', e)
   }
