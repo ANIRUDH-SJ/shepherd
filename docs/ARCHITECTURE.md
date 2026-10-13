@@ -54,9 +54,19 @@ Terminal and preview panels use a discriminated union. This keeps terminal-only
 operations, such as input and search, from being applied to a preview while
 allowing both panel types to share tabs, panes, layout, and persistence.
 
-Session persistence stores the active workspace recipe, pane tree, safe preview
-URLs, and working directories. Restoring a session creates fresh PTYs; it does
-not serialize a running process or retain ephemeral agent and usage telemetry.
+Session persistence stores every workspace's pane tree, safe preview URLs,
+working directory, active selection, and bounded notification inbox. The
+renderer debounces writes and flushes its latest snapshot before unloading;
+the main process replaces the session file atomically. Restoring a session
+creates fresh PTYs. It does not serialize a running process or retain
+ephemeral agent and usage telemetry.
+
+Where a system tray is available, closing the window hides it instead of
+destroying its renderer. The same window and PTYs continue running in the
+background, and Show restores them. Explicit Quit destroys the window and
+stops all PTYs. On desktops without a tray, closing the window quits normally.
+This is window-detached execution within the Electron process, not a daemon
+that survives app exit or crash.
 
 ## Agent and attention flow
 
@@ -112,15 +122,17 @@ block local change review if GitHub access is unavailable.
 
 Renderer preferences use a versioned local-storage record. Migration accepts the
 older standalone font-size keys and produces one validated `RendererPreferences`
-object containing terminal font size, application appearance mode, and terminal
-palette identifier.
+object containing terminal font size, application appearance mode, and a theme
+preset identifier. Earlier terminal-only palette identifiers migrate to the
+Shepherd preset.
 
 The main process applies `system`, `light`, or `dark` to Electron `nativeTheme`
 and reports the resolved mode. Semantic CSS tokens style application chrome, and
-xterm receives the matching immutable System palette for that resolved mode.
-Appearance events update existing terminals without recreating their PTYs. ANSI
-role hues remain stable while the terminal backdrop, foreground, cursor, and
-selection follow the application.
+xterm receives the matching immutable palette for the selected preset and
+resolved appearance. A preference event updates all open terminals when the
+preset changes; appearance events select its light or dark variant. Neither
+event recreates PTYs. Preset-specific CSS token overrides keep application
+chrome coordinated with terminal colors.
 
 On a fresh profile without a restored session, the renderer waits for the first
 shell output and writes `shepherd welcome` to that PTY. The CLI renders the guide

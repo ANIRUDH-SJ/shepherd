@@ -29,6 +29,8 @@ asarUnpack:
 extraResources:
   - from: bin
     to: bin
+  - from: build/icon.png
+    to: tray-icon.png
 
 linux:
   executableName: shepherd

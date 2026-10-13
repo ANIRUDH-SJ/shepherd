@@ -1,6 +1,7 @@
 import type { AppearanceMode, AppearanceSnapshot } from '../../shared/appearance'
 import { RENDERER_EVENT } from './events'
-import { getRendererPreferences, setAppearanceMode } from './settings'
+import { getRendererPreferences, setAppearanceMode, updateRendererPreferences } from './settings'
+import type { ThemePresetId } from './themePresets'
 
 let initialized = false
 
@@ -22,6 +23,7 @@ export function initializeAppearance(): void {
   if (initialized) return
   initialized = true
   const preferences = getRendererPreferences()
+  document.documentElement.dataset.themePreset = preferences.themePresetId
   const system = window.api.appearance.getSync()
   applyAppearanceSnapshot(optimisticSnapshot(preferences.appearanceMode, system))
   window.api.appearance.onChanged(applyAppearanceSnapshot)
@@ -29,6 +31,11 @@ export function initializeAppearance(): void {
     .setMode(preferences.appearanceMode)
     .then(applyAppearanceSnapshot)
     .catch(() => applyAppearanceSnapshot(optimisticSnapshot(preferences.appearanceMode, system)))
+}
+
+export function setApplicationThemePreset(preset: ThemePresetId): void {
+  const preferences = updateRendererPreferences({ themePresetId: preset })
+  document.documentElement.dataset.themePreset = preferences.themePresetId
 }
 
 export async function setApplicationAppearance(mode: AppearanceMode): Promise<AppearanceSnapshot> {

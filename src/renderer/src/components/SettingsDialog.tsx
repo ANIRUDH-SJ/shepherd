@@ -1,6 +1,11 @@
-import { useRef, useState } from 'react'
-import type { AppearanceMode } from '../../../shared/appearance'
-import { setApplicationAppearance } from '../appearance'
+import { useEffect, useRef, useState } from 'react'
+import type {
+  AppearanceMode,
+  AppearanceSnapshot,
+  ResolvedAppearance
+} from '../../../shared/appearance'
+import { setApplicationAppearance, setApplicationThemePreset } from '../appearance'
+import { RENDERER_EVENT } from '../events'
 import {
   APPEARANCE_MODES,
   bumpFontSize,
@@ -9,6 +14,7 @@ import {
   type RendererPreferences
 } from '../settings'
 import { terminalThemeForAppearance } from '../terminalTheme'
+import { THEME_PRESETS } from '../themePresets'
 import DialogFrame from './DialogFrame'
 
 const SETTINGS_CATEGORIES = [
@@ -35,20 +41,18 @@ function appearanceLabel(mode: AppearanceMode): string {
 export default function SettingsDialog({ onOpenHelp, onClose }: Props): React.JSX.Element {
   const [category, setCategory] = useState<SettingsCategory>('Appearance')
   const [preferences, setPreferences] = useState<RendererPreferences>(getRendererPreferences)
-  const categoryRefs = useRef<Array<HTMLButtonElement | null>>([])
-  const terminalTheme = terminalThemeForAppearance(
+  const [resolvedAppearance, setResolvedAppearance] = useState<ResolvedAppearance>(
     document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
   )
-  const systemSwatches = [
-    terminalTheme.black,
-    terminalTheme.red,
-    terminalTheme.green,
-    terminalTheme.yellow,
-    terminalTheme.blue,
-    terminalTheme.magenta,
-    terminalTheme.cyan,
-    terminalTheme.foreground
-  ].filter((color): color is string => typeof color === 'string')
+  const categoryRefs = useRef<Array<HTMLButtonElement | null>>([])
+
+  useEffect(() => {
+    const onAppearance = (event: Event): void => {
+      setResolvedAppearance((event as CustomEvent<AppearanceSnapshot>).detail.resolved)
+    }
+    window.addEventListener(RENDERER_EVENT.appearance, onAppearance)
+    return () => window.removeEventListener(RENDERER_EVENT.appearance, onAppearance)
+  }, [])
 
   const updateAppearance = (mode: AppearanceMode): void => {
     setPreferences((current) => ({ ...current, appearanceMode: mode }))
@@ -156,15 +160,53 @@ export default function SettingsDialog({ onOpenHelp, onClose }: Props): React.JS
               <section className="settings-group">
                 <div className="settings-setting-head">
                   <span>
-                    <strong>Terminal palette</strong>
-                    <small>Matches Shepherd chrome in light and dark appearance.</small>
+                    <strong>Color theme</strong>
+                    <small>Changes the application and every terminal together.</small>
                   </span>
-                  <span className="settings-value">System</span>
+                  <span className="settings-value">
+                    {THEME_PRESETS.find((preset) => preset.id === preferences.themePresetId)?.label}
+                  </span>
                 </div>
-                <div className="terminal-palette-preview" aria-label="System terminal palette">
-                  {systemSwatches.map((color) => (
-                    <span key={color} style={{ backgroundColor: color }} />
-                  ))}
+                <div className="theme-preset-list" role="group" aria-label="Color theme">
+                  {THEME_PRESETS.map((preset) => {
+                    const palette = terminalThemeForAppearance(resolvedAppearance, preset.id)
+                    const swatches = [
+                      palette.red,
+                      palette.green,
+                      palette.yellow,
+                      palette.blue,
+                      palette.magenta,
+                      palette.cyan
+                    ]
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        className="theme-preset-option"
+                        aria-pressed={preferences.themePresetId === preset.id}
+                        onClick={() => {
+                          setApplicationThemePreset(preset.id)
+                          setPreferences(getRendererPreferences())
+                        }}
+                      >
+                        <span
+                          className="theme-preset-sample"
+                          style={{ backgroundColor: palette.background }}
+                        >
+                          <span style={{ color: palette.foreground }}>Aa</span>
+                          <span className="terminal-palette-preview" aria-hidden="true">
+                            {swatches.map((color, index) => (
+                              <span key={index} style={{ backgroundColor: color }} />
+                            ))}
+                          </span>
+                        </span>
+                        <span className="theme-preset-copy">
+                          <strong>{preset.label}</strong>
+                          <small>{preset.description}</small>
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
               </section>
             </div>
@@ -204,9 +246,7 @@ export default function SettingsDialog({ onOpenHelp, onClose }: Props): React.JS
                 <div className="settings-setting-head">
                   <span>
                     <strong>Color contract</strong>
-                    <small>
-                      ANSI roles stay stable while foreground and backdrop follow appearance.
-                    </small>
+                    <small>Terminal ANSI colors follow the selected theme and appearance.</small>
                   </span>
                   <span className="settings-value">Synchronized</span>
                 </div>

@@ -31,6 +31,7 @@ import {
   type CommandContext
 } from './commands'
 import Sidebar from './components/Sidebar'
+import Icon from './components/Icon'
 import WorkspaceView from './components/WorkspaceView'
 import CommandPalette from './components/CommandPalette'
 import ShortcutHelp from './components/ShortcutHelp'
@@ -413,13 +414,20 @@ export default function App(): React.JSX.Element {
     })
   }, [])
 
-  // Persist the active layout plus its bounded inbox. JSON equality keeps status,
+  // Persist every workspace layout plus its bounded inbox. JSON equality keeps status,
   // usage, live-agent, and pulse churn from restarting the save debounce because
   // those fields are intentionally absent from the snapshot.
   const sessionJson = useMemo(() => JSON.stringify(toLayoutSnapshot(state)), [state])
   useEffect(() => {
     const t = setTimeout(() => window.api.session.save(JSON.parse(sessionJson)), 500)
     return () => clearTimeout(t)
+  }, [sessionJson])
+  useEffect(() => {
+    // A quit can beat the debounce timer; flush the latest layout before the
+    // renderer goes away. Hiding the window does not unload it or kill PTYs.
+    const flush = (): void => window.api.session.saveSync(JSON.parse(sessionJson))
+    window.addEventListener('beforeunload', flush)
+    return () => window.removeEventListener('beforeunload', flush)
   }, [sessionJson])
 
   // Drag the sidebar's right edge to resize it using the pane divider's model.
@@ -478,6 +486,12 @@ export default function App(): React.JSX.Element {
     }
   }
 
+  const openSettings = (): void => {
+    setInspectorWorkspaceId(null)
+    setReviewWorkspaceId(null)
+    setUtilityOverlay('settings')
+  }
+
   const openWorkspacePreview = (workspaceId: string, url: string): void => {
     const workspace = stateRef.current.workspaces.find((candidate) => candidate.id === workspaceId)
     if (!workspace) return
@@ -533,14 +547,26 @@ export default function App(): React.JSX.Element {
   return (
     <div className="app">
       {collapsed ? (
-        <button
-          className="sidebar-expand"
-          title={collapsedSidebarLabel}
-          aria-label={collapsedSidebarLabel}
-          onClick={() => setCollapsed(false)}
-        >
-          ›
-        </button>
+        <div className="sidebar-collapsed-rail">
+          <button
+            type="button"
+            className="sidebar-expand"
+            title={collapsedSidebarLabel}
+            aria-label={collapsedSidebarLabel}
+            onClick={() => setCollapsed(false)}
+          >
+            ›
+          </button>
+          <button
+            type="button"
+            className="sidebar-collapsed-settings"
+            title="Settings (Ctrl+Shift+,)"
+            aria-label="Open settings"
+            onClick={openSettings}
+          >
+            <Icon name="settings" />
+          </button>
+        </div>
       ) : (
         <>
           <aside className="sidebar" style={{ width: sidebarWidth, flexBasis: sidebarWidth }}>
@@ -555,6 +581,7 @@ export default function App(): React.JSX.Element {
                 setInspectorWorkspaceId(null)
                 setUtilityOverlay('palette')
               }}
+              onOpenSettings={openSettings}
               onInspectWorkspace={openInspector}
             />
           </aside>

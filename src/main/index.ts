@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, nativeTheme } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, nativeTheme, Tray } from 'electron'
 import { performance } from 'node:perf_hooks'
 import { join } from 'path'
 import { registerPtyIpc, killAllTerminals } from './pty'
@@ -27,6 +27,10 @@ import {
 configureProductIdentity(app)
 
 let deferredBackgroundServices: DeferredBackgroundServices | null = null
+let tray: Tray | null = null
+let isQuitting = false
+const isPrimaryInstance = app.requestSingleInstanceLock()
+if (!isPrimaryInstance) app.quit()
 const runtimePerformance = new RuntimePerformanceRecorder({
   enabled: runtimePerformanceDiagnosticsEnabled(process.env),
   now: () => performance.now()
@@ -68,6 +72,44 @@ function syncWindowAppearance(snapshot = appearanceSnapshot()): void {
   }
 }
 
+function showWindow(): void {
+  const window = BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed())
+  if (!window) {
+    createWindow()
+    return
+  }
+  if (window.isMinimized()) window.restore()
+  window.show()
+  window.focus()
+}
+
+function createTray(): void {
+  try {
+    const iconPath = app.isPackaged
+      ? join(process.resourcesPath, 'tray-icon.png')
+      : join(app.getAppPath(), 'build/icon.png')
+    const icon = nativeImage.createFromPath(iconPath).resize({ width: 20, height: 20 })
+    if (icon.isEmpty()) return
+    tray = new Tray(icon)
+    tray.setToolTip(`${PRODUCT_NAME} — terminals keep running when the window closes`)
+    tray.setContextMenu(
+      Menu.buildFromTemplate([
+        { label: `Show ${PRODUCT_NAME}`, click: showWindow },
+        { type: 'separator' },
+        { label: `Quit ${PRODUCT_NAME}`, click: () => app.quit() }
+      ])
+    )
+    tray.on('double-click', showWindow)
+  } catch (error) {
+    // When a desktop has no tray service, closing the window keeps the
+    // conventional quit behavior instead of stranding an invisible app.
+    tray = null
+    console.error('[tray] unavailable:', error)
+  }
+}
+
+app.on('second-instance', () => showWindow())
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN PROCESS  (the "backend" — full Node.js + OS access)
 // Opens the application window and coordinates the PTY, socket, session,
@@ -91,6 +133,8 @@ function createWindow(): void {
       sandbox: false,
       contextIsolation: true,
       nodeIntegration: false,
+      // A hidden window still owns live xterm readers and PTY acknowledgements.
+      backgroundThrottling: false,
       webviewTag: true
     }
   })
@@ -106,6 +150,11 @@ function createWindow(): void {
   mainWindow.on('minimize', syncBackgroundServiceVisibility)
   mainWindow.on('restore', syncBackgroundServiceVisibility)
   mainWindow.on('closed', syncBackgroundServiceVisibility)
+  mainWindow.on('close', (event) => {
+    if (isQuitting || !tray) return
+    event.preventDefault()
+    mainWindow.hide()
+  })
 
   // Browser guests are opt-in localhost previews; the application renderer never
   // gets an ambient target=_blank path to the OS browser.
@@ -122,6 +171,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  if (!isPrimaryInstance) return
   runtimePerformance.mark('electron-ready')
   // Wire up the terminal IPC handlers before any window loads.
   configurePreviewSecurity()
@@ -171,13 +221,18 @@ app.whenReady().then(() => {
     e.returnValue = loadSession()
   })
   ipcMain.on(IPC.SESSION_SAVE, (_e, state) => saveSession(state))
+  ipcMain.on(IPC.SESSION_SAVE_SYNC, (event, state) => {
+    saveSession(state)
+    event.returnValue = true
+  })
   runtimePerformance.mark('backend-services-started')
 
+  createTray()
   createWindow()
 
   // macOS convention (harmless on Linux): re-open a window if none are open.
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    showWindow()
   })
 })
 
@@ -191,6 +246,7 @@ app.on('window-all-closed', () => {
 
 // Extra safety: kill shells + close the socket if the app quits some other way too.
 app.on('before-quit', () => {
+  isQuitting = true
   runtimePerformance.flush()
   deferredBackgroundServices?.stop()
   deferredBackgroundServices = null

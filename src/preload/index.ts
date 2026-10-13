@@ -86,7 +86,10 @@ const api: ShepherdApi = {
 
   session: {
     loadSync: () => ipcRenderer.sendSync(IPC.SESSION_LOAD_SYNC),
-    save: (state) => ipcRenderer.send(IPC.SESSION_SAVE, state)
+    save: (state) => ipcRenderer.send(IPC.SESSION_SAVE, state),
+    saveSync: (state) => {
+      ipcRenderer.sendSync(IPC.SESSION_SAVE_SYNC, state)
+    }
   },
 
   review: {

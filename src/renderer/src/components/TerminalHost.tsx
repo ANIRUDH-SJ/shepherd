@@ -8,7 +8,7 @@ import '@xterm/xterm/css/xterm.css'
 import { TERMINAL_SCROLLBACK_LINES } from '../../../shared/terminalMemory'
 import type { TerminalLinkTarget } from '../../../shared/terminalLinks'
 import type { AppearanceSnapshot } from '../../../shared/appearance'
-import { getFontSize } from '../settings'
+import { getFontSize, getRendererPreferences, type RendererPreferences } from '../settings'
 import { RENDERER_EVENT } from '../events'
 import { terminalPanelId, terminalTabId } from '../terminalChrome'
 import {
@@ -120,13 +120,14 @@ export default function TerminalHost({
     }
 
     const initialAppearance = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
+    let activePresetId = getRendererPreferences().themePresetId
     const term = new Terminal({
       ...TERMINAL_FIND_TERMINAL_OPTIONS,
       fontFamily: '"JetBrains Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace',
       fontSize: getFontSize(),
       scrollback: TERMINAL_SCROLLBACK_LINES,
       cursorBlink: true,
-      theme: terminalThemeForAppearance(initialAppearance),
+      theme: terminalThemeForAppearance(initialAppearance, activePresetId),
       linkHandler: {
         allowNonHttpProtocols: true,
         activate: (event, value) => {
@@ -275,10 +276,18 @@ export default function TerminalHost({
     const onAppearance = (e: Event): void => {
       const snapshot = (e as CustomEvent<AppearanceSnapshot>).detail
       if (snapshot?.resolved === 'light' || snapshot?.resolved === 'dark') {
-        term.options.theme = terminalThemeForAppearance(snapshot.resolved)
+        term.options.theme = terminalThemeForAppearance(snapshot.resolved, activePresetId)
       }
     }
+    const onPreferences = (e: Event): void => {
+      const preferences = (e as CustomEvent<RendererPreferences>).detail
+      if (!preferences || preferences.themePresetId === activePresetId) return
+      activePresetId = preferences.themePresetId
+      const appearance = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
+      term.options.theme = terminalThemeForAppearance(appearance, activePresetId)
+    }
     window.addEventListener(RENDERER_EVENT.appearance, onAppearance)
+    window.addEventListener(RENDERER_EVENT.preferences, onPreferences)
     window.addEventListener(RENDERER_EVENT.fontSize, onFontSize)
     window.addEventListener(RENDERER_EVENT.focusSurface, onFocusSurface)
     window.addEventListener(RENDERER_EVENT.terminalFind, onTerminalFind)
@@ -289,6 +298,7 @@ export default function TerminalHost({
       if (startupReadyFrame !== null) window.cancelAnimationFrame(startupReadyFrame)
       observer.disconnect()
       window.removeEventListener(RENDERER_EVENT.appearance, onAppearance)
+      window.removeEventListener(RENDERER_EVENT.preferences, onPreferences)
       window.removeEventListener(RENDERER_EVENT.fontSize, onFontSize)
       window.removeEventListener(RENDERER_EVENT.focusSurface, onFocusSurface)
       window.removeEventListener(RENDERER_EVENT.terminalFind, onTerminalFind)

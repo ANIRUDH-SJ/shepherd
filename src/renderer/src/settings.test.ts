@@ -83,7 +83,7 @@ store.set(
     version: RENDERER_PREFERENCES_VERSION,
     terminalFontSize: 14,
     appearanceMode: 'sepia',
-    terminalPaletteId: 'system'
+    themePresetId: 'system'
   })
 )
 assert(
@@ -108,13 +108,38 @@ assert(
 const appearance = setAppearanceMode('light')
 assert(appearance.appearanceMode === 'light', 'appearance setter persists a valid mode')
 assert(
-  appearance.terminalFontSize === DEFAULT_FONT_SIZE && appearance.terminalPaletteId === 'system',
+  appearance.terminalFontSize === DEFAULT_FONT_SIZE && appearance.themePresetId === 'system',
   'appearance update preserves unrelated preferences'
 )
 assert(lastType === RENDERER_EVENT.preferences, 'preference update broadcasts the full schema')
 
 const invalid = updateRendererPreferences({ appearanceMode: 'invalid' as 'system' })
 assert(invalid.appearanceMode === 'light', 'invalid patch does not replace a valid mode')
+const themed = updateRendererPreferences({ themePresetId: 'tokyo-night' })
+assert(themed.themePresetId === 'tokyo-night', 'theme setter persists a valid preset')
+assert(themed.appearanceMode === 'light', 'theme update preserves appearance mode')
+assert(lastType === RENDERER_EVENT.preferences, 'theme update broadcasts to live terminals')
+assert(
+  updateRendererPreferences({ themePresetId: 'unknown' as 'system' }).themePresetId ===
+    'tokyo-night',
+  'unknown theme update keeps the current preset'
+)
+
+store.clear()
+store.set(
+  RENDERER_PREFERENCES_KEY,
+  JSON.stringify({
+    version: 2,
+    terminalFontSize: 17,
+    appearanceMode: 'light',
+    terminalPaletteId: 'system'
+  })
+)
+const migratedV2 = getRendererPreferences()
+assert(migratedV2.version === 3, 'migrates version-two renderer preferences')
+assert(migratedV2.themePresetId === 'system', 'maps the old terminal palette to Shepherd')
+assert(migratedV2.terminalFontSize === 17, 'preserves the font size during migration')
+assert(migratedV2.appearanceMode === 'light', 'preserves appearance during migration')
 
 store.clear()
 store.set(
@@ -127,13 +152,28 @@ store.set(
   })
 )
 const migratedGraphite = getRendererPreferences()
-assert(migratedGraphite.version === 2, 'migrates version-one renderer preferences')
+assert(migratedGraphite.version === 3, 'migrates version-one renderer preferences')
 assert(migratedGraphite.terminalFontSize === 15, 'preserves font size during palette migration')
 assert(migratedGraphite.appearanceMode === 'dark', 'preserves appearance during palette migration')
-assert(migratedGraphite.terminalPaletteId === 'system', 'migrates Graphite to the system palette')
+assert(migratedGraphite.themePresetId === 'system', 'migrates Graphite to the Shepherd theme')
 assert(
-  JSON.parse(store.get(RENDERER_PREFERENCES_KEY) ?? '{}').terminalPaletteId === 'system',
-  'persists the migrated system palette'
+  JSON.parse(store.get(RENDERER_PREFERENCES_KEY) ?? '{}').themePresetId === 'system',
+  'persists the migrated Shepherd theme'
+)
+
+store.clear()
+store.set(
+  RENDERER_PREFERENCES_KEY,
+  JSON.stringify({
+    version: 3,
+    terminalFontSize: 15,
+    appearanceMode: 'dark',
+    themePresetId: 'untrusted'
+  })
+)
+assert(
+  getRendererPreferences().themePresetId === 'system',
+  'unknown stored theme falls back safely'
 )
 
 console.log(failures === 0 ? '\n✅ ALL SETTINGS TESTS PASS' : `\n❌ ${failures} FAILURE(S)`)

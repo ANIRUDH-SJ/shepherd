@@ -11,6 +11,14 @@
 - Bound review actions to the requesting renderer's live terminal and revalidate
   the Git root and selected path before each operation.
 
+### Sessions
+
+- Restore all workspaces, their layouts, and their bounded notification inboxes
+  on launch, while starting fresh shells and clearing ephemeral agent state.
+- Keep terminals alive after window close where a system tray is available;
+  expose Show and Quit actions in the tray.
+- Replace session snapshots atomically and flush the latest layout on quit.
+
 ### Workbench
 
 - Aligned the shell with cmux's compact hierarchy: a stable workspace titlebar,

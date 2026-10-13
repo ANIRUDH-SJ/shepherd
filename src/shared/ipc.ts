@@ -56,6 +56,7 @@ export const IPC = {
   // session persistence
   SESSION_LOAD_SYNC: 'session:load', // renderer → main (synchronous, once at startup)
   SESSION_SAVE: 'session:save', // renderer → main (debounced)
+  SESSION_SAVE_SYNC: 'session:save-sync', // renderer → main (synchronous, before unload)
   // one-shot startup lifecycle
   STARTUP_FIRST_TERMINAL_READY: 'startup:first-terminal-ready', // renderer → main
   // opt-in startup diagnostics
@@ -179,6 +180,8 @@ export interface ShepherdApi {
     loadSync(): unknown
     /** Persist the current app state (called debounced on change). */
     save(state: unknown): void
+    /** Flush the latest snapshot before an explicit quit or renderer unload. */
+    saveSync(state: unknown): void
   }
   review: {
     status(request: ReviewRequest): Promise<ReviewStatus>

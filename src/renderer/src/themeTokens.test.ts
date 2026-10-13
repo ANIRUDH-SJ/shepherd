@@ -1,6 +1,8 @@
 /// <reference types="node" />
 
 import { readFileSync } from 'node:fs'
+import { terminalThemeForAppearance } from './terminalTheme'
+import { THEME_PRESETS } from './themePresets'
 
 const css = readFileSync(new URL('./App.css', import.meta.url), 'utf8')
 
@@ -43,9 +45,48 @@ for (const token of requiredTokens) {
 
 const rootBlock = css.match(/:root\s*\{[\s\S]*?\n\}/)?.[0] ?? ''
 const lightBlock = css.match(/:root\[data-theme='light'\]\s*\{[\s\S]*?\n\}/)?.[0] ?? ''
-const componentCss = css.replace(rootBlock, '').replace(lightBlock, '')
+const presetBlocks = [
+  ...css.matchAll(/:root\[data-theme-preset='([^']+)'\]\[data-theme='([^']+)'\]\s*\{[\s\S]*?\n\}/g)
+]
+const componentCss = presetBlocks.reduce(
+  (remaining, block) => remaining.replace(block[0], ''),
+  css.replace(rootBlock, '').replace(lightBlock, '')
+)
 assert(rootBlock.length > 0, 'defines a root token boundary')
 assert(lightBlock.length > 0, 'defines a light token boundary')
+for (const { id: preset } of THEME_PRESETS.filter((item) => item.id !== 'system')) {
+  for (const appearance of ['dark', 'light'] as const) {
+    const block = presetBlocks.find((match) => match[1] === preset && match[2] === appearance)?.[0]
+    assert(Boolean(block), `${preset} ${appearance} overrides app tokens`)
+    assert(Boolean(block?.includes('--color-canvas:')), `${preset} ${appearance} has a canvas`)
+    assert(Boolean(block?.includes('--color-text:')), `${preset} ${appearance} has readable text`)
+    const canvas = block?.match(/--color-canvas:\s*(#[\da-f]{6})/i)?.[1]
+    const text = block?.match(/--color-text:\s*(#[\da-f]{6})/i)?.[1]
+    const sidebar = block?.match(/--color-sidebar:\s*(#[\da-f]{6})/i)?.[1]
+    const muted = block?.match(/--color-text-muted:\s*(#[\da-f]{6})/i)?.[1]
+    const selection = block?.match(/--color-selection:\s*(#[\da-f]{6})/i)?.[1]
+    const selectionText = block?.match(/--color-selection-text:\s*(#[\da-f]{6})/i)?.[1]
+    if (canvas && text) {
+      assert(contrast(canvas, text) >= 7, `${preset} ${appearance} text meets AAA contrast`)
+      assert(
+        canvas === terminalThemeForAppearance(appearance, preset).background,
+        `${preset} ${appearance} chrome matches terminal backdrop`
+      )
+    }
+    if (sidebar && muted) {
+      assert(
+        contrast(sidebar, muted) >= 4.5,
+        `${preset} ${appearance} muted text meets AA contrast`
+      )
+    }
+    if (selection && selectionText) {
+      assert(
+        contrast(selection, selectionText) >= 4.5,
+        `${preset} ${appearance} selected text meets AA contrast`
+      )
+    }
+  }
+}
 assert(
   !/(?:#[\da-f]{3,8}|rgba?\()/i.test(componentCss),
   'keeps raw color values inside the token boundary'
