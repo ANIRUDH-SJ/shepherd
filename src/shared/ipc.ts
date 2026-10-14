@@ -2,6 +2,7 @@
 
 import type { AgentRecord } from './agent'
 import type { AppearanceMode, AppearanceSnapshot } from './appearance'
+import type { NotificationPolicy } from './notificationPolicy'
 import type { RendererRuntimePerformanceMarkName } from './runtimePerformance'
 import type {
   ReviewCommitRequest,
@@ -39,6 +40,8 @@ export const IPC = {
   PREVIEW_OPEN_EXTERNAL: 'preview:open-external',
   APPEARANCE_GET_SYNC: 'appearance:get-sync',
   APPEARANCE_SET: 'appearance:set',
+  NOTIFICATION_POLICY_GET: 'notification-policy:get',
+  NOTIFICATION_POLICY_SET: 'notification-policy:set',
   REVIEW_STATUS: 'review:status',
   REVIEW_DIFF: 'review:diff',
   REVIEW_STAGE: 'review:stage',
@@ -168,6 +171,10 @@ export interface ShepherdApi {
     setMode(mode: AppearanceMode): Promise<AppearanceSnapshot>
     /** Subscribe to OS or explicit appearance changes. */
     onChanged(cb: (snapshot: AppearanceSnapshot) => void): () => void
+  }
+  notifications: {
+    getPolicy(): Promise<NotificationPolicy>
+    setPolicy(policy: NotificationPolicy): Promise<NotificationPolicy>
   }
   socket: {
     /** Mirror the renderer's workspace list to main (for id/name resolution). */
