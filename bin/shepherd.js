@@ -60,7 +60,7 @@ if (!method || method === '-h' || method === '--help') {
 Usage:
   shepherd welcome                        show the first-launch guide again
   shepherd set-status <text>              set this workspace's sidebar subtitle
-  shepherd notify --title T --body B      flash this workspace + a desktop toast
+  shepherd notify --title T --body B      notify the inbox; desktop alert if enabled
   shepherd log <text>                     append a status line
   shepherd list-workspaces                list open workspaces
   shepherd new-workspace [--name N]       create a workspace
