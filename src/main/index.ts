@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, nativeTheme, Tray } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, nativeTheme, Tray } from 'electron'
 import { performance } from 'node:perf_hooks'
 import { join } from 'path'
 import { registerPtyIpc, killAllTerminals } from './pty'
@@ -180,6 +180,13 @@ app.whenReady().then(() => {
   // Wire up the terminal IPC handlers before any window loads.
   configurePreviewSecurity()
   registerNotificationPolicyIpc()
+  ipcMain.handle(IPC.WORKSPACE_CHOOSE_DIRECTORY, async () => {
+    const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+    const result = window
+      ? await dialog.showOpenDialog(window, { properties: ['openDirectory'] })
+      : await dialog.showOpenDialog({ properties: ['openDirectory'] })
+    return result.canceled ? null : (result.filePaths[0] ?? null)
+  })
   registerPtyIpc(runtimePerformance.enabled ? (name) => runtimePerformance.mark(name) : undefined)
   registerReviewIpc()
   ipcMain.on(IPC.PERFORMANCE_MARK, (_event, name: unknown) => {

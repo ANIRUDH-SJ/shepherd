@@ -15,9 +15,11 @@ import {
 } from '../settings'
 import { terminalThemeForAppearance } from '../terminalTheme'
 import { THEME_PRESETS } from '../themePresets'
+import type { WorkspaceTemplate } from '../workspaceTemplates'
 import DialogFrame from './DialogFrame'
 import type { Workspace } from '../state/appReducer'
 import NotificationRoutingSettings from './NotificationRoutingSettings'
+import WorkspaceTemplateSettings from './WorkspaceTemplateSettings'
 
 const SETTINGS_CATEGORIES = [
   'Appearance',
@@ -35,6 +37,10 @@ interface Props {
   onOpenHelp: () => void
   onClose: () => void
   workspaces: Workspace[]
+  templates: WorkspaceTemplate[]
+  defaultDirectory: string
+  onTemplatesChange: (templates: WorkspaceTemplate[]) => void
+  onUseTemplate: (template: WorkspaceTemplate) => void
 }
 
 function appearanceLabel(mode: AppearanceMode): string {
@@ -44,7 +50,11 @@ function appearanceLabel(mode: AppearanceMode): string {
 export default function SettingsDialog({
   onOpenHelp,
   onClose,
-  workspaces
+  workspaces,
+  templates,
+  defaultDirectory,
+  onTemplatesChange,
+  onUseTemplate
 }: Props): React.JSX.Element {
   const [category, setCategory] = useState<SettingsCategory>('Appearance')
   const [preferences, setPreferences] = useState<RendererPreferences>(getRendererPreferences)
@@ -285,7 +295,7 @@ export default function SettingsDialog({
                 <div className="settings-setting-head">
                   <span>
                     <strong>Session restore</strong>
-                    <small>The active workspace layout and bounded inbox restore on launch.</small>
+                    <small>Every workspace layout and bounded inbox restores on launch.</small>
                   </span>
                   <span className="settings-value">Enabled</span>
                 </div>
@@ -301,6 +311,12 @@ export default function SettingsDialog({
                   <span className="settings-value">Available</span>
                 </div>
               </section>
+              <WorkspaceTemplateSettings
+                templates={templates}
+                defaultDirectory={defaultDirectory}
+                onChange={onTemplatesChange}
+                onUse={onUseTemplate}
+              />
             </div>
           )}
 
