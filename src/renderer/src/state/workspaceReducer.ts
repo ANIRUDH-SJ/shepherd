@@ -51,7 +51,7 @@ export function initialWorkspace(): WorkspaceState {
 export function splitAction(paneId: string, direction: 'row' | 'column'): WorkspaceAction {
   return { type: 'split', paneId, direction, newPane: makePane(makeSurface()) }
 }
-export function newSurfaceAction(paneId: string): WorkspaceAction {
+export function newSurfaceAction(paneId: string): Extract<WorkspaceAction, { type: 'newSurface' }> {
   return { type: 'newSurface', paneId, surface: makeSurface() }
 }
 export function previewSplitAction(paneId: string, url: string): WorkspaceAction {

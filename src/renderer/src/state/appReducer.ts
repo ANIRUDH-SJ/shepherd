@@ -47,6 +47,7 @@ import {
 export interface Workspace {
   id: string
   name: string
+  templateId: string | null
   cwd: string
   projectName: string
   gitRoot: string | null
@@ -76,11 +77,16 @@ export interface AppState {
 
 /** Mint a new workspace with one terminal. The display NAME is positional
  *  ("workspace N", by sidebar position) unless a custom `name` is given. */
-export function makeWorkspace(name?: string, cwd = '~'): Workspace {
+export function makeWorkspace(
+  name?: string,
+  cwd = '~',
+  templateId: string | null = null
+): Workspace {
   const pane = makePane(makeSurface())
   return {
     id: `ws-${crypto.randomUUID()}`,
     name: normalizeWorkspaceName(name ?? ''),
+    templateId,
     cwd,
     projectName: workspaceProjectName(cwd),
     gitRoot: null,
@@ -145,6 +151,7 @@ export function sanitizeRestored(raw: unknown): AppState | null {
     workspaces.push({
       id: entry.id,
       name: typeof entry.name === 'string' ? entry.name : '',
+      templateId: typeof entry.templateId === 'string' ? entry.templateId : null,
       cwd: typeof entry.cwd === 'string' ? entry.cwd : '~',
       projectName: workspaceProjectName(typeof entry.cwd === 'string' ? entry.cwd : '~'),
       gitRoot: null,
@@ -182,6 +189,7 @@ export function toLayoutSnapshot(state: AppState): {
   workspaces: Array<{
     id: string
     name: string
+    templateId: string | null
     cwd: string
     root: LayoutNode
     activePaneId: string
@@ -194,6 +202,7 @@ export function toLayoutSnapshot(state: AppState): {
     workspaces: state.workspaces.map((workspace) => ({
       id: workspace.id,
       name: workspace.name,
+      templateId: workspace.templateId,
       cwd: workspace.cwd,
       root: workspace.root,
       activePaneId: workspace.activePaneId
@@ -227,8 +236,8 @@ export type AppAction =
   | { type: 'pane'; workspaceId: string; action: WorkspaceAction }
 
 // ── Action creators ──────────────────────────────────────────────────────────
-export function createWorkspaceAction(name?: string, cwd?: string): AppAction {
-  return { type: 'createWorkspace', workspace: makeWorkspace(name, cwd) }
+export function createWorkspaceAction(name?: string, cwd?: string, templateId?: string): AppAction {
+  return { type: 'createWorkspace', workspace: makeWorkspace(name, cwd, templateId ?? null) }
 }
 /** Wrap a pane-level (M2) action so it targets a specific workspace's tree. */
 export function paneAction(workspaceId: string, action: WorkspaceAction): AppAction {

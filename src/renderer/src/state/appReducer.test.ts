@@ -67,6 +67,19 @@ assert(
   cwdCreate.type === 'createWorkspace' && cwdCreate.workspace.projectName === 'project-worktree',
   'workspace creation derives an initial project label'
 )
+const templateCreate = createWorkspaceAction('Web app', '/tmp/web-app', 'template-1')
+assert(
+  templateCreate.type === 'createWorkspace' && templateCreate.workspace.templateId === 'template-1',
+  'workspace creation attaches a saved template id'
+)
+if (templateCreate.type === 'createWorkspace') {
+  const templateState = appReducer(initialApp(), templateCreate)
+  const restoredTemplate = sanitizeRestored(toLayoutSnapshot(templateState))
+  assert(
+    restoredTemplate?.workspaces[1].templateId === 'template-1',
+    'template association restores'
+  )
+}
 
 let metadataState = initialApp()
 const metadataWorkspace = active(metadataState)
