@@ -99,6 +99,21 @@ actionable blocks and unseen completion records are selected from current agent
 and notification state. Focusing an item reuses the stored workspace, pane,
 surface, and agent identifiers.
 
+## Notification routing
+
+Socket and terminal OSC notifications always reach the renderer’s bounded inbox.
+Only native desktop toasts consult `NotificationPolicy` in the main process. Its
+versioned JSON record is atomically replaced under Electron user data; the
+renderer edits it through the restricted preload bridge. The pure routing rule
+combines global mode, focused-window/workspace context, local-time quiet hours,
+and a per-workspace override. Quiet hours have highest precedence. Closed
+workspace overrides are pruned from the policy file.
+
+Clicking a desktop toast shows/focuses the existing Electron window and selects
+the notification’s workspace when it is still open. No notification content is
+persisted in the policy file; the inbox remains part of the bounded session
+snapshot.
+
 ## Workspace metadata
 
 The main process inspects only the active terminal target for each workspace. It

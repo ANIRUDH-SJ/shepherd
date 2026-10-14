@@ -83,6 +83,8 @@ command-line agents.
 - Bounded agent inspection, filtered snapshots, waits, and live subscriptions
 - A bounded notification center with unread navigation, resolution, and
   workspace targeting
+- Desktop alert routing with quiet hours and per-workspace overrides; the inbox
+  keeps every event regardless of alert settings
 - Status, log, usage, and notification reporting over the socket API
 - Git worktree workspace creation
 - Local workspace templates with a chosen repository folder and explicit Setup/Run commands
@@ -265,6 +267,20 @@ action opens a fresh terminal tab in the template folder and sends the displayed
 command to its shell. Commands never run merely because you opened a template,
 restored a session, or switched workspaces. You can edit or delete templates in
 Settings; an existing workspace remains open if its template is deleted.
+
+### Notification delivery
+
+Open **Settings → Notifications** to show desktop alerts for every event, only
+when Shepherd or the event’s workspace is in the background, or never. Quiet
+hours use your computer’s local time and can cross midnight. Each open workspace
+can inherit the global mode, always allow a desktop alert, or use the inbox only.
+Quiet hours take precedence over workspace overrides.
+
+These choices affect operating-system toasts, not the in-app inbox: socket,
+terminal OSC, and agent notifications still appear there with their unread and
+resolution state. Clicking a desktop alert brings Shepherd forward and selects
+its workspace when one is known. Desktop alerts also depend on support from your
+Linux notification service.
 
 ## Agent-Aware Automation
 

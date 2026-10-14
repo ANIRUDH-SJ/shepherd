@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Notification delivery
+
+- Added global desktop-alert modes, local-time quiet hours, and per-workspace
+  routing overrides without suppressing the in-app notification inbox.
+- Desktop alerts now reopen Shepherd and select the relevant workspace when
+  clicked; closed-workspace overrides are pruned.
+
 ### Workspace templates
 
 - Added local workspace templates with a native repository-folder picker and

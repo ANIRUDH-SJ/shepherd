@@ -53,6 +53,17 @@ The notification inbox remains separate. It receives bounded socket, OSC, and
 agent-lifecycle records, supports unread navigation, and distinguishes reading an
 item from resolving the underlying event.
 
+Desktop alerts are configured in Settings → Notifications. The global route can
+show every alert, show only background alerts, or turn desktop alerts off. Quiet
+hours suppress toasts using local time, including overnight ranges; each open
+workspace can override the global route except during quiet hours. These rules
+never remove an inbox record or suppress its unread state. A clicked desktop
+alert reopens a hidden workbench and selects the related workspace.
+
+![Desktop notification and quiet-hours settings](images/notification-routing-settings.png)
+
+![Per-workspace desktop alert routing](images/notification-workspace-routing.png)
+
 ## Pane and tab chrome
 
 The workspace uses a 34-pixel identity titlebar above each pane's 30-pixel tab

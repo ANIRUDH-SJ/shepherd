@@ -14,6 +14,9 @@ conformance claim.
   inspector close with Escape and restore their opening focus where appropriate.
 - Selecting an Attention or inspector agent item moves focus into that agent's
   actual xterm input, not merely its surrounding pane.
+- Notification routing has labeled mode and workspace selectors, labeled local
+  start/end time fields, and an explicit Save schedule action. Turning off
+  desktop alerts never hides unread inbox items.
 - Workspace templates have labeled form fields and explicit Open, Edit, Delete,
   Setup, and Run actions. Commands are shown before they are sent to a new tab.
 
