@@ -1044,6 +1044,96 @@ body.resizing * {
 .settings-group-list {
   padding: 0 var(--space-7) var(--space-7);
 }
+.settings-notice,
+.settings-hint {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.settings-notice {
+  padding: var(--space-7);
+}
+.notification-policy-field,
+.notification-quiet-controls label,
+.notification-workspace-routes label {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+.notification-policy-field {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+.notification-quiet-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+.notification-quiet-controls label:not(.notification-policy-check) {
+  display: grid;
+  gap: var(--space-2);
+}
+.notification-policy-check {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--space-2);
+}
+.notification-workspace-routes {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+.notification-workspace-routes label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.notification-workspace-routes label span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.notification-policy-field select,
+.notification-quiet-controls input[type='time'],
+.notification-workspace-routes select {
+  min-height: 34px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-input-overlay);
+  color: var(--color-text);
+  font: 12px var(--font-ui);
+}
+.notification-workspace-routes select {
+  max-width: 60%;
+}
+.notification-quiet-controls button {
+  min-height: 34px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: 12px var(--font-ui);
+}
+.notification-quiet-controls button:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+.notification-quiet-controls button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.settings-form-error {
+  color: var(--color-danger);
+  font-size: 12px;
+}
 .settings-group {
   padding: 16px 0;
   border-bottom: 1px solid var(--color-border);

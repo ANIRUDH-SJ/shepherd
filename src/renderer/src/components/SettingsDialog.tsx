@@ -16,6 +16,8 @@ import {
 import { terminalThemeForAppearance } from '../terminalTheme'
 import { THEME_PRESETS } from '../themePresets'
 import DialogFrame from './DialogFrame'
+import type { Workspace } from '../state/appReducer'
+import NotificationRoutingSettings from './NotificationRoutingSettings'
 
 const SETTINGS_CATEGORIES = [
   'Appearance',
@@ -32,13 +34,18 @@ type SettingsCategory = (typeof SETTINGS_CATEGORIES)[number]
 interface Props {
   onOpenHelp: () => void
   onClose: () => void
+  workspaces: Workspace[]
 }
 
 function appearanceLabel(mode: AppearanceMode): string {
   return mode[0].toUpperCase() + mode.slice(1)
 }
 
-export default function SettingsDialog({ onOpenHelp, onClose }: Props): React.JSX.Element {
+export default function SettingsDialog({
+  onOpenHelp,
+  onClose,
+  workspaces
+}: Props): React.JSX.Element {
   const [category, setCategory] = useState<SettingsCategory>('Appearance')
   const [preferences, setPreferences] = useState<RendererPreferences>(getRendererPreferences)
   const [resolvedAppearance, setResolvedAppearance] = useState<ResolvedAppearance>(
@@ -270,30 +277,7 @@ export default function SettingsDialog({ onOpenHelp, onClose }: Props): React.JS
             </div>
           )}
 
-          {category === 'Notifications' && (
-            <div className="settings-group-list">
-              <section className="settings-group">
-                <div className="settings-setting-head">
-                  <span>
-                    <strong>Notification inbox</strong>
-                    <small>Agent and OSC events remain local and can jump to their terminal.</small>
-                  </span>
-                  <span className="settings-value">Enabled</span>
-                </div>
-              </section>
-              <section className="settings-group">
-                <div className="settings-setting-head">
-                  <span>
-                    <strong>Focused-workspace suppression</strong>
-                    <small>
-                      Background attention remains visible without interrupting active work.
-                    </small>
-                  </span>
-                  <span className="settings-value">Automatic</span>
-                </div>
-              </section>
-            </div>
-          )}
+          {category === 'Notifications' && <NotificationRoutingSettings workspaces={workspaces} />}
 
           {category === 'Workspaces' && (
             <div className="settings-group-list">

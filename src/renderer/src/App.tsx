@@ -620,6 +620,7 @@ export default function App(): React.JSX.Element {
         <SettingsDialog
           onOpenHelp={() => setUtilityOverlay('help')}
           onClose={() => setUtilityOverlay(null)}
+          workspaces={state.workspaces}
         />
       )}
       {utilityOverlay === 'preview' && (
