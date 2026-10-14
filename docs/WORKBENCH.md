@@ -100,6 +100,10 @@ sends the command only after its PTY is ready. Commands are transient and are
 not replayed during session restoration. Editing or deleting a template does
 not close existing workspaces.
 
+![Saved workspace template in Settings](images/workspace-template-settings.png)
+
+![Setup and Run actions in the workspace inspector](images/workspace-template-inspector.png)
+
 ## Localhost preview
 
 Preview surfaces accept loopback URLs only. The main process applies a dedicated
