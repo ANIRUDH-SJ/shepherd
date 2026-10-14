@@ -12,6 +12,7 @@ import {
 import { writeSessionSnapshot } from './sessionFile'
 
 let cachedPolicy: NotificationPolicy | null = null
+const liveToasts = new Set<Notification>()
 
 function policyPath(): string {
   return join(app.getPath('userData'), 'notification-policy.json')
@@ -88,7 +89,14 @@ export function showDesktopNotification(input: {
     title: safeText(input.title, 120) || 'Shepherd',
     body: safeText(input.body, 500)
   })
+  if (liveToasts.size >= 32) {
+    const oldest = liveToasts.values().next().value
+    if (oldest) liveToasts.delete(oldest)
+  }
+  liveToasts.add(notification)
+  notification.on('close', () => liveToasts.delete(notification))
   notification.on('click', () => {
+    liveToasts.delete(notification)
     const window = BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed())
     if (!window) return
     if (window.isMinimized()) window.restore()
