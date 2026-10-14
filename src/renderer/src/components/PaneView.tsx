@@ -30,6 +30,8 @@ interface Props {
   welcomeSurfaceId: string | null
   terminalNumbers: Map<string, number>
   dispatch: Dispatch<WorkspaceAction>
+  pendingCommand: (surfaceId: string) => { command: string; cwd: string } | null
+  consumeCommand: (surfaceId: string) => void
 }
 
 export default function PaneView({
@@ -44,7 +46,9 @@ export default function PaneView({
   cwd,
   welcomeSurfaceId,
   terminalNumbers,
-  dispatch
+  dispatch,
+  pendingCommand,
+  consumeCommand
 }: Props): React.JSX.Element {
   return (
     <div
@@ -86,6 +90,8 @@ export default function PaneView({
               active={surface.id === pane.activeSurfaceId}
               focused={workspaceActive && active && surface.id === pane.activeSurfaceId}
               showWelcome={isWelcomeSurface(surface.id, welcomeSurfaceId)}
+              pendingCommand={pendingCommand}
+              consumeCommand={consumeCommand}
             />
           ) : (
             <PreviewHost

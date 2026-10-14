@@ -5,6 +5,7 @@ import { workspaceIdentity } from '../sidebarView'
 import type { Workspace } from '../state/appReducer'
 import { formatTokenCount, usageSummary } from '../usageView'
 import { localhostPreviewUrl, workspaceSessionSummary } from '../workspaceInspector'
+import type { WorkspaceTemplate } from '../workspaceTemplates'
 import Icon from './Icon'
 
 interface Props {
@@ -14,6 +15,8 @@ interface Props {
   onOpenPreview: (url: string) => void
   onOpenPullRequest: (url: string) => void
   onReview: () => void
+  template: WorkspaceTemplate | null
+  onRunTemplateCommand: (command: string) => void
   onFocusAgent: (agent: AgentRecord) => void
   onClose: () => void
 }
@@ -29,6 +32,8 @@ export default function WorkspaceInspector({
   onOpenPreview,
   onOpenPullRequest,
   onReview,
+  template,
+  onRunTemplateCommand,
   onFocusAgent,
   onClose
 }: Props): React.JSX.Element {
@@ -127,6 +132,35 @@ export default function WorkspaceInspector({
             Review changed files
           </button>
         </section>
+
+        {template && (
+          <section className="inspector-section" aria-labelledby="inspector-template">
+            <h2 id="inspector-template">{template.name} template</h2>
+            <p className="inspector-empty">
+              Commands open in a new terminal tab. They never rerun on restore.
+            </p>
+            {template.setupCommand && (
+              <button
+                type="button"
+                className="inspector-action"
+                title={template.setupCommand}
+                onClick={() => onRunTemplateCommand(template.setupCommand)}
+              >
+                Run setup <code>{template.setupCommand}</code>
+              </button>
+            )}
+            {template.runCommand && (
+              <button
+                type="button"
+                className="inspector-action"
+                title={template.runCommand}
+                onClick={() => onRunTemplateCommand(template.runCommand)}
+              >
+                Run app <code>{template.runCommand}</code>
+              </button>
+            )}
+          </section>
+        )}
 
         <section className="inspector-section" aria-labelledby="inspector-runtime">
           <h2 id="inspector-runtime">Runtime</h2>
