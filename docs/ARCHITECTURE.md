@@ -61,6 +61,14 @@ the main process replaces the session file atomically. Restoring a session
 creates fresh PTYs. It does not serialize a running process or retain
 ephemeral agent and usage telemetry.
 
+Workspace templates live in a separate versioned local-storage record. The
+renderer validates and caps their names, directories, and single-line commands;
+only a template identifier is associated with a workspace snapshot. Setup and
+Run create a new terminal surface on explicit user action. The pending command
+is held outside persisted layout state, and the renderer sends it only after
+the new PTY creation succeeds. No command is replayed when the session restores.
+The native directory picker is exposed through one preload IPC method.
+
 Where a system tray is available, closing the window hides it instead of
 destroying its renderer. The same window and PTYs continue running in the
 background, and Show restores them. Explicit Quit destroys the window and

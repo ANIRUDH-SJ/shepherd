@@ -87,6 +87,19 @@ Workspace metadata follows the active terminal. Git discovery is re-probed when
 the active terminal surface changes, preventing one surface's repository result
 from being reused for another.
 
+## Workspace templates
+
+Settings → Workspaces holds local templates. Each records a display name, a
+directory chosen with the native picker, and optional one-line Setup and Run
+commands. At least one command is required. Opening a template creates a
+workspace in that directory; it does not execute either command.
+
+The workspace inspector exposes the configured commands with their exact text.
+Choosing one creates a dedicated terminal tab in the template directory and
+sends the command only after its PTY is ready. Commands are transient and are
+not replayed during session restoration. Editing or deleting a template does
+not close existing workspaces.
+
 ## Localhost preview
 
 Preview surfaces accept loopback URLs only. The main process applies a dedicated
