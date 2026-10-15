@@ -67,7 +67,7 @@ export default function AgentAccessSettings(): React.JSX.Element {
             </small>
           </span>
         </div>
-        <p className="settings-notice">
+        <p className="settings-hint">
           Adapters report state, activity, and an optional short message. Automatic discovery reads
           foreground process names. Shepherd does not verify the provider name supplied by a local
           socket client.
@@ -83,7 +83,7 @@ export default function AgentAccessSettings(): React.JSX.Element {
             </small>
           </span>
         </div>
-        <label className="notification-policy-field">
+        <label className="agent-access-toggle">
           <input
             type="checkbox"
             checked={policy.terminalInspection}
@@ -92,7 +92,7 @@ export default function AgentAccessSettings(): React.JSX.Element {
           />
           Allow clients to inspect bounded terminal output and process context
         </label>
-        <label className="notification-policy-field">
+        <label className="agent-access-toggle">
           <input
             type="checkbox"
             checked={policy.terminalInput}
@@ -101,7 +101,7 @@ export default function AgentAccessSettings(): React.JSX.Element {
           />
           Allow clients to send text and keys to a terminal
         </label>
-        <p className="settings-notice">
+        <p className="settings-hint">
           Agent status reporting and read-only state queries remain available. Use{' '}
           <code>shepherd agent-permissions</code> to inspect the active policy.
         </p>
