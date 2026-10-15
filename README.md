@@ -85,6 +85,7 @@ command-line agents.
   workspace targeting
 - Status, log, usage, and notification reporting over the socket API
 - Git worktree workspace creation
+- Local workspace templates with a chosen repository folder and explicit Setup/Run commands
 - An on-demand Git review panel for changed files, bounded diffs, file staging,
   `npm test`, staged-file commits, and pull-request diffs
 - All-workspace session restoration, including cwd, tabs, panes, layout, safe
@@ -251,6 +252,19 @@ name.
 
 Settings is also available from the labeled sidebar footer or the gear button
 when the sidebar is collapsed.
+
+### Workspace templates
+
+Open **Settings → Workspaces** to save a template with a name, a repository
+folder, and a one-line Setup or Run command. The folder uses the native directory
+picker. Select **Open** on a saved template to create a workspace rooted there.
+The template stays on this machine; it is not written into the repository.
+
+Open that workspace's inspector to choose **Run setup** or **Run app**. Each
+action opens a fresh terminal tab in the template folder and sends the displayed
+command to its shell. Commands never run merely because you opened a template,
+restored a session, or switched workspaces. You can edit or delete templates in
+Settings; an existing workspace remains open if its template is deleted.
 
 ## Agent-Aware Automation
 

@@ -14,6 +14,8 @@ conformance claim.
   inspector close with Escape and restore their opening focus where appropriate.
 - Selecting an Attention or inspector agent item moves focus into that agent's
   actual xterm input, not merely its surrounding pane.
+- Workspace templates have labeled form fields and explicit Open, Edit, Delete,
+  Setup, and Run actions. Commands are shown before they are sent to a new tab.
 
 The complete global shortcut table is in the main [README](../README.md#keyboard-and-mouse).
 

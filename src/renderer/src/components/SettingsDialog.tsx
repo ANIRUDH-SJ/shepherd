@@ -15,7 +15,9 @@ import {
 } from '../settings'
 import { terminalThemeForAppearance } from '../terminalTheme'
 import { THEME_PRESETS } from '../themePresets'
+import type { WorkspaceTemplate } from '../workspaceTemplates'
 import DialogFrame from './DialogFrame'
+import WorkspaceTemplateSettings from './WorkspaceTemplateSettings'
 
 const SETTINGS_CATEGORIES = [
   'Appearance',
@@ -32,13 +34,24 @@ type SettingsCategory = (typeof SETTINGS_CATEGORIES)[number]
 interface Props {
   onOpenHelp: () => void
   onClose: () => void
+  templates: WorkspaceTemplate[]
+  defaultDirectory: string
+  onTemplatesChange: (templates: WorkspaceTemplate[]) => void
+  onUseTemplate: (template: WorkspaceTemplate) => void
 }
 
 function appearanceLabel(mode: AppearanceMode): string {
   return mode[0].toUpperCase() + mode.slice(1)
 }
 
-export default function SettingsDialog({ onOpenHelp, onClose }: Props): React.JSX.Element {
+export default function SettingsDialog({
+  onOpenHelp,
+  onClose,
+  templates,
+  defaultDirectory,
+  onTemplatesChange,
+  onUseTemplate
+}: Props): React.JSX.Element {
   const [category, setCategory] = useState<SettingsCategory>('Appearance')
   const [preferences, setPreferences] = useState<RendererPreferences>(getRendererPreferences)
   const [resolvedAppearance, setResolvedAppearance] = useState<ResolvedAppearance>(
@@ -301,7 +314,7 @@ export default function SettingsDialog({ onOpenHelp, onClose }: Props): React.JS
                 <div className="settings-setting-head">
                   <span>
                     <strong>Session restore</strong>
-                    <small>The active workspace layout and bounded inbox restore on launch.</small>
+                    <small>Every workspace layout and bounded inbox restores on launch.</small>
                   </span>
                   <span className="settings-value">Enabled</span>
                 </div>
@@ -317,6 +330,12 @@ export default function SettingsDialog({ onOpenHelp, onClose }: Props): React.JS
                   <span className="settings-value">Available</span>
                 </div>
               </section>
+              <WorkspaceTemplateSettings
+                templates={templates}
+                defaultDirectory={defaultDirectory}
+                onChange={onTemplatesChange}
+                onUse={onUseTemplate}
+              />
             </div>
           )}
 

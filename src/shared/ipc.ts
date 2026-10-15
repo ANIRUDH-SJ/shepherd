@@ -36,6 +36,7 @@ export const IPC = {
   TERM_DATA_ACK: 'terminal:data-ack',
   TERM_RESOLVE_FILE_LINKS: 'terminal:resolve-file-links',
   TERM_OPEN_LINK: 'terminal:open-link',
+  WORKSPACE_CHOOSE_DIRECTORY: 'workspace:choose-directory',
   PREVIEW_OPEN_EXTERNAL: 'preview:open-external',
   APPEARANCE_GET_SYNC: 'appearance:get-sync',
   APPEARANCE_SET: 'appearance:set',
@@ -139,6 +140,9 @@ export type PreviewOpenExternalResult = { ok: true } | { ok: false; error: strin
 // ── The bridge surface exposed as `window.api` (implemented in preload) ───────
 export interface ShepherdApi {
   version: string
+  workspace: {
+    chooseDirectory(): Promise<string | null>
+  }
   terminal: {
     /** Spawn a shell bound to `opts.id`. */
     create(opts: TermCreateOptions): Promise<void>

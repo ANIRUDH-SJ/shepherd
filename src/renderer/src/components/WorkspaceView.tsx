@@ -21,6 +21,8 @@ interface Props {
   welcomeSurfaceId: string | null
   dispatch: Dispatch<AppAction>
   onInspect: (workspaceId: string) => void
+  pendingCommand: (surfaceId: string) => { command: string; cwd: string } | null
+  consumeCommand: (surfaceId: string) => void
 }
 
 export default function WorkspaceView({
@@ -29,7 +31,9 @@ export default function WorkspaceView({
   active,
   welcomeSurfaceId,
   dispatch,
-  onInspect
+  onInspect,
+  pendingCommand,
+  consumeCommand
 }: Props): React.JSX.Element {
   const layerRef = useRef<HTMLDivElement | null>(null)
   const { panes, dividers } = useMemo(() => computeLayout(workspace.root), [workspace.root])
@@ -91,6 +95,8 @@ export default function WorkspaceView({
             welcomeSurfaceId={welcomeSurfaceId}
             terminalNumbers={terminalNumbers}
             dispatch={paneDispatch}
+            pendingCommand={pendingCommand}
+            consumeCommand={consumeCommand}
           />
         ))}
         {dividers.map((d) => (

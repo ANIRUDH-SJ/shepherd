@@ -21,6 +21,10 @@ let firstTerminalReadyReported = false
 const api: ShepherdApi = {
   version: '0.0.1',
 
+  workspace: {
+    chooseDirectory: () => ipcRenderer.invoke(IPC.WORKSPACE_CHOOSE_DIRECTORY)
+  },
+
   terminal: {
     create: (opts) => ipcRenderer.invoke(IPC.TERM_CREATE, opts),
     input: (msg) => ipcRenderer.send(IPC.TERM_INPUT, msg),

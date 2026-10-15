@@ -1044,6 +1044,106 @@ body.resizing * {
 .settings-group-list {
   padding: 0 var(--space-7) var(--space-7);
 }
+.workspace-template-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-6) 0;
+  padding: 0;
+  list-style: none;
+}
+.workspace-template-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.workspace-template-list li > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.workspace-template-list code {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font: 11px var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-template-list li > div,
+.workspace-template-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.workspace-template-list button,
+.workspace-template-form button {
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: 12px var(--font-ui);
+}
+.workspace-template-list button:hover,
+.workspace-template-form button:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+.workspace-template-form {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+.workspace-template-form h3 {
+  margin: 0;
+  font-size: 12px;
+}
+.workspace-template-form label {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+.workspace-template-form label small {
+  color: var(--color-text-muted);
+}
+.workspace-template-form input {
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-input-overlay);
+  color: var(--color-text);
+  font: 12px var(--font-ui);
+}
+.workspace-template-form input[readonly] {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+.workspace-template-directory {
+  display: flex;
+  gap: var(--space-2);
+}
+.settings-form-error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 12px;
+}
+.inspector-action code {
+  max-width: 60%;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font: 11px var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .settings-group {
   padding: 16px 0;
   border-bottom: 1px solid var(--color-border);

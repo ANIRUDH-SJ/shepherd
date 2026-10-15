@@ -54,6 +54,8 @@ interface Props {
   active: boolean
   focused: boolean
   showWelcome: boolean
+  pendingCommand: (surfaceId: string) => { command: string; cwd: string } | null
+  consumeCommand: (surfaceId: string) => void
 }
 
 export default function TerminalHost({
@@ -62,7 +64,9 @@ export default function TerminalHost({
   cwd,
   active,
   focused,
-  showWelcome
+  showWelcome,
+  pendingCommand,
+  consumeCommand
 }: Props): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const findInputRef = useRef<HTMLInputElement | null>(null)
@@ -227,14 +231,27 @@ export default function TerminalHost({
         new CustomEvent(RENDERER_EVENT.terminalExit, { detail: { surfaceId, exitCode: code } })
       )
     })
+    const startup = pendingCommand(surfaceId)
     const terminalCreation = window.api.terminal.create({
       id: surfaceId,
       workspaceId,
-      cwd,
+      cwd: startup?.cwd ?? cwd,
       cols: term.cols,
       rows: term.rows,
       ...(measuresStartup ? { startupPerformanceCandidate: true } : {})
     })
+    void terminalCreation.then(
+      () => {
+        if (disposed || !startup) return
+        consumeCommand(surfaceId)
+        window.api.terminal.input({ id: surfaceId, data: `${startup.command}\r` })
+      },
+      () => {
+        if (disposed || !startup) return
+        consumeCommand(surfaceId)
+        term.write('\r\n[Unable to start the command terminal. Check the template folder.]\r\n')
+      }
+    )
     let startupReadyFrame: number | null = null
     if (focused) {
       void terminalCreation.then(

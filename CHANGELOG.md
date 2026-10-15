@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Workspace templates
+
+- Added local workspace templates with a native repository-folder picker and
+  optional setup/run commands.
+- Commands launch only from explicit inspector actions in fresh terminal tabs;
+  session restoration never replays them.
+
 ### Change review
 
 - Added an on-demand repository review panel with changed files, separate staged

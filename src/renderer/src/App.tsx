@@ -40,6 +40,7 @@ import PreviewPicker from './components/PreviewPicker'
 import WorkspaceInspector from './components/WorkspaceInspector'
 import ReviewWorkbench from './components/ReviewWorkbench'
 import { shouldShowWelcome } from './welcome'
+import { loadWorkspaceTemplates, type WorkspaceTemplate } from './workspaceTemplates'
 
 // Restore the saved session synchronously at startup, else start fresh. Computed
 // once at module load. Optional chaining keeps it safe if the bridge isn't ready.
@@ -107,6 +108,8 @@ export default function App(): React.JSX.Element {
   const [utilityOverlay, setUtilityOverlay] = useState<UtilityOverlay | null>(null)
   const [inspectorWorkspaceId, setInspectorWorkspaceId] = useState<string | null>(null)
   const [reviewWorkspaceId, setReviewWorkspaceId] = useState<string | null>(null)
+  const [workspaceTemplates, setWorkspaceTemplates] = useState(loadWorkspaceTemplates)
+  const pendingWorkspaceCommands = useRef(new Map<string, { command: string; cwd: string }>())
   const notificationSequence = useRef(0)
 
   // Keep the latest state in a ref so the (once-installed) key handler sees it.
@@ -492,6 +495,18 @@ export default function App(): React.JSX.Element {
     setUtilityOverlay('settings')
   }
 
+  const runTemplateCommand = (
+    workspace: AppState['workspaces'][number],
+    template: WorkspaceTemplate,
+    command: string
+  ): void => {
+    const action = newSurfaceAction(workspace.activePaneId)
+    pendingWorkspaceCommands.current.set(action.surface.id, { command, cwd: template.cwd })
+    dispatch({ type: 'selectWorkspace', id: workspace.id })
+    dispatch(paneAction(workspace.id, action))
+    setInspectorWorkspaceId(null)
+  }
+
   const openWorkspacePreview = (workspaceId: string, url: string): void => {
     const workspace = stateRef.current.workspaces.find((candidate) => candidate.id === workspaceId)
     if (!workspace) return
@@ -599,6 +614,10 @@ export default function App(): React.JSX.Element {
             welcomeSurfaceId={INITIAL_WELCOME_SURFACE_ID}
             dispatch={dispatch}
             onInspect={openInspector}
+            pendingCommand={(surfaceId) => pendingWorkspaceCommands.current.get(surfaceId) ?? null}
+            consumeCommand={(surfaceId) => {
+              pendingWorkspaceCommands.current.delete(surfaceId)
+            }}
           />
         ))}
       </main>
@@ -620,6 +639,18 @@ export default function App(): React.JSX.Element {
         <SettingsDialog
           onOpenHelp={() => setUtilityOverlay('help')}
           onClose={() => setUtilityOverlay(null)}
+          templates={workspaceTemplates}
+          defaultDirectory={
+            state.workspaces.find((workspace) => workspace.id === state.activeWorkspaceId)
+              ?.gitRoot ??
+            state.workspaces.find((workspace) => workspace.id === state.activeWorkspaceId)?.cwd ??
+            ''
+          }
+          onTemplatesChange={setWorkspaceTemplates}
+          onUseTemplate={(template: WorkspaceTemplate) => {
+            dispatch(createWorkspaceAction(template.name, template.cwd, template.id))
+            setUtilityOverlay(null)
+          }}
         />
       )}
       {utilityOverlay === 'preview' && (
@@ -642,6 +673,15 @@ export default function App(): React.JSX.Element {
           onOpenPreview={(url) => openWorkspacePreview(inspectedWorkspace.id, url)}
           onOpenPullRequest={(url) => openPullRequest(inspectedWorkspace.id, url)}
           onReview={() => openReview(inspectedWorkspace.id)}
+          template={
+            workspaceTemplates.find((item) => item.id === inspectedWorkspace.templateId) ?? null
+          }
+          onRunTemplateCommand={(command) => {
+            const template = workspaceTemplates.find(
+              (item) => item.id === inspectedWorkspace.templateId
+            )
+            if (template) runTemplateCommand(inspectedWorkspace, template, command)
+          }}
           onFocusAgent={focusWorkspaceAgent}
           onClose={() => setInspectorWorkspaceId(null)}
         />
