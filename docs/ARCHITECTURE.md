@@ -172,6 +172,11 @@ running again automatically.
   partition with remote requests, popups, downloads, and permissions blocked.
 - Agent inspection returns bounded plain text and safe process identity rather
   than arbitrary process memory or environment contents.
+- A versioned main-process policy gates `inspect-agent`, `send-text`, and
+  `send-key` at the local socket boundary. The renderer can change that policy
+  through the restricted preload bridge; socket clients can only query it with
+  `agent-permissions`. Provider names in socket reports are claims, not
+  authenticated identities. The defaults preserve earlier socket behavior.
 - Generated bundles and packages are excluded from Git and rebuilt for releases.
 
 ## Verification

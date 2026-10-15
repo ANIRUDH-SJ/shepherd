@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Agent access
+
+- Added visible local-socket permissions for terminal inspection and text/key
+  input, with main-process enforcement and a read-only `agent-permissions` query.
+- Clarified adapter data access and the fact that local socket provider names
+  are not authenticated identities.
+
 ### Notification delivery
 
 - Added global desktop-alert modes, local-time quiet hours, and per-workspace

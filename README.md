@@ -224,6 +224,13 @@ Run `shepherd integrations setup` again after upgrades when you want Shepherd to
 refresh its managed integration blocks. Codex users must also review and trust
 new lifecycle hooks in Codex before they become active.
 
+The Agents settings page explains what integrations observe and lets you
+disable two sensitive local-socket operations: bounded terminal inspection and
+text/key input. Both stay enabled for existing CLI compatibility until you
+change them. Direct typing in Shepherd is unaffected. Run
+`shepherd agent-permissions` to inspect the active policy; local clients can
+still report agent state, and a claimed provider name is not authenticated.
+
 ## Keyboard and Mouse
 
 | Shortcut                   | Action                                      |
