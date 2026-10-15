@@ -48,11 +48,18 @@ export function initialWorkspace(): WorkspaceState {
 }
 
 // ── Action creators (mint new terminals — call ONLY from event handlers) ──────
-export function splitAction(paneId: string, direction: 'row' | 'column'): WorkspaceAction {
-  return { type: 'split', paneId, direction, newPane: makePane(makeSurface()) }
+export function splitAction(
+  paneId: string,
+  direction: 'row' | 'column',
+  cwd?: string
+): WorkspaceAction {
+  return { type: 'split', paneId, direction, newPane: makePane(makeSurface(cwd)) }
 }
-export function newSurfaceAction(paneId: string): Extract<WorkspaceAction, { type: 'newSurface' }> {
-  return { type: 'newSurface', paneId, surface: makeSurface() }
+export function newSurfaceAction(
+  paneId: string,
+  cwd?: string
+): Extract<WorkspaceAction, { type: 'newSurface' }> {
+  return { type: 'newSurface', paneId, surface: makeSurface(cwd) }
 }
 export function previewSplitAction(paneId: string, url: string): WorkspaceAction {
   return {

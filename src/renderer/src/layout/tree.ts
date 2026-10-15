@@ -1,5 +1,6 @@
 import type { LayoutNode, Pane, Surface, PlacedPane, PlacedDivider, Rect } from './types'
 import { normalizePreviewUrl } from '../../../shared/preview'
+import { validRepositoryRoot } from '../../../shared/repository'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PURE TREE + GEOMETRY OPERATIONS
@@ -14,10 +15,35 @@ export function uid(prefix: string): string {
   return `${prefix}-${crypto.randomUUID()}`
 }
 
-export function makeSurface(): Surface {
+export function makeSurface(cwd?: string): Surface {
   // No stored number — the "Terminal N" label is derived from position at render
   // time (see WorkspaceView), so numbers renumber when others close.
-  return { id: uid('term'), panel: { type: 'terminal' } }
+  return {
+    id: uid('term'),
+    panel: { type: 'terminal', ...(validRepositoryRoot(cwd) ? { cwd } : {}) }
+  }
+}
+
+export function updateTerminalSurfaceCwd(
+  node: LayoutNode,
+  surfaceId: string,
+  cwd: string
+): LayoutNode {
+  if (!validRepositoryRoot(cwd)) return node
+  if (node.type === 'split') {
+    const children = node.children.map((child) => updateTerminalSurfaceCwd(child, surfaceId, cwd))
+    return children.every((child, index) => child === node.children[index])
+      ? node
+      : { ...node, children }
+  }
+  const surfaces = node.pane.surfaces.map((surface) =>
+    surface.id === surfaceId && surface.panel.type === 'terminal' && surface.panel.cwd !== cwd
+      ? { ...surface, panel: { ...surface.panel, cwd } }
+      : surface
+  )
+  return surfaces.every((surface, index) => surface === node.pane.surfaces[index])
+    ? node
+    : { ...node, pane: { ...node.pane, surfaces } }
 }
 
 export function makePreviewSurface(url: string): Surface {
@@ -81,6 +107,16 @@ export function activeTerminalSurfaceId(node: LayoutNode, activePaneId: string):
   return listTerminalSurfaceIds(node)[0] ?? null
 }
 
+export function activeTerminalCwd(
+  node: LayoutNode,
+  activePaneId: string,
+  fallback: string
+): string {
+  const pane = findPane(node, activePaneId)
+  const surface = pane?.surfaces.find((candidate) => candidate.id === pane.activeSurfaceId)
+  return surface?.panel.type === 'terminal' ? (surface.panel.cwd ?? fallback) : fallback
+}
+
 // (Numbering is positional now — derived from listSurfaceIds order in the UI — so
 //  the old title/lowest-free helpers were removed.)
 
@@ -109,7 +145,8 @@ export function isValidLayoutNode(node: unknown): boolean {
       if (surface.panel === undefined) return true
       if (!surface.panel || typeof surface.panel !== 'object') return false
       const panel = surface.panel as Record<string, unknown>
-      if (panel.type === 'terminal') return true
+      if (panel.type === 'terminal')
+        return panel.cwd === undefined || validRepositoryRoot(panel.cwd)
       return panel.type === 'preview' && normalizePreviewUrl(panel.url).ok
     })
     return surfacesValid && ids.has(pane.activeSurfaceId)
@@ -139,7 +176,13 @@ export function normalizeLayoutNode(node: unknown): LayoutNode | null {
           panel: { type: 'preview' as const, url: normalized.url! }
         }
       }
-      return { id: surface.id as string, panel: { type: 'terminal' as const } }
+      return {
+        id: surface.id as string,
+        panel: {
+          type: 'terminal' as const,
+          ...(panel?.cwd ? { cwd: panel.cwd as string } : {})
+        }
+      }
     })
     return {
       type: 'pane',

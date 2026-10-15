@@ -50,6 +50,9 @@ export default function PaneView({
   pendingCommand,
   consumeCommand
 }: Props): React.JSX.Element {
+  const selectedSurface = pane.surfaces.find((surface) => surface.id === pane.activeSurfaceId)
+  const nextTerminalCwd =
+    selectedSurface?.panel.type === 'terminal' ? (selectedSurface.panel.cwd ?? cwd) : cwd
   return (
     <div
       className={'pane' + (active ? ' active' : '')}
@@ -73,9 +76,9 @@ export default function PaneView({
         onCloseSurface={(surfaceId) =>
           dispatch({ type: 'closeSurface', paneId: pane.id, surfaceId })
         }
-        onNewSurface={() => dispatch(newSurfaceAction(pane.id))}
-        onSplitRight={() => dispatch(splitAction(pane.id, 'row'))}
-        onSplitDown={() => dispatch(splitAction(pane.id, 'column'))}
+        onNewSurface={() => dispatch(newSurfaceAction(pane.id, nextTerminalCwd))}
+        onSplitRight={() => dispatch(splitAction(pane.id, 'row', nextTerminalCwd))}
+        onSplitDown={() => dispatch(splitAction(pane.id, 'column', nextTerminalCwd))}
         onClosePane={() => dispatch({ type: 'closePane', paneId: pane.id })}
       />
 
@@ -86,7 +89,7 @@ export default function PaneView({
               key={surface.id}
               surfaceId={surface.id}
               workspaceId={workspaceId}
-              cwd={cwd}
+              cwd={surface.panel.cwd ?? cwd}
               active={surface.id === pane.activeSurfaceId}
               focused={workspaceActive && active && surface.id === pane.activeSurfaceId}
               showWelcome={isWelcomeSurface(surface.id, welcomeSurfaceId)}

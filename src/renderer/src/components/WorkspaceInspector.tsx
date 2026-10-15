@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { AgentRecord } from '../../../shared/agent'
 import { agentStatusLabel, sortAgentsForSidebar } from '../agentView'
 import { workspaceIdentity } from '../sidebarView'
@@ -7,6 +7,7 @@ import { formatTokenCount, usageSummary } from '../usageView'
 import { localhostPreviewUrl, workspaceSessionSummary } from '../workspaceInspector'
 import type { WorkspaceTemplate } from '../workspaceTemplates'
 import Icon from './Icon'
+import { MAX_LINKED_REPOSITORIES } from '../../../shared/repository'
 
 interface Props {
   workspace: Workspace
@@ -15,6 +16,9 @@ interface Props {
   onOpenPreview: (url: string) => void
   onOpenPullRequest: (url: string) => void
   onReview: () => void
+  onAddRepository: () => Promise<void>
+  onOpenRepository: (root: string) => void
+  onRemoveRepository: (root: string) => void
   template: WorkspaceTemplate | null
   onRunTemplateCommand: (command: string) => void
   onFocusAgent: (agent: AgentRecord) => void
@@ -32,12 +36,17 @@ export default function WorkspaceInspector({
   onOpenPreview,
   onOpenPullRequest,
   onReview,
+  onAddRepository,
+  onOpenRepository,
+  onRemoveRepository,
   template,
   onRunTemplateCommand,
   onFocusAgent,
   onClose
 }: Props): React.JSX.Element {
   const panelRef = useRef<HTMLElement | null>(null)
+  const [repositoryBusy, setRepositoryBusy] = useState(false)
+  const [repositoryError, setRepositoryError] = useState('')
   const onCloseRef = useRef(onClose)
   const restoreFocusRef = useRef(true)
   onCloseRef.current = onClose
@@ -131,6 +140,63 @@ export default function WorkspaceInspector({
           >
             Review changed files
           </button>
+        </section>
+
+        <section className="inspector-section" aria-labelledby="inspector-linked-repositories">
+          <h2 id="inspector-linked-repositories">Task repositories</h2>
+          <p className="inspector-empty">
+            Link local Git repositories to open each in its own terminal tab. The original workspace
+            directory stays available.
+          </p>
+          <button
+            type="button"
+            className="inspector-action"
+            disabled={
+              repositoryBusy || workspace.linkedRepositories.length >= MAX_LINKED_REPOSITORIES
+            }
+            onClick={() => {
+              setRepositoryBusy(true)
+              setRepositoryError('')
+              void onAddRepository()
+                .catch((error: unknown) => {
+                  setRepositoryError(
+                    error instanceof Error ? error.message : 'Could not link repository'
+                  )
+                })
+                .finally(() => setRepositoryBusy(false))
+            }}
+          >
+            {repositoryBusy ? 'Choosing repository…' : 'Add Git repository'}
+          </button>
+          {repositoryError && (
+            <p className="settings-form-error" role="alert">
+              {repositoryError}
+            </p>
+          )}
+          {workspace.linkedRepositories.map((root) => (
+            <div key={root} className="inspector-linked-repository">
+              <code title={root}>{root}</code>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    restoreFocusRef.current = false
+                    onOpenRepository(root)
+                  }}
+                >
+                  Open terminal
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Unlink ${root}`}
+                  title="Remove from this workspace; existing terminals stay open"
+                  onClick={() => onRemoveRepository(root)}
+                >
+                  Unlink
+                </button>
+              </div>
+            </div>
+          ))}
         </section>
 
         {template && (

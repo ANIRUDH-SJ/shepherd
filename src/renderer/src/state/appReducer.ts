@@ -8,11 +8,17 @@ import {
   listSurfaceIds,
   makeSurface,
   normalizeLayoutNode,
-  activeTerminalSurfaceId
+  activeTerminalSurfaceId,
+  updateTerminalSurfaceCwd
 } from '../layout/tree'
 import { workspaceReducer, type WorkspaceState, type WorkspaceAction } from './workspaceReducer'
 import { agentNeedsAttention, type AgentRecord, type AgentReport } from '../../../shared/agent'
 import { normalizeWorkspaceName } from '../../../shared/workspace'
+import {
+  MAX_LINKED_REPOSITORIES,
+  sanitizeLinkedRepositories,
+  validRepositoryRoot
+} from '../../../shared/repository'
 import {
   workspaceProjectName,
   type WorkspaceMetadata,
@@ -49,6 +55,8 @@ export interface Workspace {
   name: string
   templateId: string | null
   cwd: string
+  homeCwd: string
+  linkedRepositories: string[]
   projectName: string
   gitRoot: string | null
   gitBranch: string | null
@@ -82,12 +90,14 @@ export function makeWorkspace(
   cwd = '~',
   templateId: string | null = null
 ): Workspace {
-  const pane = makePane(makeSurface())
+  const pane = makePane(makeSurface(cwd))
   return {
     id: `ws-${crypto.randomUUID()}`,
     name: normalizeWorkspaceName(name ?? ''),
     templateId,
     cwd,
+    homeCwd: cwd,
+    linkedRepositories: [],
     projectName: workspaceProjectName(cwd),
     gitRoot: null,
     gitBranch: null,
@@ -153,6 +163,13 @@ export function sanitizeRestored(raw: unknown): AppState | null {
       name: typeof entry.name === 'string' ? entry.name : '',
       templateId: typeof entry.templateId === 'string' ? entry.templateId : null,
       cwd: typeof entry.cwd === 'string' ? entry.cwd : '~',
+      homeCwd:
+        typeof entry.homeCwd === 'string'
+          ? entry.homeCwd
+          : typeof entry.cwd === 'string'
+            ? entry.cwd
+            : '~',
+      linkedRepositories: sanitizeLinkedRepositories(entry.linkedRepositories),
       projectName: workspaceProjectName(typeof entry.cwd === 'string' ? entry.cwd : '~'),
       gitRoot: null,
       gitBranch: null,
@@ -191,6 +208,8 @@ export function toLayoutSnapshot(state: AppState): {
     name: string
     templateId: string | null
     cwd: string
+    homeCwd: string
+    linkedRepositories: string[]
     root: LayoutNode
     activePaneId: string
   }>
@@ -204,6 +223,8 @@ export function toLayoutSnapshot(state: AppState): {
       name: workspace.name,
       templateId: workspace.templateId,
       cwd: workspace.cwd,
+      homeCwd: workspace.homeCwd,
+      linkedRepositories: workspace.linkedRepositories,
       root: workspace.root,
       activePaneId: workspace.activePaneId
     })),
@@ -219,6 +240,8 @@ export type AppAction =
   | { type: 'selectWorkspace'; id: string }
   | { type: 'closeWorkspace'; id: string }
   | { type: 'renameWorkspace'; id: string; name: string }
+  | { type: 'linkRepository'; id: string; root: string }
+  | { type: 'unlinkRepository'; id: string; root: string }
   | { type: 'setWorkspaceMetadata'; id: string; metadata: WorkspaceMetadata }
   | { type: 'setStatus'; id: string; status: string | null }
   | { type: 'setAttention'; id: string; unread?: boolean; attention?: boolean }
@@ -422,6 +445,24 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         name: normalizeWorkspaceName(action.name)
       }))
 
+    case 'linkRepository':
+      return mapWorkspace(state, action.id, (workspace) => {
+        if (
+          !validRepositoryRoot(action.root) ||
+          workspace.linkedRepositories.length >= MAX_LINKED_REPOSITORIES ||
+          workspace.linkedRepositories.includes(action.root) ||
+          workspace.homeCwd === action.root
+        )
+          return workspace
+        return { ...workspace, linkedRepositories: [...workspace.linkedRepositories, action.root] }
+      })
+
+    case 'unlinkRepository':
+      return mapWorkspace(state, action.id, (workspace) => ({
+        ...workspace,
+        linkedRepositories: workspace.linkedRepositories.filter((root) => root !== action.root)
+      }))
+
     case 'setWorkspaceMetadata':
       return mapWorkspace(state, action.id, (w) => {
         const activeSurfaceId = activeTerminalSurfaceId(w.root, w.activePaneId)
@@ -443,6 +484,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         return {
           ...w,
           cwd: action.metadata.cwd,
+          root: updateTerminalSurfaceCwd(w.root, activeSurfaceId, action.metadata.cwd),
           projectName: action.metadata.projectName,
           gitRoot: action.metadata.gitRoot,
           gitBranch: action.metadata.gitBranch,

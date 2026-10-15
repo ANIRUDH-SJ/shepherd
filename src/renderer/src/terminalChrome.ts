@@ -31,9 +31,10 @@ export function terminalPanelId(surfaceId: string): string {
 export const surfacePanelId = terminalPanelId
 
 export function surfaceLabel(surface: Surface, terminalNumbers: Map<string, number>): string {
-  return surface.panel.type === 'terminal'
-    ? `Terminal ${terminalNumbers.get(surface.id) ?? '?'}`
-    : `Preview ${previewUrlLabel(surface.panel.url)}`
+  if (surface.panel.type === 'preview') return `Preview ${previewUrlLabel(surface.panel.url)}`
+  const number = terminalNumbers.get(surface.id) ?? '?'
+  const repository = surface.panel.cwd?.split('/').filter(Boolean).at(-1)
+  return repository ? `${repository} · Terminal ${number}` : `Terminal ${number}`
 }
 
 export function terminalWorkspaceAriaLabel(
