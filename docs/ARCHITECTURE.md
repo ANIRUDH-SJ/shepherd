@@ -61,6 +61,14 @@ the main process replaces the session file atomically. Restoring a session
 creates fresh PTYs. It does not serialize a running process or retain
 ephemeral agent and usage telemetry.
 
+Multi-repository workspaces additionally persist a bounded list of canonical
+Git roots and a stable original directory. Terminal surfaces can carry their
+own validated absolute cwd; live metadata updates only the active terminal's
+saved cwd. New tabs inherit the selected terminal's directory, and restoring
+the layout starts each shell in its own saved directory. The main process
+resolves folder-picker selections with `git rev-parse --show-toplevel` before
+the renderer links them. Unlinking a root never disposes a PTY.
+
 Workspace templates live in a separate versioned local-storage record. The
 renderer validates and caps their names, directories, and single-line commands;
 only a template identifier is associated with a workspace snapshot. Setup and

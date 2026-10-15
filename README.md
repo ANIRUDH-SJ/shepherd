@@ -127,6 +127,15 @@ palette. The inspector shows the current repository and branch, pull request,
 owned ports, agent activity, reported usage, and pane/surface counts. Port and
 agent rows are actions: they open the secure preview or focus the real terminal.
 
+For a task spanning repositories, use **Task repositories → Add Git repository**
+in that inspector. Shepherd verifies the chosen local folder is in a Git
+repository and saves up to eight distinct linked roots in the workspace. Each
+**Open terminal** action creates a tab rooted in that repository; tab names show
+the repo directory. Tabs and their individual directories restore with fresh
+shells on launch. **Unlink** only removes the saved shortcut—open terminals
+stay open. Review changed files follows the currently active terminal, so
+switch to the repository tab you want to review.
+
 ### Changed files and review
 
 Choose **Review changed files** in the workspace inspector or **Review
