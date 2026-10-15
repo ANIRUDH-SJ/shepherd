@@ -11,6 +11,10 @@ import { configureProductIdentity } from './productIdentity'
 import { configurePreviewHost, configurePreviewSecurity } from './previewSecurity'
 import { loadSession, saveSession } from './session'
 import { registerReviewIpc } from './review'
+import {
+  pruneNotificationPolicyWorkspaces,
+  registerNotificationPolicyIpc
+} from './notificationRouting'
 import { IPC, type SocketApply, type WorkspacesSync } from '../shared/ipc'
 import {
   APP_BACKGROUND_COLOR,
@@ -175,6 +179,7 @@ app.whenReady().then(() => {
   runtimePerformance.mark('electron-ready')
   // Wire up the terminal IPC handlers before any window loads.
   configurePreviewSecurity()
+  registerNotificationPolicyIpc()
   ipcMain.handle(IPC.WORKSPACE_CHOOSE_DIRECTORY, async () => {
     const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
     const result = window
@@ -220,6 +225,9 @@ app.whenReady().then(() => {
   // Renderer mirrors its workspace list here so the socket can resolve ids/names.
   ipcMain.on(IPC.WORKSPACES_SYNC, (_e, sync: WorkspacesSync) => {
     updateWorkspaceMirror(sync)
+    if (Array.isArray(sync.workspaces)) {
+      pruneNotificationPolicyWorkspaces(new Set(sync.workspaces.map((workspace) => workspace.id)))
+    }
     deferredBackgroundServices?.update(sync)
   })
 

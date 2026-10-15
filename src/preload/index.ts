@@ -76,6 +76,11 @@ const api: ShepherdApi = {
     }
   },
 
+  notifications: {
+    getPolicy: () => ipcRenderer.invoke(IPC.NOTIFICATION_POLICY_GET),
+    setPolicy: (policy) => ipcRenderer.invoke(IPC.NOTIFICATION_POLICY_SET, policy)
+  },
+
   socket: {
     syncWorkspaces: (sync) => ipcRenderer.send(IPC.WORKSPACES_SYNC, sync),
 

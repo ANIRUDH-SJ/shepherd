@@ -1,9 +1,10 @@
-import { app, ipcMain, Notification, shell, type WebContents } from 'electron'
+import { app, ipcMain, shell, type WebContents } from 'electron'
 import { statSync } from 'node:fs'
 import * as pty from 'node-pty'
 import { homedir, platform } from 'os'
 import { join } from 'path'
-import { socketPath } from './socket'
+import { activeWorkspaceIdForNotifications, socketPath } from './socket'
+import { showDesktopNotification } from './notificationRouting'
 import { parseOsc } from './osc'
 import {
   appendTerminalInspectionOutput,
@@ -306,7 +307,12 @@ function sniffOsc(id: string, sender: WebContents, data: string): void {
         }
       })
     }
-    if (Notification.isSupported()) new Notification({ title: n.title, body: n.body }).show()
+    showDesktopNotification({
+      workspaceId: rec.workspaceId ?? null,
+      activeWorkspaceId: activeWorkspaceIdForNotifications(),
+      title: n.title,
+      body: n.body
+    })
   }
 }
 

@@ -17,6 +17,8 @@ import { terminalThemeForAppearance } from '../terminalTheme'
 import { THEME_PRESETS } from '../themePresets'
 import type { WorkspaceTemplate } from '../workspaceTemplates'
 import DialogFrame from './DialogFrame'
+import type { Workspace } from '../state/appReducer'
+import NotificationRoutingSettings from './NotificationRoutingSettings'
 import WorkspaceTemplateSettings from './WorkspaceTemplateSettings'
 
 const SETTINGS_CATEGORIES = [
@@ -34,6 +36,7 @@ type SettingsCategory = (typeof SETTINGS_CATEGORIES)[number]
 interface Props {
   onOpenHelp: () => void
   onClose: () => void
+  workspaces: Workspace[]
   templates: WorkspaceTemplate[]
   defaultDirectory: string
   onTemplatesChange: (templates: WorkspaceTemplate[]) => void
@@ -47,6 +50,7 @@ function appearanceLabel(mode: AppearanceMode): string {
 export default function SettingsDialog({
   onOpenHelp,
   onClose,
+  workspaces,
   templates,
   defaultDirectory,
   onTemplatesChange,
@@ -283,30 +287,7 @@ export default function SettingsDialog({
             </div>
           )}
 
-          {category === 'Notifications' && (
-            <div className="settings-group-list">
-              <section className="settings-group">
-                <div className="settings-setting-head">
-                  <span>
-                    <strong>Notification inbox</strong>
-                    <small>Agent and OSC events remain local and can jump to their terminal.</small>
-                  </span>
-                  <span className="settings-value">Enabled</span>
-                </div>
-              </section>
-              <section className="settings-group">
-                <div className="settings-setting-head">
-                  <span>
-                    <strong>Focused-workspace suppression</strong>
-                    <small>
-                      Background attention remains visible without interrupting active work.
-                    </small>
-                  </span>
-                  <span className="settings-value">Automatic</span>
-                </div>
-              </section>
-            </div>
-          )}
+          {category === 'Notifications' && <NotificationRoutingSettings workspaces={workspaces} />}
 
           {category === 'Workspaces' && (
             <div className="settings-group-list">

@@ -1,6 +1,5 @@
 import net from 'net'
 import { existsSync, unlinkSync } from 'fs'
-import { Notification } from 'electron'
 import type { SocketApply, WorkspacesSync } from '../shared/ipc'
 import { normalizeAgentReport } from '../shared/agent'
 import {
@@ -17,6 +16,7 @@ import { normalizeUsageReport } from '../shared/usage'
 import { normalizeAgentWait, waitForAgent } from './agentWait'
 import { inspectTerminal, normalizeTerminalInspection } from './terminalInspection'
 import { createGitWorktree, normalizeWorktreeRequest } from './worktree'
+import { showDesktopNotification } from './notificationRouting'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SOCKET SERVER  (main process — the programmable control channel)
@@ -61,6 +61,10 @@ export function socketPath(): string {
 export function updateWorkspaceMirror(sync: WorkspacesSync): void {
   mirror = sync
   publishAgentUpdates()
+}
+
+export function activeWorkspaceIdForNotifications(): string | null {
+  return mirror.activeWorkspaceId || null
 }
 
 function querySubscription(subscriber: AgentSubscriber): AgentQueryResult {
@@ -418,11 +422,13 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
         return
       }
       apply({ method, workspaceId, params })
-      if (method === 'notify' && Notification.isSupported()) {
-        new Notification({
+      if (method === 'notify') {
+        showDesktopNotification({
+          workspaceId,
+          activeWorkspaceId: mirror.activeWorkspaceId || null,
           title: String(params.title ?? PRODUCT_NAME),
           body: String(params.body ?? '')
-        }).show()
+        })
       }
       send(conn, id, { ok: true })
       return
