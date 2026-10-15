@@ -17,6 +17,9 @@ import { normalizeAgentWait, waitForAgent } from './agentWait'
 import { inspectTerminal, normalizeTerminalInspection } from './terminalInspection'
 import { createGitWorktree, normalizeWorktreeRequest } from './worktree'
 import { showDesktopNotification } from './notificationRouting'
+import { getAgentAccessPolicy } from './agentAccess'
+import { socketPermissionForMethod } from '../shared/agentAccess'
+import type { AgentAccessPolicy } from '../shared/agentAccess'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SOCKET SERVER  (main process — the programmable control channel)
@@ -145,7 +148,12 @@ function send(conn: net.Socket, id: unknown, result: unknown, error?: string): v
   conn.write(JSON.stringify(error ? { id, error } : { id, result }) + '\n')
 }
 
-async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promise<void> {
+async function handleLine(
+  line: string,
+  conn: net.Socket,
+  apply: ApplyFn,
+  accessPolicy: () => AgentAccessPolicy
+): Promise<void> {
   let msg: { id?: unknown; method?: string; params?: Record<string, unknown> }
   try {
     msg = JSON.parse(line)
@@ -191,6 +199,13 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
       else send(conn, id, result.capabilities)
       return
     }
+    case 'agent-permissions':
+      send(conn, id, {
+        ...accessPolicy(),
+        scope: 'local-socket',
+        providerIdentityVerified: false
+      })
+      return
     case 'identify': {
       // Fall back to the requested id/name if the mirror can't resolve it yet
       // (e.g. early startup), so identify doesn't report null for a valid caller.
@@ -304,6 +319,11 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
       return
     }
     case 'inspect-agent': {
+      const denied = socketPermissionForMethod(accessPolicy(), method)
+      if (denied) {
+        send(conn, id, null, denied)
+        return
+      }
       const agentId = typeof params.agentId === 'string' ? params.agentId.trim() : ''
       if (!agentId) {
         send(conn, id, null, 'inspect-agent requires an agent id')
@@ -393,6 +413,11 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
     }
     case 'send-text':
     case 'send-key': {
+      const denied = socketPermissionForMethod(accessPolicy(), method)
+      if (denied) {
+        send(conn, id, null, denied)
+        return
+      }
       // Validate the payload so an empty command isn't silently accepted.
       const arg = String((method === 'send-key' ? (params.key ?? params.text) : params.text) ?? '')
       if (!arg) {
@@ -492,7 +517,7 @@ async function handleLine(line: string, conn: net.Socket, apply: ApplyFn): Promi
   }
 }
 
-function createSocketServer(apply: ApplyFn): net.Server {
+function createSocketServer(apply: ApplyFn, accessPolicy: () => AgentAccessPolicy): net.Server {
   return net.createServer((conn) => {
     // Message framing: a single 'data' event may contain partial or multiple JSON
     // lines, so we buffer and split on '\n'.
@@ -503,7 +528,7 @@ function createSocketServer(apply: ApplyFn): net.Server {
       while ((nl = buffer.indexOf('\n')) >= 0) {
         const line = buffer.slice(0, nl).trim()
         buffer = buffer.slice(nl + 1)
-        if (line) void handleLine(line, conn, apply)
+        if (line) void handleLine(line, conn, apply, accessPolicy)
       }
     })
     conn.on('error', () => {
@@ -519,7 +544,8 @@ function createSocketServer(apply: ApplyFn): net.Server {
 
 export function startSocketServer(
   apply: ApplyFn,
-  paths: string[] = productSocketPaths(process.env)
+  paths: string[] = productSocketPaths(process.env),
+  accessPolicy: () => AgentAccessPolicy = getAgentAccessPolicy
 ): void {
   for (const path of paths) {
     // Clean up a stale socket file left by a previous crash.
@@ -531,7 +557,7 @@ export function startSocketServer(
       }
     }
 
-    const server = createSocketServer(apply)
+    const server = createSocketServer(apply, accessPolicy)
     servers.push({ server, path })
     server.on('error', (err) => console.error('[shepherd:socket] server error:', err))
     server.listen(path, () => console.log('[shepherd:socket] listening on', path))

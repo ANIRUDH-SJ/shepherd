@@ -4,6 +4,7 @@ import { join } from 'path'
 import { registerPtyIpc, killAllTerminals } from './pty'
 import { startSocketServer, stopSocketServer, updateWorkspaceMirror } from './socket'
 import { startAutomaticAgentDiscovery } from './agentDiscovery'
+import { registerAgentAccessIpc } from './agentAccess'
 import { DeferredBackgroundServices } from './deferredBackgroundServices'
 import { startWorkspaceMetadataDiscovery } from './workspaceMetadata'
 import { RuntimePerformanceRecorder } from './runtimePerformance'
@@ -180,6 +181,7 @@ app.whenReady().then(() => {
   // Wire up the terminal IPC handlers before any window loads.
   configurePreviewSecurity()
   registerNotificationPolicyIpc()
+  registerAgentAccessIpc()
   ipcMain.handle(IPC.WORKSPACE_CHOOSE_DIRECTORY, async () => {
     const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
     const result = window

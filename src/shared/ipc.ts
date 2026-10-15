@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { AgentRecord } from './agent'
+import type { AgentAccessPolicy } from './agentAccess'
 import type { AppearanceMode, AppearanceSnapshot } from './appearance'
 import type { NotificationPolicy } from './notificationPolicy'
 import type { RendererRuntimePerformanceMarkName } from './runtimePerformance'
@@ -43,6 +44,8 @@ export const IPC = {
   APPEARANCE_SET: 'appearance:set',
   NOTIFICATION_POLICY_GET: 'notification-policy:get',
   NOTIFICATION_POLICY_SET: 'notification-policy:set',
+  AGENT_ACCESS_GET: 'agent-access:get',
+  AGENT_ACCESS_SET: 'agent-access:set',
   REVIEW_STATUS: 'review:status',
   REVIEW_DIFF: 'review:diff',
   REVIEW_STAGE: 'review:stage',
@@ -179,6 +182,10 @@ export interface ShepherdApi {
   notifications: {
     getPolicy(): Promise<NotificationPolicy>
     setPolicy(policy: NotificationPolicy): Promise<NotificationPolicy>
+  }
+  agents: {
+    getAccessPolicy(): Promise<AgentAccessPolicy>
+    setAccessPolicy(policy: AgentAccessPolicy): Promise<AgentAccessPolicy>
   }
   socket: {
     /** Mirror the renderer's workspace list to main (for id/name resolution). */
