@@ -6,6 +6,8 @@
 
 export interface TerminalPanel {
   type: 'terminal'
+  /** Fixed launch directory for a repository-specific tab. */
+  cwd?: string
 }
 
 export interface PreviewPanel {

@@ -10,6 +10,7 @@ import {
 } from './state/appReducer'
 import { splitAction, newSurfaceAction, previewSplitAction } from './state/workspaceReducer'
 import {
+  activeTerminalCwd,
   activeTerminalSurfaceId,
   computeLayout,
   findPane,
@@ -39,6 +40,7 @@ import SettingsDialog from './components/SettingsDialog'
 import PreviewPicker from './components/PreviewPicker'
 import WorkspaceInspector from './components/WorkspaceInspector'
 import ReviewWorkbench from './components/ReviewWorkbench'
+import { MAX_LINKED_REPOSITORIES } from '../../shared/repository'
 import { shouldShowWelcome } from './welcome'
 import { loadWorkspaceTemplates, type WorkspaceTemplate } from './workspaceTemplates'
 
@@ -129,6 +131,7 @@ export default function App(): React.JSX.Element {
     )
     if (!workspace) return false
     const pane = findPane(workspace.root, workspace.activePaneId)
+    const terminalCwd = activeTerminalCwd(workspace.root, workspace.activePaneId, workspace.cwd)
 
     if (id !== 'workspace.inspect') setInspectorWorkspaceId(null)
     if (id !== 'workspace.review') setReviewWorkspaceId(null)
@@ -162,7 +165,7 @@ export default function App(): React.JSX.Element {
         setUtilityOverlay('palette')
         break
       case 'terminal.new-tab':
-        dispatch(paneAction(workspace.id, newSurfaceAction(workspace.activePaneId)))
+        dispatch(paneAction(workspace.id, newSurfaceAction(workspace.activePaneId, terminalCwd)))
         break
       case 'surface.close':
         if (!pane) return false
@@ -175,10 +178,12 @@ export default function App(): React.JSX.Element {
         )
         break
       case 'pane.split-right':
-        dispatch(paneAction(workspace.id, splitAction(workspace.activePaneId, 'row')))
+        dispatch(paneAction(workspace.id, splitAction(workspace.activePaneId, 'row', terminalCwd)))
         break
       case 'pane.split-down':
-        dispatch(paneAction(workspace.id, splitAction(workspace.activePaneId, 'column')))
+        dispatch(
+          paneAction(workspace.id, splitAction(workspace.activePaneId, 'column', terminalCwd))
+        )
         break
       case 'pane.close':
         dispatch(paneAction(workspace.id, { type: 'closePane', paneId: workspace.activePaneId }))
@@ -396,7 +401,12 @@ export default function App(): React.JSX.Element {
         if (method === 'new-split') {
           const raw = String(params.direction ?? params.text ?? 'right')
           const dir = raw === 'up' || raw === 'down' ? 'column' : 'row'
-          dispatch(paneAction(ws.id, splitAction(ws.activePaneId, dir)))
+          dispatch(
+            paneAction(
+              ws.id,
+              splitAction(ws.activePaneId, dir, activeTerminalCwd(ws.root, ws.activePaneId, ws.cwd))
+            )
+          )
         } else {
           const surfaceId = activeTerminalSurfaceId(ws.root, ws.activePaneId)
           if (!surfaceId) return
@@ -474,6 +484,31 @@ export default function App(): React.JSX.Element {
     setReviewWorkspaceId(workspaceId)
   }
 
+  const addLinkedRepository = async (workspaceId: string): Promise<void> => {
+    const chosen = await window.api.workspace.chooseDirectory()
+    if (!chosen) return
+    const repository = await window.api.workspace.resolveRepository(chosen)
+    const workspace = stateRef.current.workspaces.find((candidate) => candidate.id === workspaceId)
+    if (!workspace) return
+    if (
+      workspace.linkedRepositories.includes(repository.root) ||
+      workspace.gitRoot === repository.root
+    ) {
+      throw new Error('This repository is already part of the workspace')
+    }
+    if (workspace.linkedRepositories.length >= MAX_LINKED_REPOSITORIES)
+      throw new Error(`A workspace can link up to ${MAX_LINKED_REPOSITORIES} repositories`)
+    dispatch({ type: 'linkRepository', id: workspaceId, root: repository.root })
+  }
+
+  const openLinkedRepository = (workspaceId: string, root: string): void => {
+    const workspace = stateRef.current.workspaces.find((candidate) => candidate.id === workspaceId)
+    if (!workspace?.linkedRepositories.includes(root)) return
+    dispatch({ type: 'selectWorkspace', id: workspace.id })
+    dispatch(paneAction(workspace.id, newSurfaceAction(workspace.activePaneId, root)))
+    setInspectorWorkspaceId(null)
+  }
+
   const closeReview = (): void => {
     const workspace = stateRef.current.workspaces.find(
       (candidate) => candidate.id === reviewWorkspaceId
@@ -500,7 +535,7 @@ export default function App(): React.JSX.Element {
     template: WorkspaceTemplate,
     command: string
   ): void => {
-    const action = newSurfaceAction(workspace.activePaneId)
+    const action = newSurfaceAction(workspace.activePaneId, template.cwd)
     pendingWorkspaceCommands.current.set(action.surface.id, { command, cwd: template.cwd })
     dispatch({ type: 'selectWorkspace', id: workspace.id })
     dispatch(paneAction(workspace.id, action))
@@ -674,6 +709,11 @@ export default function App(): React.JSX.Element {
           onOpenPreview={(url) => openWorkspacePreview(inspectedWorkspace.id, url)}
           onOpenPullRequest={(url) => openPullRequest(inspectedWorkspace.id, url)}
           onReview={() => openReview(inspectedWorkspace.id)}
+          onAddRepository={() => addLinkedRepository(inspectedWorkspace.id)}
+          onOpenRepository={(root) => openLinkedRepository(inspectedWorkspace.id, root)}
+          onRemoveRepository={(root) =>
+            dispatch({ type: 'unlinkRepository', id: inspectedWorkspace.id, root })
+          }
           template={
             workspaceTemplates.find((item) => item.id === inspectedWorkspace.templateId) ?? null
           }

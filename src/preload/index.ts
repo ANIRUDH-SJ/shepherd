@@ -22,7 +22,8 @@ const api: ShepherdApi = {
   version: '0.0.1',
 
   workspace: {
-    chooseDirectory: () => ipcRenderer.invoke(IPC.WORKSPACE_CHOOSE_DIRECTORY)
+    chooseDirectory: () => ipcRenderer.invoke(IPC.WORKSPACE_CHOOSE_DIRECTORY),
+    resolveRepository: (path) => ipcRenderer.invoke(IPC.WORKSPACE_RESOLVE_REPOSITORY, path)
   },
 
   terminal: {

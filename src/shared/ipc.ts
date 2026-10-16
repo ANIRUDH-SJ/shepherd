@@ -39,6 +39,7 @@ export const IPC = {
   TERM_RESOLVE_FILE_LINKS: 'terminal:resolve-file-links',
   TERM_OPEN_LINK: 'terminal:open-link',
   WORKSPACE_CHOOSE_DIRECTORY: 'workspace:choose-directory',
+  WORKSPACE_RESOLVE_REPOSITORY: 'workspace:resolve-repository',
   PREVIEW_OPEN_EXTERNAL: 'preview:open-external',
   APPEARANCE_GET_SYNC: 'appearance:get-sync',
   APPEARANCE_SET: 'appearance:set',
@@ -148,6 +149,7 @@ export interface ShepherdApi {
   version: string
   workspace: {
     chooseDirectory(): Promise<string | null>
+    resolveRepository(path: string): Promise<{ root: string; name: string }>
   }
   terminal: {
     /** Spawn a shell bound to `opts.id`. */

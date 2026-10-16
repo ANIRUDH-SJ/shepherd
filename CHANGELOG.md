@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Multi-repository workspaces
+
+- Added verified local Git repositories to a workspace inspector, with
+  repository-specific terminal tabs and a bounded saved link list.
+- Preserved individual tab directories across session restoration and kept
+  unlinking a repository separate from closing a live terminal.
+
 ### Agent access
 
 - Added visible local-socket permissions for terminal inspection and text/key

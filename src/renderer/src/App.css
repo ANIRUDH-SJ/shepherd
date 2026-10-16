@@ -1813,6 +1813,43 @@ body.resizing * {
   background: var(--color-surface-hover);
   color: var(--color-text);
 }
+.inspector-linked-repository {
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.inspector-linked-repository code {
+  display: block;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font: 11px/1.4 var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.inspector-linked-repository > div {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.inspector-linked-repository button {
+  min-height: 28px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: 11px var(--font-ui);
+}
+.inspector-linked-repository button:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+.inspector-linked-repository button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
 .inspector-ports {
   display: flex;
   flex-wrap: wrap;

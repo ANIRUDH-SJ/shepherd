@@ -8,7 +8,7 @@ import {
   toLayoutSnapshot,
   type AppState
 } from './appReducer'
-import { previewSplitAction, splitAction } from './workspaceReducer'
+import { newSurfaceAction, previewSplitAction, splitAction } from './workspaceReducer'
 import { findPane, listSurfaceIds } from '../layout/tree'
 import type { AgentReport } from '../../../shared/agent'
 import { MAX_WORKSPACE_NAME_LENGTH } from '../../../shared/workspace'
@@ -128,6 +128,66 @@ assert(
 assert(active(metadataState).gitBranch === null, 'clears stale branch data on surface change')
 assert(active(metadataState).pullRequest === null, 'clears stale pull request on surface change')
 assert(active(metadataState).ports.length === 0, 'clears stale ports on surface change')
+
+let multiRepoState = appReducer(initialApp(), createWorkspaceAction('Task', '/tmp/primary'))
+const multiRepoId = multiRepoState.activeWorkspaceId
+multiRepoState = appReducer(multiRepoState, {
+  type: 'linkRepository',
+  id: multiRepoId,
+  root: '/tmp/backend'
+})
+multiRepoState = appReducer(multiRepoState, {
+  type: 'linkRepository',
+  id: multiRepoId,
+  root: '/tmp/frontend'
+})
+multiRepoState = appReducer(multiRepoState, {
+  type: 'linkRepository',
+  id: multiRepoId,
+  root: '/tmp/backend'
+})
+assert(
+  active(multiRepoState).linkedRepositories.length === 2,
+  'links distinct repository roots once'
+)
+const linkedAction = newSurfaceAction(active(multiRepoState).activePaneId, '/tmp/backend')
+multiRepoState = appReducer(multiRepoState, paneAction(multiRepoId, linkedAction))
+const linkedSurface = findPane(
+  active(multiRepoState).root,
+  active(multiRepoState).activePaneId
+)?.surfaces.at(-1)
+assert(
+  linkedSurface?.panel.type === 'terminal' && linkedSurface.panel.cwd === '/tmp/backend',
+  'linked repository tab carries its own launch directory'
+)
+const restoredMultiRepo = sanitizeRestored(toLayoutSnapshot(multiRepoState))
+const restoredLinkedSurface =
+  restoredMultiRepo?.workspaces[1] &&
+  findPane(
+    restoredMultiRepo.workspaces[1].root,
+    restoredMultiRepo.workspaces[1].activePaneId
+  )?.surfaces.at(-1)
+assert(restoredMultiRepo?.workspaces[1].linkedRepositories.length === 2, 'linked roots restore')
+assert(restoredMultiRepo?.workspaces[1].homeCwd === '/tmp/primary', 'primary directory stays fixed')
+assert(
+  restoredLinkedSurface?.panel.type === 'terminal' &&
+    restoredLinkedSurface.panel.cwd === '/tmp/backend',
+  'repository tab directory restores independently'
+)
+multiRepoState = appReducer(multiRepoState, {
+  type: 'unlinkRepository',
+  id: multiRepoId,
+  root: '/tmp/backend'
+})
+assert(
+  active(multiRepoState).linkedRepositories.length === 1,
+  'unlink removes only its saved shortcut'
+)
+assert(
+  findPane(active(multiRepoState).root, active(multiRepoState).activePaneId)?.surfaces.at(-1)
+    ?.id === linkedAction.surface.id,
+  'unlink does not close an existing terminal'
+)
 
 const exactUsage: UsageReport = {
   inputTokens: 1000,

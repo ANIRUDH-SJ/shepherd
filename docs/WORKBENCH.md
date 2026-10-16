@@ -123,6 +123,21 @@ not close existing workspaces.
 
 ![Setup and Run actions in the workspace inspector](images/workspace-template-inspector.png)
 
+## Task repositories
+
+The workspace inspector can link up to eight additional local Git roots to one
+task workspace. The native folder picker and main-process Git check establish
+the root; duplicate and non-Git selections are rejected. Open terminal creates
+a tab whose launch directory is that root, without replacing the original tab.
+Unlink removes the shortcut but leaves any running tab alone.
+
+The session snapshot retains linked roots, the original workspace directory,
+and each terminal tab's latest known cwd. Restoring starts new shells in those
+directories, not the old processes. Repository metadata and changed-file review
+follow the active terminal, so work in different repositories stays contextual.
+
+![Two repositories in one task workspace](images/multi-repository-inspector.png)
+
 ## Localhost preview
 
 Preview surfaces accept loopback URLs only. The main process applies a dedicated

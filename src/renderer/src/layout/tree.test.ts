@@ -12,6 +12,7 @@ import {
   listSurfaceIds,
   listTerminalSurfaceIds,
   activeTerminalSurfaceId,
+  activeTerminalCwd,
   findPane,
   findPaneBySurfaceId,
   makePane,
@@ -79,6 +80,28 @@ assert(
     }
   }),
   'rejects a persisted remote preview'
+)
+assert(
+  !isValidLayoutNode({
+    type: 'pane',
+    pane: {
+      id: 'unsafe-pane',
+      surfaces: [{ id: 'unsafe-term', panel: { type: 'terminal', cwd: 'relative' } }],
+      activeSurfaceId: 'unsafe-term'
+    }
+  }),
+  'rejects a relative terminal launch directory in a session'
+)
+const linkedSurface = makeSurface('/tmp/linked-repo')
+assert(
+  linkedSurface.panel.type === 'terminal' && linkedSurface.panel.cwd === '/tmp/linked-repo',
+  'new repository surface retains its launch directory'
+)
+const linkedPane = makePane(linkedSurface)
+assert(
+  activeTerminalCwd({ type: 'pane', pane: linkedPane }, linkedPane.id, '/tmp/default') ===
+    '/tmp/linked-repo',
+  'new tabs inherit the selected terminal repository without waiting for metadata'
 )
 
 // ── split right (row) ────────────────────────────────────────
