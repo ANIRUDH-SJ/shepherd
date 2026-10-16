@@ -82,6 +82,11 @@ const api: ShepherdApi = {
     setPolicy: (policy) => ipcRenderer.invoke(IPC.NOTIFICATION_POLICY_SET, policy)
   },
 
+  agents: {
+    getAccessPolicy: () => ipcRenderer.invoke(IPC.AGENT_ACCESS_GET),
+    setAccessPolicy: (policy) => ipcRenderer.invoke(IPC.AGENT_ACCESS_SET, policy)
+  },
+
   socket: {
     syncWorkspaces: (sync) => ipcRenderer.send(IPC.WORKSPACES_SYNC, sync),
 

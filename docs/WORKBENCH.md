@@ -60,6 +60,14 @@ workspace can override the global route except during quiet hours. These rules
 never remove an inbox record or suppress its unread state. A clicked desktop
 alert reopens a hidden workbench and selects the related workspace.
 
+Settings → Agents describes lifecycle adapters and automatic process discovery.
+It also controls whether local socket clients can inspect bounded terminal
+output/process context or send text and keys. These app-wide switches take
+effect immediately; they do not disable direct terminal typing or agent state
+reports. The CLI's `agent-permissions` query shows the current policy.
+
+![Agent adapter disclosure and local socket permissions](images/agent-access-settings.png)
+
 ![Desktop notification and quiet-hours settings](images/notification-routing-settings.png)
 
 ![Per-workspace desktop alert routing](images/notification-workspace-routing.png)

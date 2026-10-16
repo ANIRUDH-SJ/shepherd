@@ -83,6 +83,7 @@ Usage:
   shepherd watch-agents [query flags]     stream a snapshot followed by agent updates
   shepherd agent-schema                   print the machine-readable agent contract
   shepherd agent-capabilities [provider]  discover protocol and adapter support
+  shepherd agent-permissions              show active local socket permissions
   shepherd focus-agent <agent-id>         focus an agent's exact terminal
   shepherd inspect-agent <agent-id>       read bounded terminal/process context
   shepherd wait-agent <agent-id> --state S [--timeout-ms N]

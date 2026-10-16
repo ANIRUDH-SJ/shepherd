@@ -9,6 +9,13 @@
 - Preserved individual tab directories across session restoration and kept
   unlinking a repository separate from closing a live terminal.
 
+### Agent access
+
+- Added visible local-socket permissions for terminal inspection and text/key
+  input, with main-process enforcement and a read-only `agent-permissions` query.
+- Clarified adapter data access and the fact that local socket provider names
+  are not authenticated identities.
+
 ### Notification delivery
 
 - Added global desktop-alert modes, local-time quiet hours, and per-workspace
