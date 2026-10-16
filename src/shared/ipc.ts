@@ -2,6 +2,7 @@
 
 import type { AgentRecord } from './agent'
 import type { AgentAccessPolicy } from './agentAccess'
+import type { CompanionNetwork, CompanionStatus } from './companion'
 import type { AppearanceMode, AppearanceSnapshot } from './appearance'
 import type { NotificationPolicy } from './notificationPolicy'
 import type { RendererRuntimePerformanceMarkName } from './runtimePerformance'
@@ -47,6 +48,10 @@ export const IPC = {
   NOTIFICATION_POLICY_SET: 'notification-policy:set',
   AGENT_ACCESS_GET: 'agent-access:get',
   AGENT_ACCESS_SET: 'agent-access:set',
+  COMPANION_STATUS: 'companion:status',
+  COMPANION_NETWORKS: 'companion:networks',
+  COMPANION_START: 'companion:start',
+  COMPANION_STOP: 'companion:stop',
   REVIEW_STATUS: 'review:status',
   REVIEW_DIFF: 'review:diff',
   REVIEW_STAGE: 'review:stage',
@@ -188,6 +193,12 @@ export interface ShepherdApi {
   agents: {
     getAccessPolicy(): Promise<AgentAccessPolicy>
     setAccessPolicy(policy: AgentAccessPolicy): Promise<AgentAccessPolicy>
+  }
+  companion: {
+    status(): Promise<CompanionStatus>
+    networks(): Promise<CompanionNetwork[]>
+    start(address: string): Promise<CompanionStatus>
+    stop(): Promise<CompanionStatus>
   }
   socket: {
     /** Mirror the renderer's workspace list to main (for id/name resolution). */
