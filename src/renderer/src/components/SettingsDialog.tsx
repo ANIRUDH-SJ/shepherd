@@ -21,6 +21,7 @@ import type { Workspace } from '../state/appReducer'
 import NotificationRoutingSettings from './NotificationRoutingSettings'
 import WorkspaceTemplateSettings from './WorkspaceTemplateSettings'
 import AgentAccessSettings from './AgentAccessSettings'
+import SessionHistorySettings from './SessionHistorySettings'
 
 const SETTINGS_CATEGORIES = [
   'Appearance',
@@ -29,6 +30,7 @@ const SETTINGS_CATEGORIES = [
   'Notifications',
   'Workspaces',
   'Agents',
+  'History',
   'Advanced'
 ] as const
 
@@ -42,6 +44,7 @@ interface Props {
   defaultDirectory: string
   onTemplatesChange: (templates: WorkspaceTemplate[]) => void
   onUseTemplate: (template: WorkspaceTemplate) => void
+  sessionSnapshot: unknown
 }
 
 function appearanceLabel(mode: AppearanceMode): string {
@@ -55,7 +58,8 @@ export default function SettingsDialog({
   templates,
   defaultDirectory,
   onTemplatesChange,
-  onUseTemplate
+  onUseTemplate,
+  sessionSnapshot
 }: Props): React.JSX.Element {
   const [category, setCategory] = useState<SettingsCategory>('Appearance')
   const [preferences, setPreferences] = useState<RendererPreferences>(getRendererPreferences)
@@ -322,6 +326,8 @@ export default function SettingsDialog({
           )}
 
           {category === 'Agents' && <AgentAccessSettings />}
+
+          {category === 'History' && <SessionHistorySettings snapshot={sessionSnapshot} />}
 
           {category === 'Advanced' && (
             <div className="settings-group-list">

@@ -104,7 +104,12 @@ const api: ShepherdApi = {
     save: (state) => ipcRenderer.send(IPC.SESSION_SAVE, state),
     saveSync: (state) => {
       ipcRenderer.sendSync(IPC.SESSION_SAVE_SYNC, state)
-    }
+    },
+    export: (snapshot) => ipcRenderer.invoke(IPC.SESSION_EXPORT, snapshot)
+  },
+
+  provenance: {
+    list: () => ipcRenderer.invoke(IPC.PROVENANCE_LIST)
   },
 
   review: {

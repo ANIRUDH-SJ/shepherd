@@ -13,6 +13,7 @@ import { configurePreviewHost, configurePreviewSecurity } from './previewSecurit
 import { loadSession, saveSession } from './session'
 import { registerReviewIpc } from './review'
 import { registerRepositoryIpc } from './repository'
+import { registerProvenanceIpc } from './provenance'
 import {
   pruneNotificationPolicyWorkspaces,
   registerNotificationPolicyIpc
@@ -193,6 +194,7 @@ app.whenReady().then(() => {
   registerPtyIpc(runtimePerformance.enabled ? (name) => runtimePerformance.mark(name) : undefined)
   registerReviewIpc()
   registerRepositoryIpc()
+  registerProvenanceIpc()
   ipcMain.on(IPC.PERFORMANCE_MARK, (_event, name: unknown) => {
     if (isRendererRuntimePerformanceMarkName(name)) runtimePerformance.mark(name)
   })
