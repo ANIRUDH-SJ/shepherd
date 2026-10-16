@@ -92,6 +92,7 @@ command-line agents.
   `npm test`, staged-file commits, and pull-request diffs
 - All-workspace session restoration, including cwd, tabs, panes, layout, safe
   localhost previews, and notification inboxes
+- An explicit JSON session export and bounded local workspace activity history
 - Background terminals after window close where a system tray is available
 - Safe Ctrl/Meta-click opening for HTTP(S), OSC 8, and existing local-file links
 - Terminal search, a typed command palette, contextual shortcut help, and
@@ -297,6 +298,20 @@ terminal OSC, and agent notifications still appear there with their unread and
 resolution state. Clicking a desktop alert brings Shepherd forward and selects
 its workspace when one is known. Desktop alerts also depend on support from your
 Linux notification service.
+
+### Session export and activity history
+
+Open **Settings → History** to review recent workspace, repository-link, and
+tab changes. Shepherd keeps at most 500 metadata-only activity entries in its
+local app data. This history does not record terminal output or notification
+bodies; workspace names can still be personal.
+
+Choose **Export…** to save the current session and history through a native
+file dialog. The versioned JSON includes workspace layouts, linked and working
+directories, safe preview URLs, and the bounded notification inbox. It can
+therefore contain local paths and notification text: review the file before
+sharing it. Exports are snapshots for inspection or backup, not live-process
+backups; Shepherd does not import them or resume running shells from them.
 
 ## Agent-Aware Automation
 

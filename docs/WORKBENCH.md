@@ -138,6 +138,23 @@ follow the active terminal, so work in different repositories stays contextual.
 
 ![Two repositories in one task workspace](images/multi-repository-inspector.png)
 
+## Session history and export
+
+Settings → History shows the newest 20 of up to 500 locally stored activity
+entries. The main process derives these from saved layout changes: workspace
+creation, closure, and renaming; repository links; tab changes; and exports.
+The log stores event type, time, workspace identifier/name, and a short label,
+not terminal output, repository paths, or notification bodies. Workspace names
+are user-defined and may themselves contain personal information.
+
+The Export action first flushes the current layout, then opens a native save
+dialog. Its versioned JSON contains the session snapshot and bounded history.
+This is a manual file export, not an import or process checkpoint. It includes
+working directories, linked roots, previews, and inbox records, so inspect it
+before sharing. Canceling the dialog creates no export file.
+
+![Session export and recent activity in Settings](images/session-history-settings.png)
+
 ## Localhost preview
 
 Preview surfaces accept loopback URLs only. The main process applies a dedicated
