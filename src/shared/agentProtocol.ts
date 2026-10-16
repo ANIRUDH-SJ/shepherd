@@ -30,7 +30,8 @@ export const AGENT_PROTOCOL_METHODS = [
   'inspect-agent',
   'wait-agent',
   'agent-schema',
-  'agent-capabilities'
+  'agent-capabilities',
+  'agent-permissions'
 ] as const
 
 const stringField = (maxLength: number): Record<string, unknown> => ({
@@ -275,6 +276,27 @@ export const AGENT_PROTOCOL_SCHEMA = {
         properties: { provider: { $ref: '#/$defs/agentProvider' } }
       },
       result: { type: 'object' }
+    },
+    'agent-permissions': {
+      kind: 'query',
+      params: { type: 'object' },
+      result: {
+        type: 'object',
+        required: [
+          'version',
+          'terminalInspection',
+          'terminalInput',
+          'scope',
+          'providerIdentityVerified'
+        ],
+        properties: {
+          version: { const: 1 },
+          terminalInspection: { type: 'boolean' },
+          terminalInput: { type: 'boolean' },
+          scope: { const: 'local-socket' },
+          providerIdentityVerified: { const: false }
+        }
+      }
     }
   },
   $defs: {

@@ -20,6 +20,7 @@ import DialogFrame from './DialogFrame'
 import type { Workspace } from '../state/appReducer'
 import NotificationRoutingSettings from './NotificationRoutingSettings'
 import WorkspaceTemplateSettings from './WorkspaceTemplateSettings'
+import AgentAccessSettings from './AgentAccessSettings'
 
 const SETTINGS_CATEGORIES = [
   'Appearance',
@@ -320,30 +321,7 @@ export default function SettingsDialog({
             </div>
           )}
 
-          {category === 'Agents' && (
-            <div className="settings-group-list">
-              <section className="settings-group">
-                <div className="settings-setting-head">
-                  <span>
-                    <strong>Lifecycle adapters</strong>
-                    <small>Codex, Claude Code, OpenCode, and custom reporters.</small>
-                  </span>
-                  <span className="settings-value">4 providers</span>
-                </div>
-              </section>
-              <section className="settings-group">
-                <div className="settings-setting-head">
-                  <span>
-                    <strong>Attention states</strong>
-                    <small>
-                      Working, blocked, done, idle, and stale states use text and shape.
-                    </small>
-                  </span>
-                  <span className="settings-value">Semantic</span>
-                </div>
-              </section>
-            </div>
-          )}
+          {category === 'Agents' && <AgentAccessSettings />}
 
           {category === 'Advanced' && (
             <div className="settings-group-list">

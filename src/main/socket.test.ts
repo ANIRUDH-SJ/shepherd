@@ -35,7 +35,12 @@ async function main(): Promise<void> {
     agents: []
   }
   updateWorkspaceMirror(mirror)
-  startSocketServer((command) => applied.push(command), [path, legacyPath])
+  let accessPolicy = { version: 1 as const, terminalInspection: true, terminalInput: true }
+  startSocketServer(
+    (command) => applied.push(command),
+    [path, legacyPath],
+    () => accessPolicy
+  )
 
   for (
     let attempt = 0;
@@ -78,6 +83,17 @@ async function main(): Promise<void> {
     (capabilities.result?.methods as string[]).includes('agent-schema'),
     'advertises the agent protocol schema'
   )
+  assert(
+    (capabilities.result?.methods as string[]).includes('agent-permissions'),
+    'advertises socket permission discovery'
+  )
+
+  const defaultPermissions = await request('agent-permissions', {})
+  assert(defaultPermissions.result?.terminalInspection === true, 'preserves inspection default')
+  assert(
+    defaultPermissions.result?.providerIdentityVerified === false,
+    'discloses unverified provider identity'
+  )
 
   const schema = await request('agent-schema', {})
   assert(schema.result?.version === 1, 'returns the versioned agent protocol schema')
@@ -95,6 +111,18 @@ async function main(): Promise<void> {
     invalidCapabilities.error?.includes('provider must be') === true,
     'rejects an unknown capability provider'
   )
+
+  accessPolicy = { version: 1, terminalInspection: false, terminalInput: false }
+  const deniedInspection = await request('inspect-agent', { agentId: 'any' })
+  assert(
+    deniedInspection.error?.includes('disabled') === true,
+    'denies terminal inspection before lookup'
+  )
+  const deniedInput = await request('send-text', { text: 'echo no' })
+  assert(deniedInput.error?.includes('disabled') === true, 'denies socket terminal input')
+  const restrictedPermissions = await request('agent-permissions', {})
+  assert(restrictedPermissions.result?.terminalInput === false, 'reports active policy')
+  accessPolicy = { version: 1, terminalInspection: true, terminalInput: true }
 
   const invalidWorktree = await request('new-worktree', {
     repo: '/tmp/repo',
