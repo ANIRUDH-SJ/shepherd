@@ -72,6 +72,21 @@ reports. The CLI's `agent-permissions` query shows the current policy.
 
 ![Per-workspace desktop alert routing](images/notification-workspace-routing.png)
 
+## Local-network companion
+
+Settings → Companion offers an opt-in, read-only status page for another
+browser on a private IPv4 network. Select the interface, start the listener,
+and enter its fresh access code on the other device. The page updates only on
+manual refresh. Stopping the listener clears the code; it never auto-starts on
+launch.
+
+The page receives workspace names, active selection, and counts of working,
+blocked, and done agents. It receives no terminal output, paths, messages,
+usage, or command endpoint. Its HTTP transport is unencrypted, so use it only
+on a trusted LAN.
+
+![Companion settings, disabled by default](images/companion-settings.png)
+
 ## Pane and tab chrome
 
 The workspace uses a 34-pixel identity titlebar above each pane's 30-pixel tab
