@@ -7,8 +7,11 @@ export const THEME_PRESETS = [
   { id: 'rose-pine', label: 'Rosé Pine', description: 'Muted rose and iris' }
 ] as const
 
-export type ThemePresetId = (typeof THEME_PRESETS)[number]['id']
+export type ThemePresetId = (typeof THEME_PRESETS)[number]['id'] | 'custom'
 
 export function isThemePresetId(value: unknown): value is ThemePresetId {
-  return typeof value === 'string' && THEME_PRESETS.some((preset) => preset.id === value)
+  return (
+    value === 'custom' ||
+    (typeof value === 'string' && THEME_PRESETS.some((preset) => preset.id === value))
+  )
 }

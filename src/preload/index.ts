@@ -119,6 +119,11 @@ const api: ShepherdApi = {
     list: () => ipcRenderer.invoke(IPC.PROVENANCE_LIST)
   },
 
+  theme: {
+    importFile: () => ipcRenderer.invoke(IPC.THEME_IMPORT),
+    exportFile: (theme) => ipcRenderer.invoke(IPC.THEME_EXPORT, theme)
+  },
+
   review: {
     status: (request) => ipcRenderer.invoke(IPC.REVIEW_STATUS, request),
     diff: (request) => ipcRenderer.invoke(IPC.REVIEW_DIFF, request),

@@ -1,8 +1,9 @@
 import { APPEARANCE_MODES, isAppearanceMode, type AppearanceMode } from '../../shared/appearance'
 import { RENDERER_EVENT } from './events'
 import { isThemePresetId, type ThemePresetId } from './themePresets'
+import { getCustomTheme } from './customTheme'
 
-export const RENDERER_PREFERENCES_VERSION = 3 as const
+export const RENDERER_PREFERENCES_VERSION = 4 as const
 export const RENDERER_PREFERENCES_KEY = 'shepherd.preferences'
 const LEGACY_FONT_KEY = 'shepherd.fontSize'
 const LEGACY_CMUX_FONT_KEY = 'cmux.fontSize'
@@ -42,17 +43,18 @@ function clampedFontSize(value: number, fallback: number): number {
 function normalizePreferences(value: unknown): RendererPreferences | null {
   if (!value || typeof value !== 'object') return null
   const candidate = value as Record<string, unknown>
-  if (candidate.version !== 1 && candidate.version !== 2 && candidate.version !== 3) return null
+  if (![1, 2, 3, 4].includes(candidate.version as number)) return null
   if (!isAppearanceMode(candidate.appearanceMode)) return null
   if (candidate.version === 1 && candidate.terminalPaletteId !== 'graphite') return null
   if (candidate.version === 2 && candidate.terminalPaletteId !== 'system') return null
-  const themePresetId = candidate.version === 3 ? candidate.themePresetId : 'system'
+  const themePresetId =
+    candidate.version === 3 || candidate.version === 4 ? candidate.themePresetId : 'system'
   if (!isThemePresetId(themePresetId)) return null
   return {
     version: RENDERER_PREFERENCES_VERSION,
     terminalFontSize: normalizedFontSize(candidate.terminalFontSize),
     appearanceMode: candidate.appearanceMode,
-    themePresetId
+    themePresetId: themePresetId === 'custom' && !getCustomTheme() ? 'system' : themePresetId
   }
 }
 
@@ -77,7 +79,10 @@ export function getRendererPreferences(): RendererPreferences {
       const parsed = JSON.parse(stored) as unknown
       const normalized = normalizePreferences(parsed)
       if (normalized) {
-        if ((parsed as { version?: unknown }).version !== RENDERER_PREFERENCES_VERSION) {
+        if (
+          (parsed as { version?: unknown }).version !== RENDERER_PREFERENCES_VERSION ||
+          (parsed as { themePresetId?: unknown }).themePresetId !== normalized.themePresetId
+        ) {
           persistPreferences(normalized)
         }
         return normalized
@@ -102,9 +107,10 @@ export function updateRendererPreferences(
     appearanceMode: isAppearanceMode(patch.appearanceMode)
       ? patch.appearanceMode
       : current.appearanceMode,
-    themePresetId: isThemePresetId(patch.themePresetId)
-      ? patch.themePresetId
-      : current.themePresetId
+    themePresetId:
+      isThemePresetId(patch.themePresetId) && (patch.themePresetId !== 'custom' || getCustomTheme())
+        ? patch.themePresetId
+        : current.themePresetId
   }
   persistPreferences(next)
   window.dispatchEvent(new CustomEvent(RENDERER_EVENT.preferences, { detail: next }))

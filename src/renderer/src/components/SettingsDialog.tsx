@@ -23,6 +23,8 @@ import WorkspaceTemplateSettings from './WorkspaceTemplateSettings'
 import AgentAccessSettings from './AgentAccessSettings'
 import SessionHistorySettings from './SessionHistorySettings'
 import CompanionSettings from './CompanionSettings'
+import { getCustomTheme } from '../customTheme'
+import ThemeFileControls from './ThemeFileControls'
 
 const SETTINGS_CATEGORIES = [
   'Appearance',
@@ -69,6 +71,13 @@ export default function SettingsDialog({
     document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
   )
   const categoryRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const customTheme = getCustomTheme()
+  const visibleThemes = customTheme
+    ? [
+        ...THEME_PRESETS,
+        { id: 'custom' as const, label: customTheme.name, description: 'Imported local theme' }
+      ]
+    : THEME_PRESETS
 
   useEffect(() => {
     const onAppearance = (event: Event): void => {
@@ -188,11 +197,11 @@ export default function SettingsDialog({
                     <small>Changes the application and every terminal together.</small>
                   </span>
                   <span className="settings-value">
-                    {THEME_PRESETS.find((preset) => preset.id === preferences.themePresetId)?.label}
+                    {visibleThemes.find((preset) => preset.id === preferences.themePresetId)?.label}
                   </span>
                 </div>
                 <div className="theme-preset-list" role="group" aria-label="Color theme">
-                  {THEME_PRESETS.map((preset) => {
+                  {visibleThemes.map((preset) => {
                     const palette = terminalThemeForAppearance(resolvedAppearance, preset.id)
                     const swatches = [
                       palette.red,
@@ -233,6 +242,10 @@ export default function SettingsDialog({
                   })}
                 </div>
               </section>
+              <ThemeFileControls
+                preset={preferences.themePresetId}
+                onImported={() => setPreferences(getRendererPreferences())}
+              />
             </div>
           )}
 

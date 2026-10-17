@@ -177,6 +177,16 @@ preset changes; appearance events select its light or dark variant. Neither
 event recreates PTYs. Preset-specific CSS token overrides keep application
 chrome coordinated with terminal colors.
 
+Custom theme files cross a narrow native-dialog IPC boundary. Main reads at
+most 32 KiB from a regular UTF-8 file and validates the versioned palette
+before returning it; export validates again and writes the chosen file
+atomically with owner-only permissions. The renderer stores one validated
+theme in local storage. It maps its fixed chrome color keys into semantic CSS
+tokens and supplies its terminal colors directly to xterm. Imported text,
+URLs, selectors, or executable CSS never enter a style sheet. High-contrast
+token overrides still apply after custom values. A dedicated event refreshes
+open terminals when an imported custom palette replaces another one.
+
 On a fresh profile without a restored session, the renderer waits for the first
 shell output and writes `shepherd welcome` to that PTY. The CLI renders the guide
 locally without opening the socket API, and local storage prevents it from

@@ -303,8 +303,14 @@ export default function TerminalHost({
       const appearance = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
       term.options.theme = terminalThemeForAppearance(appearance, activePresetId)
     }
+    const onThemeFile = (): void => {
+      if (activePresetId !== 'custom') return
+      const appearance = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
+      term.options.theme = terminalThemeForAppearance(appearance, 'custom')
+    }
     window.addEventListener(RENDERER_EVENT.appearance, onAppearance)
     window.addEventListener(RENDERER_EVENT.preferences, onPreferences)
+    window.addEventListener(RENDERER_EVENT.themeFile, onThemeFile)
     window.addEventListener(RENDERER_EVENT.fontSize, onFontSize)
     window.addEventListener(RENDERER_EVENT.focusSurface, onFocusSurface)
     window.addEventListener(RENDERER_EVENT.terminalFind, onTerminalFind)
@@ -316,6 +322,7 @@ export default function TerminalHost({
       observer.disconnect()
       window.removeEventListener(RENDERER_EVENT.appearance, onAppearance)
       window.removeEventListener(RENDERER_EVENT.preferences, onPreferences)
+      window.removeEventListener(RENDERER_EVENT.themeFile, onThemeFile)
       window.removeEventListener(RENDERER_EVENT.fontSize, onFontSize)
       window.removeEventListener(RENDERER_EVENT.focusSurface, onFocusSurface)
       window.removeEventListener(RENDERER_EVENT.terminalFind, onTerminalFind)

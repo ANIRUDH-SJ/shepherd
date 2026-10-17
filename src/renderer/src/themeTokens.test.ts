@@ -146,14 +146,17 @@ assert(
 assert(token('--color-surface') === token('--color-canvas'), 'permanent chrome shares one backdrop')
 
 assert(token('--color-accent') === '#0091ff', 'uses the cmux dark interaction accent')
-assert(token('--color-selection') === token('--color-accent'), 'selection uses the shared accent')
+assert(
+  contrast(token('--color-selection'), token('--color-selection-text')) >= 4.5,
+  'dark selection text meets AA contrast'
+)
 assert(token('--color-focus') === token('--color-accent'), 'keyboard focus uses the shared accent')
 assert(token('--color-selection-text') === '#ffffff', 'selection uses readable white text')
 assert(lightToken('--color-canvas') === '#feffff', 'uses the cmux default light backdrop')
 assert(lightToken('--color-accent') === '#0088ff', 'uses the cmux light interaction accent')
 assert(
-  lightToken('--color-selection') === lightToken('--color-accent'),
-  'light selection uses the shared accent'
+  contrast(lightToken('--color-selection'), lightToken('--color-selection-text')) >= 4.5,
+  'light selection text meets AA contrast'
 )
 
 assert(

@@ -12,6 +12,9 @@ import {
   updateRendererPreferences
 } from './settings'
 import { RENDERER_EVENT } from './events'
+import { CHROME_COLOR_KEYS, TERMINAL_COLOR_KEYS } from '../../shared/customTheme'
+import { saveCustomTheme } from './customTheme'
+import { terminalThemeForAppearance } from './terminalTheme'
 
 const store = new Map<string, string>()
 let lastDetail: unknown = null
@@ -124,6 +127,38 @@ assert(
     'tokyo-night',
   'unknown theme update keeps the current preset'
 )
+assert(
+  updateRendererPreferences({ themePresetId: 'custom' }).themePresetId === 'tokyo-night',
+  'custom preset requires a valid imported theme'
+)
+
+const customChrome = Object.fromEntries(CHROME_COLOR_KEYS.map((key) => [key, '#ffffff']))
+customChrome.canvas = '#000000'
+customChrome.sidebar = '#000000'
+customChrome.surface = '#000000'
+customChrome.selection = '#000000'
+customChrome['selection-hover'] = '#000000'
+const customTerminal = Object.fromEntries(TERMINAL_COLOR_KEYS.map((key) => [key, '#ffffff']))
+customTerminal.background = '#000000'
+customTerminal.selectionBackground = '#000000'
+const customVariant = { chrome: customChrome, terminal: customTerminal }
+saveCustomTheme({
+  format: 'shepherd-theme',
+  version: 1,
+  name: 'Local theme',
+  dark: customVariant,
+  light: customVariant
+})
+assert(
+  updateRendererPreferences({ themePresetId: 'custom' }).themePresetId === 'custom',
+  'selects a validated imported theme'
+)
+assert(
+  terminalThemeForAppearance('dark', 'custom').background === '#000000',
+  'applies imported terminal colors'
+)
+store.delete('shepherd.customTheme')
+assert(getRendererPreferences().themePresetId === 'system', 'missing custom file falls back safely')
 
 store.clear()
 store.set(
@@ -136,10 +171,24 @@ store.set(
   })
 )
 const migratedV2 = getRendererPreferences()
-assert(migratedV2.version === 3, 'migrates version-two renderer preferences')
+assert(migratedV2.version === 4, 'migrates version-two renderer preferences')
 assert(migratedV2.themePresetId === 'system', 'maps the old terminal palette to Shepherd')
 assert(migratedV2.terminalFontSize === 17, 'preserves the font size during migration')
 assert(migratedV2.appearanceMode === 'light', 'preserves appearance during migration')
+
+store.clear()
+store.set(
+  RENDERER_PREFERENCES_KEY,
+  JSON.stringify({
+    version: 3,
+    terminalFontSize: 16,
+    appearanceMode: 'dark',
+    themePresetId: 'rose-pine'
+  })
+)
+const migratedV3 = getRendererPreferences()
+assert(migratedV3.version === 4, 'migrates version-three renderer preferences')
+assert(migratedV3.themePresetId === 'rose-pine', 'preserves curated themes during migration')
 
 store.clear()
 store.set(
@@ -152,7 +201,7 @@ store.set(
   })
 )
 const migratedGraphite = getRendererPreferences()
-assert(migratedGraphite.version === 3, 'migrates version-one renderer preferences')
+assert(migratedGraphite.version === 4, 'migrates version-one renderer preferences')
 assert(migratedGraphite.terminalFontSize === 15, 'preserves font size during palette migration')
 assert(migratedGraphite.appearanceMode === 'dark', 'preserves appearance during palette migration')
 assert(migratedGraphite.themePresetId === 'system', 'migrates Graphite to the Shepherd theme')

@@ -43,6 +43,10 @@ markers as a secondary cue.
 Focus uses a dedicated high-contrast semantic token. Active workspaces and panes
 have both structural and color cues. Empty, loading, unavailable, and error
 states use text rather than an unlabeled spinner or decorative status graph.
+Theme imports require readable text and selection pairs in both light and dark
+variants, plus visible focus and accent colors. The default selected-row blue
+was darkened so its white text meets 4.5:1 contrast without changing the
+separate accent color.
 
 ## Readability and scaling
 

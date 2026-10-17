@@ -3,6 +3,7 @@
 import type { AgentRecord } from './agent'
 import type { AgentAccessPolicy } from './agentAccess'
 import type { CompanionNetwork, CompanionStatus } from './companion'
+import type { CustomTheme } from './customTheme'
 import type { AppearanceMode, AppearanceSnapshot } from './appearance'
 import type { NotificationPolicy } from './notificationPolicy'
 import type { AuditEntry } from './provenance'
@@ -62,6 +63,8 @@ export const IPC = {
   REVIEW_PR_DIFF: 'review:pr-diff',
   PROVENANCE_LIST: 'provenance:list',
   SESSION_EXPORT: 'session:export',
+  THEME_IMPORT: 'theme:import',
+  THEME_EXPORT: 'theme:export',
   // main → renderer  (push via webContents.send / ipcRenderer.on)
   TERM_DATA: 'terminal:data',
   TERM_EXIT: 'terminal:exit',
@@ -221,6 +224,10 @@ export interface ShepherdApi {
   }
   provenance: {
     list(): Promise<AuditEntry[]>
+  }
+  theme: {
+    importFile(): Promise<CustomTheme | null>
+    exportFile(theme: CustomTheme): Promise<{ path: string } | null>
   }
   review: {
     status(request: ReviewRequest): Promise<ReviewStatus>

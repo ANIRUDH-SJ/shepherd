@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Custom theme files
+
+- Added native-dialog import and export of versioned, validated light/dark
+  chrome and terminal palettes, with one locally saved custom theme.
+- Improved default selected-row text contrast while keeping the original accent.
+
 ### Session export and activity history
 
 - Added an explicit versioned JSON session export through a native save dialog.
