@@ -61,6 +61,18 @@ the main process replaces the session file atomically. Restoring a session
 creates fresh PTYs. It does not serialize a running process or retain
 ephemeral agent and usage telemetry.
 
+After a successful session write, the main process compares the previous and
+next snapshots and appends metadata-only events to a separate, atomic local
+`provenance.json` file. The log is capped at 500 records. It never reads PTY
+output or inbox bodies and does not persist repository paths; workspace names
+remain user data.
+Settings obtains the history through a read-only preload method. Export is a
+separate explicit IPC action: the renderer supplies its current snapshot, the
+main process shows a native save dialog, caps the serialized file at 5 MiB,
+and writes a versioned JSON envelope with the snapshot and history. The file
+is created with owner-only permissions. There is no import or process-resume
+path for an export.
+
 Multi-repository workspaces additionally persist a bounded list of canonical
 Git roots and a stable original directory. Terminal surfaces can carry their
 own validated absolute cwd; live metadata updates only the active terminal's
@@ -193,6 +205,8 @@ running again automatically.
   the surface. The code is cleared when stopped or on app exit. HTTP is not
   encrypted, so the setting warns against untrusted networks.
 - Generated bundles and packages are excluded from Git and rebuilt for releases.
+- Session export requires a native file selection. Its JSON intentionally
+  includes saved directories and notification text; the UI warns before sharing.
 
 ## Verification
 

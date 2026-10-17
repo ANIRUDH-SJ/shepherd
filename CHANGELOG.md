@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Session export and activity history
+
+- Added an explicit versioned JSON session export through a native save dialog.
+- Added a bounded local activity log for workspace, repository-link, and tab
+  changes without recording terminal output or notification bodies.
+
 ### Local-network companion
 
 - Added an opt-in, read-only phone/browser status page on a selected private

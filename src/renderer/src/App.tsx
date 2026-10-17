@@ -675,6 +675,7 @@ export default function App(): React.JSX.Element {
           onOpenHelp={() => setUtilityOverlay('help')}
           onClose={() => setUtilityOverlay(null)}
           workspaces={state.workspaces}
+          sessionSnapshot={JSON.parse(sessionJson)}
           templates={workspaceTemplates}
           defaultDirectory={
             state.workspaces.find((workspace) => workspace.id === state.activeWorkspaceId)

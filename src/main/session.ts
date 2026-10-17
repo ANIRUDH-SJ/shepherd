@@ -2,6 +2,7 @@ import { app } from 'electron'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 import { PRODUCT_ENV, productEnvironmentValue } from '../shared/product'
+import { recordSessionChanges } from './provenance'
 import { writeSessionSnapshot } from './sessionFile'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -25,20 +26,30 @@ function sessionPath(): string {
   return resolveSessionPath(process.env, app.getPath('userData'))
 }
 
+let lastSnapshot: unknown | undefined
+
 /** Read the saved session (or null if none / unreadable). */
 export function loadSession(): unknown {
   try {
-    return JSON.parse(readFileSync(sessionPath(), 'utf8'))
+    lastSnapshot = JSON.parse(readFileSync(sessionPath(), 'utf8'))
   } catch {
-    return null
+    lastSnapshot = null
   }
+  return lastSnapshot
 }
 
 /** Write the session snapshot. Best-effort — never throws into the app. */
 export function saveSession(state: unknown): void {
   const p = sessionPath()
   try {
+    const previous = lastSnapshot === undefined ? loadSession() : lastSnapshot
     writeSessionSnapshot(p, state)
+    lastSnapshot = state
+    try {
+      recordSessionChanges(previous, state)
+    } catch (error) {
+      console.error('[provenance] record failed:', error)
+    }
   } catch (e) {
     console.error('[session] save failed:', e)
   }

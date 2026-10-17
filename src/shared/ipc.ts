@@ -5,6 +5,7 @@ import type { AgentAccessPolicy } from './agentAccess'
 import type { CompanionNetwork, CompanionStatus } from './companion'
 import type { AppearanceMode, AppearanceSnapshot } from './appearance'
 import type { NotificationPolicy } from './notificationPolicy'
+import type { AuditEntry } from './provenance'
 import type { RendererRuntimePerformanceMarkName } from './runtimePerformance'
 import type {
   ReviewCommitRequest,
@@ -59,6 +60,8 @@ export const IPC = {
   REVIEW_COMMIT: 'review:commit',
   REVIEW_TEST: 'review:test',
   REVIEW_PR_DIFF: 'review:pr-diff',
+  PROVENANCE_LIST: 'provenance:list',
+  SESSION_EXPORT: 'session:export',
   // main → renderer  (push via webContents.send / ipcRenderer.on)
   TERM_DATA: 'terminal:data',
   TERM_EXIT: 'terminal:exit',
@@ -213,6 +216,11 @@ export interface ShepherdApi {
     save(state: unknown): void
     /** Flush the latest snapshot before an explicit quit or renderer unload. */
     saveSync(state: unknown): void
+    /** Save a portable JSON snapshot and bounded history after native confirmation. */
+    export(snapshot: unknown): Promise<{ path: string } | null>
+  }
+  provenance: {
+    list(): Promise<AuditEntry[]>
   }
   review: {
     status(request: ReviewRequest): Promise<ReviewStatus>

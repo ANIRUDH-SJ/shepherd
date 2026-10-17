@@ -13,6 +13,7 @@ import { configurePreviewHost, configurePreviewSecurity } from './previewSecurit
 import { loadSession, saveSession } from './session'
 import { registerReviewIpc } from './review'
 import { registerRepositoryIpc } from './repository'
+import { registerProvenanceIpc } from './provenance'
 import {
   companionStatus,
   companionNetworks,
@@ -200,6 +201,7 @@ app.whenReady().then(() => {
   registerPtyIpc(runtimePerformance.enabled ? (name) => runtimePerformance.mark(name) : undefined)
   registerReviewIpc()
   registerRepositoryIpc()
+  registerProvenanceIpc()
   ipcMain.handle(IPC.COMPANION_STATUS, () => companionStatus())
   ipcMain.handle(IPC.COMPANION_NETWORKS, () => companionNetworks())
   ipcMain.handle(IPC.COMPANION_START, (_event, requested: unknown) => {
