@@ -1077,6 +1077,19 @@ body.resizing * {
   flex: 0 0 auto;
   margin: 2px 0 0;
 }
+.companion-credential {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-6) 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+.companion-credential code {
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font: 12px/1.4 var(--font-mono);
+  user-select: text;
+}
 .notification-quiet-controls {
   display: flex;
   flex-wrap: wrap;

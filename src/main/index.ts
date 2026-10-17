@@ -15,6 +15,13 @@ import { registerReviewIpc } from './review'
 import { registerRepositoryIpc } from './repository'
 import { registerProvenanceIpc } from './provenance'
 import {
+  companionStatus,
+  companionNetworks,
+  startCompanionServer,
+  stopCompanionServer,
+  updateCompanionWorkspaces
+} from './companion'
+import {
   pruneNotificationPolicyWorkspaces,
   registerNotificationPolicyIpc
 } from './notificationRouting'
@@ -195,6 +202,17 @@ app.whenReady().then(() => {
   registerReviewIpc()
   registerRepositoryIpc()
   registerProvenanceIpc()
+  ipcMain.handle(IPC.COMPANION_STATUS, () => companionStatus())
+  ipcMain.handle(IPC.COMPANION_NETWORKS, () => companionNetworks())
+  ipcMain.handle(IPC.COMPANION_START, (_event, requested: unknown) => {
+    if (
+      typeof requested !== 'string' ||
+      !companionNetworks().some((network) => network.address === requested)
+    )
+      throw new Error('Choose an available private IPv4 interface')
+    return startCompanionServer(requested)
+  })
+  ipcMain.handle(IPC.COMPANION_STOP, () => stopCompanionServer())
   ipcMain.on(IPC.PERFORMANCE_MARK, (_event, name: unknown) => {
     if (isRendererRuntimePerformanceMarkName(name)) runtimePerformance.mark(name)
   })
@@ -231,6 +249,7 @@ app.whenReady().then(() => {
   // Renderer mirrors its workspace list here so the socket can resolve ids/names.
   ipcMain.on(IPC.WORKSPACES_SYNC, (_e, sync: WorkspacesSync) => {
     updateWorkspaceMirror(sync)
+    updateCompanionWorkspaces(sync)
     if (Array.isArray(sync.workspaces)) {
       pruneNotificationPolicyWorkspaces(new Set(sync.workspaces.map((workspace) => workspace.id)))
     }
@@ -273,4 +292,5 @@ app.on('before-quit', () => {
   deferredBackgroundServices = null
   killAllTerminals()
   stopSocketServer()
+  void stopCompanionServer()
 })

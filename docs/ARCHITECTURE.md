@@ -197,6 +197,13 @@ running again automatically.
   through the restricted preload bridge; socket clients can only query it with
   `agent-permissions`. Provider names in socket reports are claims, not
   authenticated identities. The defaults preserve earlier socket behavior.
+- The companion HTTP listener is absent until explicitly started. It binds to
+  one user-selected private IPv4 interface on an ephemeral port and serves a
+  read-only projection of the renderer's workspace mirror. Its status endpoint
+  requires a fresh in-memory access code; host and origin checks, a restrictive
+  content security policy, no-store responses, and connection/time limits bound
+  the surface. The code is cleared when stopped or on app exit. HTTP is not
+  encrypted, so the setting warns against untrusted networks.
 - Generated bundles and packages are excluded from Git and rebuilt for releases.
 - Session export requires a native file selection. Its JSON intentionally
   includes saved directories and notification text; the UI warns before sharing.

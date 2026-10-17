@@ -22,6 +22,7 @@ import NotificationRoutingSettings from './NotificationRoutingSettings'
 import WorkspaceTemplateSettings from './WorkspaceTemplateSettings'
 import AgentAccessSettings from './AgentAccessSettings'
 import SessionHistorySettings from './SessionHistorySettings'
+import CompanionSettings from './CompanionSettings'
 
 const SETTINGS_CATEGORIES = [
   'Appearance',
@@ -31,6 +32,7 @@ const SETTINGS_CATEGORIES = [
   'Workspaces',
   'Agents',
   'History',
+  'Companion',
   'Advanced'
 ] as const
 
@@ -328,6 +330,7 @@ export default function SettingsDialog({
           {category === 'Agents' && <AgentAccessSettings />}
 
           {category === 'History' && <SessionHistorySettings snapshot={sessionSnapshot} />}
+          {category === 'Companion' && <CompanionSettings />}
 
           {category === 'Advanced' && (
             <div className="settings-group-list">

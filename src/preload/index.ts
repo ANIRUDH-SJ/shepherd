@@ -87,6 +87,13 @@ const api: ShepherdApi = {
     setAccessPolicy: (policy) => ipcRenderer.invoke(IPC.AGENT_ACCESS_SET, policy)
   },
 
+  companion: {
+    status: () => ipcRenderer.invoke(IPC.COMPANION_STATUS),
+    networks: () => ipcRenderer.invoke(IPC.COMPANION_NETWORKS),
+    start: (address) => ipcRenderer.invoke(IPC.COMPANION_START, address),
+    stop: () => ipcRenderer.invoke(IPC.COMPANION_STOP)
+  },
+
   socket: {
     syncWorkspaces: (sync) => ipcRenderer.send(IPC.WORKSPACES_SYNC, sync),
 
