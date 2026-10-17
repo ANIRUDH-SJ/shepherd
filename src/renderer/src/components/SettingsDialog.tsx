@@ -21,6 +21,7 @@ import type { Workspace } from '../state/appReducer'
 import NotificationRoutingSettings from './NotificationRoutingSettings'
 import WorkspaceTemplateSettings from './WorkspaceTemplateSettings'
 import AgentAccessSettings from './AgentAccessSettings'
+import CompanionSettings from './CompanionSettings'
 
 const SETTINGS_CATEGORIES = [
   'Appearance',
@@ -29,6 +30,7 @@ const SETTINGS_CATEGORIES = [
   'Notifications',
   'Workspaces',
   'Agents',
+  'Companion',
   'Advanced'
 ] as const
 
@@ -322,6 +324,8 @@ export default function SettingsDialog({
           )}
 
           {category === 'Agents' && <AgentAccessSettings />}
+
+          {category === 'Companion' && <CompanionSettings />}
 
           {category === 'Advanced' && (
             <div className="settings-group-list">

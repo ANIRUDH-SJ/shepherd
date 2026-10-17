@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Local-network companion
+
+- Added an opt-in, read-only phone/browser status page on a selected private
+  IPv4 interface, with a fresh access code and explicit stop control.
+- Limited the shared view to workspace names, active selection, and agent-state
+  counts; terminal output and remote commands remain unavailable.
+
 ### Multi-repository workspaces
 
 - Added verified local Git repositories to a workspace inspector, with

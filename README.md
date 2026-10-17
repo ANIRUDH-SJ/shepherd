@@ -298,6 +298,20 @@ resolution state. Clicking a desktop alert brings Shepherd forward and selects
 its workspace when one is known. Desktop alerts also depend on support from your
 Linux notification service.
 
+### Local-network companion
+
+Open **Settings → Companion** to share a small, read-only workspace overview
+with a phone or browser on the same private IPv4 network. Choose the network
+interface and turn it on explicitly; Shepherd shows an address and a fresh
+access code. Open the address on the other device, enter the code, and refresh
+when you want updated status. The companion is off by default and after every
+app restart. Turning it off closes the listener and invalidates the code.
+
+Only workspace names, the active workspace, and working/blocked/done agent
+counts are sent. Terminal output, repository paths, agent messages, usage,
+and remote-control commands are not exposed. The connection is plain HTTP:
+use it only on a trusted local network and keep the access code private.
+
 ## Agent-Aware Automation
 
 Every Shepherd terminal receives these environment variables:
