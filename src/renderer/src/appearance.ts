@@ -2,12 +2,15 @@ import type { AppearanceMode, AppearanceSnapshot } from '../../shared/appearance
 import { RENDERER_EVENT } from './events'
 import { getRendererPreferences, setAppearanceMode, updateRendererPreferences } from './settings'
 import type { ThemePresetId } from './themePresets'
+import { applyCustomChrome, saveCustomTheme } from './customTheme'
+import type { CustomTheme } from '../../shared/customTheme'
 
 let initialized = false
 
 export function applyAppearanceSnapshot(snapshot: AppearanceSnapshot): void {
   const root = document.documentElement
   root.dataset.theme = snapshot.resolved
+  applyCustomChrome(snapshot.resolved, getRendererPreferences().themePresetId)
   root.toggleAttribute('data-high-contrast', snapshot.highContrast)
   root.toggleAttribute('data-inverted-colors', snapshot.inverted)
   root.style.colorScheme = snapshot.resolved
@@ -36,6 +39,14 @@ export function initializeAppearance(): void {
 export function setApplicationThemePreset(preset: ThemePresetId): void {
   const preferences = updateRendererPreferences({ themePresetId: preset })
   document.documentElement.dataset.themePreset = preferences.themePresetId
+  applyCustomChrome(document.documentElement.dataset.theme === 'light' ? 'light' : 'dark', preset)
+}
+
+export function setApplicationCustomTheme(value: CustomTheme): void {
+  const wasCustom = getRendererPreferences().themePresetId === 'custom'
+  saveCustomTheme(value)
+  setApplicationThemePreset('custom')
+  if (wasCustom) window.dispatchEvent(new Event(RENDERER_EVENT.themeFile))
 }
 
 export async function setApplicationAppearance(mode: AppearanceMode): Promise<AppearanceSnapshot> {
