@@ -100,7 +100,7 @@ command-line agents.
 - A constrained localhost preview that blocks remote navigation, popups,
   downloads, and permission requests
 - System, Light, and Dark appearance with matching application and terminal
-  surfaces, plus stable semantic ANSI colors
+  surfaces, stable semantic ANSI colors, and validated custom-theme files
 - An on-demand workspace inspector for repository, pull-request, port, agent,
   usage, and session context
 - AppImage and Debian package targets
@@ -312,6 +312,15 @@ directories, safe preview URLs, and the bounded notification inbox. It can
 therefore contain local paths and notification text: review the file before
 sharing it. Exports are snapshots for inspection or backup, not live-process
 backups; Shepherd does not import them or resume running shells from them.
+
+### Theme files
+
+In **Settings → Appearance**, export the selected color theme as a JSON starting
+point or import a customized file. Themes include separate light and dark
+application and terminal palettes. Shepherd accepts only its versioned color
+schema—no CSS or scripts—and checks key text, selection, and focus contrast.
+One imported theme is saved locally and can be reselected alongside the built-in
+presets. See [Appearance and terminal themes](docs/APPEARANCE.md) for the format.
 
 ### Local-network companion
 
