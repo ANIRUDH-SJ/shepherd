@@ -1,6 +1,7 @@
 import type { ITheme } from '@xterm/xterm'
 import type { ResolvedAppearance } from '../../shared/appearance'
 import type { ThemePresetId } from './themePresets'
+import { getCustomTheme } from './customTheme'
 
 const SHARED_ANSI_COLORS = {
   black: '#1a1a1a',
@@ -298,6 +299,10 @@ export function terminalThemeForAppearance(
   appearance: ResolvedAppearance,
   preset: ThemePresetId = 'system'
 ): Readonly<ITheme> {
+  if (preset === 'custom') {
+    const custom = getCustomTheme()
+    if (custom) return Object.freeze({ ...custom[appearance].terminal })
+  }
   if (preset === 'tokyo-night') return appearance === 'light' ? TOKYO_NIGHT_LIGHT : TOKYO_NIGHT_DARK
   if (preset === 'catppuccin') return appearance === 'light' ? CATPPUCCIN_LIGHT : CATPPUCCIN_DARK
   if (preset === 'gruvbox') return appearance === 'light' ? GRUVBOX_LIGHT : GRUVBOX_DARK

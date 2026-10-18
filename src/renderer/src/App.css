@@ -24,8 +24,8 @@
   /* Interaction */
   --color-accent: #0091ff;
   --color-accent-strong: #3aa8ff;
-  --color-selection: #0091ff;
-  --color-selection-hover: #168ff0;
+  --color-selection: #0070c7;
+  --color-selection-hover: #006ab8;
   --color-selection-text: #ffffff;
   --color-focus: #0091ff;
   --color-control-overlay: rgba(255, 255, 255, 0.08);
@@ -74,8 +74,8 @@
 
   --color-accent: #0088ff;
   --color-accent-strong: #006ed0;
-  --color-selection: #0088ff;
-  --color-selection-hover: #087fe8;
+  --color-selection: #0066b3;
+  --color-selection-hover: #005ca7;
   --color-selection-text: #ffffff;
   --color-focus: #0088ff;
   --color-control-overlay: rgba(0, 0, 0, 0.06);
@@ -360,6 +360,33 @@
   --color-info: #286983;
   --color-working: #73588e;
   --color-git: #686383;
+}
+
+:root[data-theme-preset='custom'] {
+  --color-canvas: var(--custom-color-canvas);
+  --color-sidebar: var(--custom-color-sidebar);
+  --color-surface: var(--custom-color-surface);
+  --color-surface-hover: var(--custom-color-surface-hover);
+  --color-surface-raised: var(--custom-color-surface-raised);
+  --color-border: var(--custom-color-border);
+  --color-border-strong: var(--custom-color-border-strong);
+  --color-text: var(--custom-color-text);
+  --color-text-secondary: var(--custom-color-text-secondary);
+  --color-text-muted: var(--custom-color-text-muted);
+  --color-text-subdued: var(--custom-color-text-subdued);
+  --color-text-faint: var(--custom-color-text-faint);
+  --color-accent: var(--custom-color-accent);
+  --color-accent-strong: var(--custom-color-accent-strong);
+  --color-selection: var(--custom-color-selection);
+  --color-selection-hover: var(--custom-color-selection-hover);
+  --color-selection-text: var(--custom-color-selection-text);
+  --color-focus: var(--custom-color-focus);
+  --color-attention: var(--custom-color-attention);
+  --color-danger: var(--custom-color-danger);
+  --color-success: var(--custom-color-success);
+  --color-info: var(--custom-color-info);
+  --color-working: var(--custom-color-working);
+  --color-git: var(--custom-color-git);
 }
 
 :root[data-high-contrast] {
@@ -1344,6 +1371,12 @@ body.resizing * {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-input-overlay);
+}
+.theme-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
 }
 .settings-choice button {
   min-width: 76px;

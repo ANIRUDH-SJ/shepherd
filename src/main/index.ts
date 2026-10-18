@@ -14,6 +14,7 @@ import { loadSession, saveSession } from './session'
 import { registerReviewIpc } from './review'
 import { registerRepositoryIpc } from './repository'
 import { registerProvenanceIpc } from './provenance'
+import { registerThemeFileIpc } from './themeFiles'
 import {
   companionStatus,
   companionNetworks,
@@ -202,6 +203,7 @@ app.whenReady().then(() => {
   registerReviewIpc()
   registerRepositoryIpc()
   registerProvenanceIpc()
+  registerThemeFileIpc()
   ipcMain.handle(IPC.COMPANION_STATUS, () => companionStatus())
   ipcMain.handle(IPC.COMPANION_NETWORKS, () => companionNetworks())
   ipcMain.handle(IPC.COMPANION_START, (_event, requested: unknown) => {

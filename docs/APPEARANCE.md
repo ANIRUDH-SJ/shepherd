@@ -39,6 +39,28 @@ new terminals start with the saved theme.
 
 ![Theme picker showing six presets with Rosé Pine selected in light appearance](images/theme-presets-light.png)
 
+## Custom theme files
+
+Settings → Appearance has **Import…** and **Export…** controls below the preset
+picker. Export the selected built-in theme to get a complete starting file, edit
+its colors, then import it. The native dialogs choose the files. Importing saves
+one custom theme on this machine and selects it; a later import replaces that
+slot. The built-in presets remain available. The custom theme persists across
+restarts and follows System, Light, or Dark appearance like a built-in preset.
+
+The `shepherd-theme` JSON format is version 1. It requires a short `name` and
+both `dark` and `light` variants. Each variant has a `chrome` map of 24 semantic
+application color roles and a `terminal` map of 22 xterm color roles. Every value
+must be a six-digit hex color. Export a preset to see every required key; extra
+keys, CSS, URLs, and scripts are not accepted. Files are limited to 32 KiB.
+Application and terminal backgrounds must match within each variant. Import
+checks primary, secondary, muted, selection, and terminal text at a minimum
+4.5:1 contrast ratio, plus accent and focus visibility at 3:1. Invalid files
+leave the current theme unchanged. Only the color data and name are saved; no
+file path is retained. Exported files use owner-only permissions.
+
+![Theme file controls in Appearance settings](images/theme-file-settings.png)
+
 ## Semantic token contract
 
 Application CSS uses named roles rather than component-specific raw colors. The
@@ -51,10 +73,10 @@ roles cover:
   state;
 - backdrop, popover shadow, spacing, radii, and transition timing.
 
-Raw color values are kept at the root dark, light, and preset token boundaries. Controls,
-workspace rows, pane chrome, dialogs, and the inspector consume those roles. The
-default geometry is restrained, surfaces remain neutral, and a single blue
-accent is reserved for selection, focus, and small identity details.
+Raw color values are kept at the root dark, light, preset, and validated custom
+token boundaries. Controls, workspace rows, pane chrome, dialogs, and the
+inspector consume those roles. The default geometry is restrained; Shepherd's
+own preset uses a focused blue accent, while imported palettes may differ.
 
 ## Typography and motion
 
@@ -73,15 +95,17 @@ Renderer preferences are versioned. The current record contains:
 
 ```ts
 interface RendererPreferences {
-  version: 3
+  version: 4
   terminalFontSize: number
   appearanceMode: 'system' | 'light' | 'dark'
-  themePresetId: 'system' | 'tokyo-night' | 'catppuccin' | 'gruvbox' | 'solarized' | 'rose-pine'
+  themePresetId:
+    'system' | 'tokyo-night' | 'catppuccin' | 'gruvbox' | 'solarized' | 'rose-pine' | 'custom'
 }
 ```
 
 Version-one Graphite and version-two System palette settings migrate to the
 Shepherd theme while preserving font size and appearance. Older standalone font
-keys also migrate. Invalid JSON, unsupported modes, non-finite font sizes, and
-unknown theme identifiers fall back to validated defaults rather than reaching
-xterm or native theme APIs.
+keys also migrate. Version-three preset selections are preserved. Invalid JSON,
+unsupported modes, non-finite font sizes, unknown theme identifiers, and a
+missing custom theme fall back to validated defaults rather than reaching xterm
+or native theme APIs.
