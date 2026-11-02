@@ -1,15 +1,15 @@
 # Installation and Verification
 
-Shepherd v0.1.0 is an early x86-64 Linux release. The release provides an
+Shepherd v0.2.0 is an early x86-64 Linux release. The release provides an
 AppImage for portable use and a Debian package for system installation.
 
 ## Download
 
-Download the three v0.1.0 files from the
-[GitHub release](https://github.com/ANIRUDH-SJ/shepherd/releases/tag/v0.1.0):
+Download the three v0.2.0 files from the
+[GitHub release](https://github.com/ANIRUDH-SJ/shepherd/releases/tag/v0.2.0):
 
-- `Shepherd-0.1.0-x86_64.AppImage`
-- `Shepherd_0.1.0_amd64.deb`
+- `Shepherd-0.2.0-x86_64.AppImage`
+- `Shepherd_0.2.0_amd64.deb`
 - `SHA256SUMS.txt`
 
 Use files from the official `ANIRUDH-SJ/shepherd` release page. The checksum file
@@ -24,11 +24,11 @@ Keep `SHA256SUMS.txt` beside the package you downloaded, then run:
 sha256sum --ignore-missing -c SHA256SUMS.txt
 ```
 
-The selected package must report `OK`. The published v0.1.0 checksums are:
+The selected package must report `OK`. The published v0.2.0 checksums are:
 
 ```text
-140e9724ee83c3f7ef540617d59eae35dd976172723080397c5956ea0182bce4  Shepherd-0.1.0-x86_64.AppImage
-ff00744dffce70994c72315d99f0354ddcbc417632cc2a810159b419aa0ab69f  Shepherd_0.1.0_amd64.deb
+a04e1ae88c892bd281120db3a49323035ecc3bb014289dbefbdfd21676a4128a  Shepherd-0.2.0-x86_64.AppImage
+5d9b03cabd3bc9eb5e06b86c23f115cb2a88d219db9fccb4c09104f4ccf4fc2e  Shepherd_0.2.0_amd64.deb
 ```
 
 ## Run the AppImage
@@ -36,14 +36,14 @@ ff00744dffce70994c72315d99f0354ddcbc417632cc2a810159b419aa0ab69f  Shepherd_0.1.0
 The AppImage runs without installing Shepherd system-wide:
 
 ```bash
-chmod +x Shepherd-0.1.0-x86_64.AppImage
-./Shepherd-0.1.0-x86_64.AppImage
+chmod +x Shepherd-0.2.0-x86_64.AppImage
+./Shepherd-0.2.0-x86_64.AppImage
 ```
 
 If the system does not provide FUSE support, use the AppImage extraction mode:
 
 ```bash
-./Shepherd-0.1.0-x86_64.AppImage --appimage-extract-and-run
+./Shepherd-0.2.0-x86_64.AppImage --appimage-extract-and-run
 ```
 
 Shepherd stores its application state in the normal per-user configuration
@@ -54,7 +54,7 @@ location. Running the AppImage does not add a system package.
 On Debian or Ubuntu, install with `apt` so package dependencies are resolved:
 
 ```bash
-sudo apt install ./Shepherd_0.1.0_amd64.deb
+sudo apt install ./Shepherd_0.2.0_amd64.deb
 ```
 
 Launch Shepherd from the desktop application menu or a terminal:
@@ -86,7 +86,7 @@ need a working C/C++ compiler toolchain and Python for the Node.js build process
 
 ## Release validation
 
-Before publication, both v0.1.0 packages were rebuilt from the tagged commit,
+Before publication, both v0.2.0 packages were rebuilt from the tagged commit,
 launched on an isolated Linux display, and exercised through Shepherd's Unix
 socket. The uploaded assets were then downloaded from GitHub and checked against
 the published SHA-256 file.

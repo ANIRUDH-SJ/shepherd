@@ -16,7 +16,7 @@ into an AI dashboard or losing track of what needs you.
 > notification, preview, and automation systems are implemented, but interfaces
 > and protocols may still change before a stable release.
 
-[Download Shepherd v0.1.0](https://github.com/ANIRUDH-SJ/shepherd/releases/tag/v0.1.0)
+[Download Shepherd v0.2.0](https://github.com/ANIRUDH-SJ/shepherd/releases/tag/v0.2.0)
 · [Installation and verification](docs/INSTALLATION.md)
 
 ## Why Shepherd?
@@ -67,6 +67,22 @@ Shepherd turns that collection of terminals into an understandable workspace:
 Shepherd is not an AI model, chatbot, or full IDE. It is the terminal-first
 workspace around tools such as Codex, Claude Code, OpenCode, and other
 command-line agents.
+
+## What's New in v0.2.0
+
+- Review repository changes, stage or unstage files, run project tests, create
+  commits, and inspect the current pull-request diff from an on-demand workbench.
+- Link multiple local Git repositories to one task workspace and open terminals
+  rooted in each repository, with per-tab directories restored across launches.
+- Create reusable local workspace templates with explicit setup and run actions.
+- Control desktop-notification routing with quiet hours and per-workspace
+  overrides while keeping every event in Shepherd's notification inbox.
+- Export a versioned session snapshot and inspect a bounded, privacy-conscious
+  local history of workspace activity.
+- Share a read-only workspace and agent-status view with a phone or browser on
+  the local network through an explicit, access-code-protected companion.
+- Import and export validated custom theme files in addition to the coordinated
+  built-in light and dark theme collection.
 
 ## What Works Today
 
@@ -163,7 +179,7 @@ remains restricted to localhost and uses a dedicated Electron session boundary.
 ## Install
 
 The current pre-1.0 build is
-[Shepherd v0.1.0](https://github.com/ANIRUDH-SJ/shepherd/releases/tag/v0.1.0)
+[Shepherd v0.2.0](https://github.com/ANIRUDH-SJ/shepherd/releases/tag/v0.2.0)
 for x86-64 Linux. Download the AppImage or Debian package from that release and
 use its `SHA256SUMS.txt` file to verify the download.
 

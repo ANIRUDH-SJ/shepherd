@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.2.0 — 2026-11-02
+
+Shepherd 0.2.0 expands the terminal workbench with repository review,
+multi-repository tasks, configurable local workflows, safer notification and
+agent controls, session portability, and validated appearance customization.
+
 ### Custom theme files
 
 - Added native-dialog import and export of versioned, validated light/dark
