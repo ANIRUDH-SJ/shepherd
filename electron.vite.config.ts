@@ -7,7 +7,15 @@ import react from '@vitejs/plugin-react'
 // later, native modules like node-pty) out of the main/preload bundles.
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve('src/main/index.ts'),
+          detachedRuntime: resolve('src/main/detachedRuntimeEntry.ts')
+        }
+      }
+    }
   },
   preload: {
     plugins: [externalizeDepsPlugin()]
